@@ -43,7 +43,7 @@ use Scalar::Util qw| blessed reftype |;
 ## Class Vars & Exports
 ##
 
-our $VERSION = '0.20_00';
+our $VERSION = '0.20_01';
 
 our @EXPORT_OK = (
   qw|
@@ -288,7 +288,7 @@ OP::Class
 
 =head1 VERSION
 
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Class.pm#9 $
+$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Class.pm#2 $
 
 
 =head1 SYNOPSIS

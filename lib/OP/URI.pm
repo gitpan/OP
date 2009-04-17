@@ -56,7 +56,7 @@ OP::URI
 
 =head1 VERSION
 
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/URI.pm#2 $
+  $Id: //depotit/tools/snitchd/OP-0.20/lib/OP/URI.pm#1 $
 
 =head1 SYNOPSIS
 

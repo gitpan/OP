@@ -79,7 +79,7 @@ This file is part of L<OP>.
 
 =head1 REVISION
 
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Node.pm#5 $
+$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Node.pm#1 $
 
 =cut
 

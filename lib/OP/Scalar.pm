@@ -267,7 +267,7 @@ This file is part of L<OP>.
 
 =head1 REVISION
 
-$Id: $
+$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Scalar.pm#1 $
 
 =cut
 

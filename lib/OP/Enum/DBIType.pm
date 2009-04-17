@@ -56,7 +56,7 @@ This file is part of L<OP>.
 
 =head1 REVISION
 
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Enum/DBIType.pm#2 $
+$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Enum/DBIType.pm#1 $
 
 =cut
 
