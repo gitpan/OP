@@ -62,7 +62,7 @@ This file is part of L<OP>.
 
 =head1 REVISON
 
-$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Persistence/SQLite.pm#1 $
+$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Persistence/SQLite.pm#2 $
 
 =cut
 

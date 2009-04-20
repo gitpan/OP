@@ -74,7 +74,7 @@ OP::EmailAddr
 
 =head1 VERSION
 
-  $Id: //depotit/tools/snitchd/OP-0.20/lib/OP/EmailAddr.pm#1 $
+  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/EmailAddr.pm#4 $
 
 =head1 SYNOPSIS
 

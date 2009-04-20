@@ -253,7 +253,7 @@ sub import {
 
 =head1 REVISION
 
-$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Enum.pm#1 $
+$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Enum.pm#4 $
 
 =head1 SEE ALSO
 

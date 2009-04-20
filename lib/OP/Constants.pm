@@ -215,7 +215,7 @@ for my $key ( keys %{$rc} ) {
 
 =head1 REVISION
 
-$Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Constants.pm#1 $
+$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Constants.pm#8 $
 
 =head1 SEE ALSO
 

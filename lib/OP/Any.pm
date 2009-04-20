@@ -70,7 +70,7 @@ OP::Any
 
 =head1 VERSION
 
-  $Id: //depotit/tools/snitchd/OP-0.20/lib/OP/Any.pm#1 $
+  $Id: $
 
 =head1 SYNOPSIS
 
