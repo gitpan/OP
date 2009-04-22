@@ -43,7 +43,7 @@ use Scalar::Util qw| blessed reftype |;
 ## Class Vars & Exports
 ##
 
-our $VERSION = '0.20_02';
+our $VERSION = '0.20_03';
 
 our @EXPORT_OK = (
   qw|
@@ -283,7 +283,7 @@ __END__
 
 =head1 NAME
 
-OP::Class
+OP::Class - Root-level "Class" class
 
 
 =head1 VERSION

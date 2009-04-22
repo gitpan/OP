@@ -1,7 +1,7 @@
 #
 # File: OP.pm
 #
-# Copyright (c) 2005 TiVo Inc.
+# Copyright (c) 2009 TiVo Inc.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Common Public License v1.0
@@ -138,13 +138,11 @@ __END__
 
 =head1 NAME
 
-OP - Objective Perl 5 (Overpowered)
+OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
 This documentation is for version B<0.20> of OP.
-
-  $Id: //depotit/tools/snitchd/OP-0.20/lib/OP.pm#2 $
 
 =head1 STATUS
 
@@ -396,49 +394,6 @@ specified, the received arg must be of that object type or a subclass (ie,
 it must pass the L<UNIVERSAL>C<::isa()> test). The Perl6::Subs equivalent
 pseudo-types are designed around Perl 5's native data types, and are
 suitable for testing non-objects.
-
-As an academic example, here are less-picky and more-picky subs:
-
-  #
-  # Less-picky, duck-typey sub:
-  #
-  sub doSomethingWithHash(Hash $hash) {
-    say $hash ? "I'm happy with $hash" : "I got nothin'";
-  }
-
-  #
-  # Pickier sub:
-  #
-  sub pickyHashSub(OP::Hash $hash) {
-    doSomethingWithHash($hash);
-  }
-
-Here is code to test the less-picky version:
-
-  #
-  # This says "I'm happy with OP::Hash=HASH(0xDEADBEEF)"
-  #
-  doSomethingWithHash(OP::Hash->new());
-
-  #
-  # This says "I'm happy with HASH(0xDEADBEEF)"
-  #
-  doSomethingWithHash({ });
-
-And code to test its pickier counterpart:
-
-  #
-  # This says "I'm happy with OP::Hash=HASH(0xDEADBEEF)":
-  #
-  pickyHashSub(OP::Hash->new());
-
-  #
-  # But this will throw an exception like:
-  #
-  # - Unhandled OP::InvalidArgument Exception:
-  #   Parameter $hash is not an OP::Hash in call to main::pickyHashSub ...
-  #
-  pickyHashSub({ });
 
 Note that constructors and setter methods accept both native Perl 5 data
 types and their OP object class equivalents. The setters will

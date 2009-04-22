@@ -12,11 +12,9 @@
 
 =head1 NAME
 
-OP::Bool
+OP::Bool - Overloaded object class for booleans
 
 =head1 DESCRIPTION
-
-Scalar-backed overloaded object class for booleans.
 
 Extends L<OP::Scalar>.
 
@@ -54,10 +52,13 @@ use strict;
 use warnings;
 
 use OP::Enum::Bool;
+use OP::Num;
 
 use Perl6::Subs;
 
 use base qw| OP::Scalar |;
+
+use overload %OP::Num::overload;
 
 method new(OP::Class $class: Bool $self) {
   OP::Type::insist $self, OP::Type::isBool;

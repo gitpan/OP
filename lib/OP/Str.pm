@@ -1,5 +1,5 @@
 #
-# File: OP/Bool.pm
+# File: OP/Str.pm
 #
 # Copyright (c) 2009 TiVo Inc.
 #
@@ -12,19 +12,17 @@
 
 =head1 NAME
 
-OP::Bool
+OP::Str - Overloaded object class for strings
 
 =head1 DESCRIPTION
-
-Scalar-backed overloaded object class for strings.
 
 Extends L<OP::Scalar>, L<Mime::Base64>, and L<Unicode::String>.
 
 =head1 SYNOPSIS
 
-  use OP::Bool;
+  use OP::Str;
 
-  my $string = OP::String->new("Lorem Ipsum");
+  my $string = OP::Str->new("Lorem Ipsum");
 
 =head1 PUBLIC INSTANCE METHODS
 

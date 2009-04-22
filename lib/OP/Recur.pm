@@ -12,11 +12,7 @@
 
 =head1 NAME
 
-OP::Recur
-
-=head1 DESCRIPTION
-
-Objects to represent a recurring point in time.
+OP::Recur - Object class to represent recurring points in time
 
 =head1 SYNOPSIS
 
@@ -572,6 +568,13 @@ create "OP::Recur" => {
 
   each => method(*@args) {
     if ( @args ) {
+      #
+      # Multi-method - allow iterator usage like other OP classes
+      #
+      if ( @args == 1 && UNIVERSAL::isa($args[0], "CODE") ) {
+        return OP::Hash::collect($self, @args);
+      }
+
       $self->{_each}->push( OP::Recur::Each->new(@args) );
     } else {
       return $self->{_each};
