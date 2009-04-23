@@ -49,6 +49,7 @@ use File::Copy;
 use File::Path;
 use File::Find;
 use IO::File;
+use JSON::Syck;
 use Perl6::Subs;
 use Rcs;
 use Time::HiRes qw| time |;
@@ -674,6 +675,29 @@ method loadYaml(OP::Class $class: Str $yaml) {
 
 =pod
 
+=item * $class->loadJson($string)
+
+Load the received string containing JSON into an instance of the
+receiving class.
+
+Warns and returns undef if the load fails.
+
+=cut
+
+method loadJson(OP::Class $class: Str $json) {
+  throw OP::InvalidArgument( "Empty YAML stream received" )
+    if !$json;
+
+  my $hash = JSON::Syck::Load($json);
+
+  throw OP::DataConversionFailed($@) if $@;
+
+  return $class->__marshal($hash);
+};
+
+
+=pod
+
 =back
 
 =head1 PRIVATE CLASS METHODS
@@ -1140,7 +1164,7 @@ method __marshal(OP::Class $class: Hash $self) {
 
         my $sth = $elementClass->query( sprintf q|
             select * from %s where parentId = %s
-              order by elementIndex
+              order by elementIndex + 0
           |,
           $elementClass->tableName(),
           $elementClass->quote($self->{ $class->__primaryKey() })
@@ -2768,13 +2792,52 @@ Does B<not> delete RCS history, if present.
 method remove(Str ?$reason) {
   my $class = $self->class();
 
+  my $asserts = $class->asserts;
+
   if ( $class->__useDbi() ) {
+    my $began = $class->__beginTransaction();
+
+    if ( !$began ) {
+      throw OP::TransactionFailed($@);
+    }
+
+    #
+    # Purge multi-value elements residing in linked tables
+    #
+    for ( keys %{ $asserts } ) {
+      my $key = $_;
+    
+      my $type = $asserts->{$_};
+      
+      next if !$type->objectClass->isa("OP::Array")
+        && !$type->objectClass->isa("OP::Hash");
+
+      my $elementClass = $class->elementClass($key);
+
+      next if !$elementClass;
+    
+      $elementClass->write(  
+        sprintf 'DELETE FROM %s WHERE parentId = %s',
+        $elementClass->tableName,
+        $class->quote($self->key)
+      );
+    }
+
     #
     # Try to run a 'delete' on an existing row
     #
     $class->write(
       $self->_deleteRowStatement()
     );
+
+    my $committed = $class->__commitTransaction();
+
+    if ( !$committed ) {
+      #
+      # If this happens, freak out.
+      #
+      throw OP::TransactionFailed("COMMIT failed on remove");
+    }
   }
 
   if ( $memd && $class->__useMemcached() ) {

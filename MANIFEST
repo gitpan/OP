@@ -66,3 +66,4 @@ lib/OP.pm
 README
 Changes
 cpl1.0.txt
+META.yml                                 Module meta-data (added by MakeMaker)
