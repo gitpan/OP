@@ -1,3 +1,6 @@
+2009-04-24: .211
+  - More housekeeping and fixes for CPAN
+
 2009-04-21: Developer release 0.20_03
   - 0.21 release candidate
   - Add missing dependencies to Makefile.PL

@@ -48,7 +48,7 @@ my $prereqs = {
 
 WriteMakefile(
   ABSTRACT_FROM => 'lib/OP.pm',
-  VERSION_FROM  => 'lib/OP/Class.pm',
+  VERSION_FROM  => 'lib/OP.pm',
   NAME          => 'OP',
   PREREQ_PM     => $prereqs,
 );

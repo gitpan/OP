@@ -28,6 +28,8 @@ sub DESTROY {
 
 package OP;
 
+our $VERSION = '0.211';
+
 use strict;
 use diagnostics;
 
@@ -142,7 +144,7 @@ OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
-This documentation is for version B<0.21> of OP.
+This documentation is for version B<0.211> of OP.
 
 =head1 STATUS
 

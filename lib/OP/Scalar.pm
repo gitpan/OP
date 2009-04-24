@@ -19,6 +19,12 @@ use OP::Class qw| true false |;
 
 use overload fallback => true,
   '""' => sub { shift->value() },
+  'ne' => sub {
+    my $first = shift;
+    my $second = shift;
+
+    "$first" ne "$second";
+  },
   'eq' => sub {
     my $first = shift;
     my $second = shift;

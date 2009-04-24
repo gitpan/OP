@@ -1,0 +1,457 @@
+<html>
+<head>
+  <title>OP Basics Cheat Sheet</title>
+  <style>
+
+a {
+  color: #246;
+}
+
+body {
+  background: #fff;
+}
+
+body, td {
+  font-family: verdana, sans-serif;
+  font-size: 9px;
+}
+
+h1, h2 {
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  background: #666;
+  color: #ddd;
+  padding: 4px;
+  margin: 0px;
+}
+
+h3 {
+  margin: 0px;
+}
+
+pre {
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  background: #666;
+  color: #fff;
+  padding: 4px;
+  margin-bottom: 0px;
+  font-family: monaco, courier new, monospace;
+}
+
+.item {
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  background: #ddd;
+  padding: 4px;
+  margin: 4px;
+  margin-bottom: 8px;
+}
+
+  </style>
+</head>
+<body>
+
+<h2 align="center" style="margin: 4px; background: #333; color: #fff">
+  OP Basics Cheat Sheet
+</h2>
+
+<table border="0" cellspacing="0" cellpadding="0" width="100%">
+  <tr>
+    <td valign="top" width="20%">
+
+<div class="item">
+<h3><i>install</i> OP</h3>
+
+<pre>
+sudo perl -MCPAN -e 'install OP'
+</pre>
+
+<p>
+This installs the latest stable version of OP.
+</p>
+
+<p>
+You will also need <b>DBD::mysql</b>.
+</p>
+</div>
+
+<div class="item">
+<h3><i>create</i> a database</h3>
+
+<p>
+OP will create any necessary tables, but a DBA must create the
+initial database, as well as run any required GRANT statements.
+</p>
+
+<pre>
+mysql -u root -p
+create database <i>yourapp</i>;
+grant all on <i>yourapp</i>.* to op@localhost;
+</pre>
+</div>
+
+<div class="item">
+<h3><i>create</i> an object class</h3>
+
+<p>
+In file <i>YourApp/Example.pm</i>:
+</p>
+
+<pre>
+use OP;
+
+create "<i>YourApp::Example</i>" => { };
+</pre>
+</div>
+
+
+<div class="item">
+<h3><i>assert</i> variable types</h3>
+
+<p>Asserted types map to same-named database table columns.</p>
+
+<pre>
+create "<i>YourApp::Example</i>" => {
+  favoriteNumber => OP::Int->assert(
+    ::optional
+  ),
+
+  favoriteColor  => OP::Str->assert(
+    qw| red green blue |,
+    ::optional
+  ),
+};
+</pre>
+
+<p>
+By default, instances will already have: <b>id</b>, <b>name</b>,
+<b>ctime</b>, and <b>mtime</b>.
+</p>
+</div>
+
+    </td>
+    <td valign="top" width="20%">
+
+<div class="item">
+<h3>make a <i>new</i> object</h3>
+
+<pre>
+use <i>YourApp::Example</i>;
+
+my $class = "<i>YourApp::Example</i>";
+
+my $example = $class->new(
+  name => "HelloWorld"
+);
+</pre>
+</div>
+
+<div class="item">
+<h3><i>save</i> an object</h3>
+
+<pre>
+$example->save;
+</pre>
+</div>
+
+<div class="item">
+<h3><i>load</i> an object</h3>
+
+<p>
+Load by GUID:
+</p>
+
+<pre>
+my $example = $class->load($id);
+</pre>
+
+<p>
+Load by Name:
+</p>
+
+<pre>
+my $example = $class->loadByName("HelloWorld");
+</pre>
+</div>
+
+<div class="item">
+<h3><i>remove</i> an object</h3>
+
+<pre>
+$example->remove
+</pre>
+</div>
+
+<div class="item">
+<h3><i>query</i> the database</h3>
+
+<p>Use <b>DBI</b> statement handles:</p>
+
+<pre>
+my $sth = $class->query(
+  sprintf q| select id, name from %s |,
+    $class->tableName
+);
+
+while ( my @row = $sth->fetchrow_array ) {
+  print join ",", @row;
+  print "\n";
+};
+</div>
+    </td>
+
+    <td valign="top" width="20%">
+
+<div class="item">
+<h3><i>set</i>, <i>get</i>, and <i>delete</i> an attribute</h3>
+
+<p>Explicit:</p>
+
+<pre>
+$example->setFavoriteColor("blue");
+
+my $color = $example->favoriteColor;
+
+$example->deleteFavoriteColor;
+</pre>
+
+<p>Iterative:</p>
+
+<pre>
+$example->set("favoriteColor", "blue");
+
+my $color = $example->get("favoriteColor");
+
+$example->delete("favoriteColor");
+</pre>
+</div>
+
+</pre>
+</div>
+
+
+<div class="item">
+<h3>dump object <i>to json</i> or <i>yaml</i></h3>
+
+<pre>
+my $json = $object->toJson;
+
+my $yaml = $object->toYaml;
+
+#
+# Prints YAML
+#
+$object->print;
+</pre>
+</div>
+
+<div class="item">
+<h3><i>load json</i> or <i>yaml</i> as object</h3>
+
+<pre>
+my $examp1 = $class->loadJson($json);
+
+my $examp2 = $class->loadYaml($yaml);
+</pre>
+</div>
+
+<div class="item">
+<h3><i>assert</i> a foreign id constraint</h3>
+
+<p>Use <b>OP::ExtID</b>:</p>
+
+<pre>
+create "YourApp::ThisClass" => {
+  relatedId => OP::ExtID->assert(
+    "YourApp::OtherClass"
+  ),
+};
+</pre>
+</div>
+
+    </td>
+    <td valign="top" width="20%">
+
+<div class="item">
+<h3>class <i>method</i></h3>
+
+<p>Inline:</p>
+
+<pre>
+create "YourApp::Example" => {
+  someMethod => method(OP::Class $class:) {
+    print "No need to shift $class etc\n";
+  },
+
+  methodWithArgs => method(
+    OP::Class $class: Str $arg, *@slurp
+  ) {
+    print "No need to shift $class etc\n";
+  },
+
+};
+</pre>
+
+<p>Free standing:</p>
+
+<pre>
+method methodWithArgs(
+  OP::Class $class: Str $arg, *@slurp
+) {
+  print "No need to shift $class etc\n";
+};
+</pre>
+</div>
+
+<div class="item">
+<h3>instance <i>method</i></h3>
+
+<p>Inline:</p>
+
+<pre>
+create "YourApp::Example" => {
+  someMethod => method() {
+    print "No need to shift $self etc\n";
+  },
+
+  methodWithArgs => method(Str $arg, *@slurp) {
+    print "No need to shift $self etc\n";
+  },
+
+};
+</pre>
+
+<p>Free standing:</p>
+
+<pre>
+method methodWithArgs(Str $arg, *@slurp) {
+  print "No need to shift $self etc\n";
+};
+</pre>
+</div>
+
+    </td>
+    <td valign="top" width="20%">
+
+<div class="item">
+
+<table width="100%">
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP.pm">OP</a></b></td>
+    <td>Framework loader</td>
+  </tr>
+
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Any.pm">OP::Any</a></b></td>
+    <td>Wrapper for any type of variable</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Array.pm">OP::Array</a></b></td>
+    <td>List</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Bool.pm">OP::Bool</a></b></td>
+    <td>Overloaded boolean</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/DateTime.pm">OP::DateTime</a></b></td>
+    <td>Overloaded time object</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Domain.pm">OP::Domain</a></b></td>
+    <td>Overloaded domain name</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Double.pm">OP::Double</a></b></td>
+    <td>Overloaded double precision number</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/EmailAddr.pm">OP::EmailAddr</a></b></td>
+    <td>Overloaded email address</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/ExtID.pm">OP::ExtID</a></b></td>
+    <td>Overloaded foreign GUID</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Float.pm">OP::Float</a></b></td>
+    <td>Overloaded floating point number</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Hash.pm">OP::Hash</a></b></td>
+    <td>Hashtable</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/ID.pm">OP::ID</a></b></td>
+    <td>Overloaded GUID</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/IPv4Addr.pm">OP::IPv4Addr</a></b></td>
+    <td>Overloaded IPv4 address</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Int.pm">OP::Int</a></b></td>
+    <td>Overloaded integer</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Name.pm">OP::Name</a></b></td>
+    <td>A unique secondary key</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Num.pm">OP::Num</a></b></td>
+    <td>Overloaded number</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Rule.pm">OP::Rule</a></b></td>
+    <td>Regex</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Str.pm">OP::Str</a></b></td>
+    <td>Overloaded string</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/TimeSpan.pm">OP::TimeSpan</a></b></td>
+    <td>Overloaded time range object</td>
+  </tr>
+  <tr>
+    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/URI.pm">OP::URI</a></b></td>
+    <td>Overloaded URI</td>
+  </tr>
+</table>
+
+<p>OP classes may be instantiated (<i>$class->new(...)</i>), or declared
+as inline attributes (<i>$class->assert(...)</i>).</p>
+
+</div>
+
+<div class="item">
+<h3><i>collect</i> array elements</h3>
+
+<pre>
+my $collected = $array->collect( sub(Any $item) {
+  print "Working with element $item\n"
+
+  return if $item == $foo; # Yield nothing
+
+  break if $item == $bar;  # Stop collecting
+
+  # Upstream $things, continue curr iteration:
+  emit $thing1, [$thing2, ...];
+
+  # Upstream $things, skip to next iteration:
+  yield $thing1, [$thing2, ...];
+} );
+ 
+</pre>
+</div>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
