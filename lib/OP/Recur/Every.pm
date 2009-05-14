@@ -25,20 +25,6 @@ sub new {
     : $class->SUPER::new($lesser);
 }
 
-sub _next {
-  my $self = shift;
-  my $now = shift || $OP::Recur::TIME;
-
-  #
-  # the 1000 avoids stupid mod 0 errors for fractional times
-  #
-  my $next = $now - ( (($now*1000) % ($self*1000))/1000 ) + $self;
-
-  $next += $self if $next <= $now;
-
-  return OP::DateTime->new( $next );
-} 
-
 1;
 __END__
 =pod

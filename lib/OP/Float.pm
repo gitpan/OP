@@ -47,7 +47,7 @@ use overload fallback => true, %OP::Num::overload;
 
 method assert(OP::Class $class: *@rules) {
   my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isFloat, @_
+    OP::Type::isFloat, @rules
   );
 
   $parsed{default} = "0.0" if !defined $parsed{default};

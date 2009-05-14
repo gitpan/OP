@@ -27,30 +27,6 @@ sub wday  { return $_[0]->[0]; }
 sub month { return $_[0]->[1]; }
 sub year  { return $_[0]->[2]; }
 
-sub includes {
-  my $self = shift;
-  my $now = shift || $OP::Recur::TIME;
-
-  my @now = localtime($now);
-
-  my $haveYear  = $now[5] + 1900;
-  my $haveMonth = $now[4] + 1;
-  my $haveWDay  = $now[6];
-
-  return false if defined($self->year) && $self->year != $haveYear;
-  return false if defined($self->month) && $self->month != $haveMonth;
-  return false if defined($self->wday) && $self->wday != $haveWDay;
-
-  return true;
-}
-
-sub excludes {
-  my $self = shift;
-  my $time = shift;
-
-  return $self->includes($time) ? false : true;
-}
-
 1;
 __END__
 =pod

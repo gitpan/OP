@@ -128,7 +128,7 @@ method create (Str $class: Hash $args) {
     $baselib =~ s/::/\//gxms;
     $baselib .= ".pm";
 
-    require $baselib;
+    eval { require $baselib };
 
     $base->import();
   }
@@ -450,10 +450,19 @@ to C<create()>.
 
 =head2 Instance Variables
 
-Instance variables are declared with assertions.
+Instance variables are declared with the C<assert> class method:
 
-See the SYNOPSIS section in this module, and further examples in the
-L<OP::Subtype> and L<OP::Type> modules.
+  create "YourApp::Example" => {
+    favoriteNumber => OP::Int->assert(
+      ::optional
+    ),
+
+    favoriteColor  => OP::Str->assert(
+      qw| red green blue |,
+      ::optional
+    ),
+  };
+
 
 =head2 Instance Methods
 

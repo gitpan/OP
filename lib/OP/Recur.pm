@@ -526,6 +526,12 @@ create "OP::Recur" => {
     )
   ),
 
+  _planAhead => OP::TimeSpan->assert(
+    OP::Type::default(10),
+  ),
+
+  _lastPlanTime => OP::DateTime->assert,
+
   every => method(*@args) {
     if ( @args ) {
       $self->{_every}->push( OP::Recur::Every->new(@args) );
@@ -610,168 +616,295 @@ create "OP::Recur" => {
 
   coloop => method(Code $sub) {
     async {
-      $self->loop($sub);
+      $self->_loop($sub);
     };
   },
 
   loop => method(Code $sub) {
+    $self->coloop($sub);
+
+    while(1) {
+      OP::Recur::snooze(.001);
+    }
+  },
+
+  _loop => method(Code $sub) {
     local $OP::Recur::TIME = OP::DateTime->new(
       sprintf('%.03f', Time::HiRes::time())
     );
     my $now = $OP::Recur::TIME;
 
-    my $nextEvery = $self->every()->collect( sub {
-      yield $_->_next();
-    } )->min();
-
-    my $nextAt = $self->at()->collect( sub {
-      yield $_->_next();
-    } )->min();
-
-    return if !defined($nextAt) && !defined($nextEvery);
-
-    my $haveNext;
-
-    if ( !defined $nextEvery) {
-      $haveNext = $nextAt;
-    } elsif ( !defined $nextAt ) {
-      $haveNext = $nextEvery;
-    } else {
-      $haveNext = ( $nextEvery < $nextAt ) ? $nextEvery : $nextAt;
-    }
-
-    $haveNext = sprintf('%.03f', $haveNext);
+    my $plan = $self->makePlan;
 
     while(1) {
       $OP::Recur::TIME = OP::DateTime->new(
         sprintf('%.03f', Time::HiRes::time())
       );
       $now = $OP::Recur::TIME;
+      #
+      # Figure out if it's time to run
+      #
+      if ( !$plan->isEmpty && $now >= $plan->first ) {
+        $plan->shift;
 
-      if ( $haveNext > $now ) {
-        my $sleepTime = sprintf('%.03f', $haveNext - $now) - .001;
+        #
+        #
+        #
+        local $Error::THROWN = undef;
 
-        if ( $sleepTime > 0 ) {
-          # select(undef,undef,undef,$sleepTime);
-          OP::Recur::snooze($sleepTime);
+        eval { &$sub($now) };
+
+        if ( $@ ) {
+          my $thrown = $Error::THROWN;
+
+          if ( $thrown && UNIVERSAL::isa($thrown, "OP::Recur::Break") ) {
+            last;
+          } elsif ( $thrown ) {
+            #
+            # Rethrow
+            #
+            $thrown->throw();
+          } elsif ( !$thrown ) {
+            #
+            # Normal error encountered, just die
+            #
+            die $@;
+          }
         }
-
-        next;
+      } elsif ( !$plan->isEmpty ) {
+        OP::Recur::snooze($plan->first - $now);
       }
 
       #
-      # Skipping "at" exceptions??
+      # Update the plan
       #
-      my $exceptAt = $self->exceptAt()->collect( sub {
-        yield $_->_next();
-      } )->min();
+      my $nextPlanTime = $self->_lastPlanTime + $self->_planAhead;
 
-      if ( defined($exceptAt) && int($exceptAt) == int($haveNext) ) {
-        select(undef,undef,undef,.001);
+      if ( $now >= $nextPlanTime ) {
+        $self->{_lastPlanTime} = $now;
 
-        next;
+        $plan = $self->makePlan;
+
+        OP::Recur::snooze(.001);
       }
 
       #
+      # Big snoozer if there's nothing to do
       #
-      #
-      my $on = $self->on()->collect( sub {
-        yield $_->includes($haveNext);
-      } )->max();
-
-      if ( defined($on) && !$on ) {
-        select(undef,undef,undef,.001);
-
-        next;
-      }
-
-      #
-      #
-      #
-      my $exceptOn = $self->exceptOn()->collect( sub {
-        yield $_->includes($haveNext);
-      } )->max();
-
-      if ( $exceptOn ) {
-        select(undef,undef,undef,.001);
-
-        next;
-      }
-
-      #
-      #
-      #
-      my $each = $self->each()->collect( sub {
-        yield $_->includes($haveNext);
-      } )->max();
-
-      if ( defined($each) && !$each ) {
-        select(undef,undef,undef,.001);
-
-        next;
-      }
-
-      #
-      #
-      #
-      my $exceptEach = $self->exceptEach()->collect( sub {
-        yield $_->includes($haveNext);
-      } )->max();
-
-      if ( $exceptEach ) {
-        select(undef,undef,undef,.001);
-
-        next;
-      }
-
-      #
-      #
-      #
-      $nextEvery = $self->every()->collect( sub {
-        yield $_->_next();
-      } )->min();
-
-      $nextAt = $self->at()->collect( sub {
-        yield $_->_next();
-      } )->min();
-
-      if ( !defined($nextAt) && !defined($nextEvery) ) {
-        last;
-      }
-
-      if ( !defined $nextEvery) {
-        $haveNext = $nextAt;
-      } elsif ( !defined $nextAt ) {
-        $haveNext = $nextEvery;
-      } else {
-        $haveNext = ( $nextEvery < $nextAt ) ? $nextEvery : $nextAt;
-      }
-
-      #
-      #
-      #
-      local $Error::THROWN = undef;
-
-      eval { &$sub($now) };
-
-      if ( $@ ) {
-        my $thrown = $Error::THROWN;
-
-        if ( $thrown && UNIVERSAL::isa($thrown, "OP::Recur::Break") ) {
-          last;
-        } elsif ( $thrown ) {
-          #
-          # Rethrow
-          #
-          $thrown->throw();
-        } elsif ( !$thrown ) {
-          #
-          # Normal error encountered, just die
-          #
-          die $@;
+      if ( $plan->isEmpty ) {
+        my $wakeIn = $nextPlanTime - $now;
+        if ( $wakeIn > 0 ) {
+          OP::Recur::snooze($wakeIn);
         }
       }
     }
+  },
+
+  updatePlanForEvery => method(OP::Hash $plan, Num $ustart) {
+    my $ulen = $self->_planAhead * 1.5 * 1000;
+
+    #
+    # Add to schedule from the "every" rules:
+    #
+    $self->every->each( sub(OP::Recur::Every $every) {
+      my $uint = $every * 1000;
+
+      for (
+        my $utime = $ustart; $utime < ( $ustart + $ulen ); $utime++
+      ) {
+        next if $utime % $uint;
+
+        my $time = $utime / 1000;
+
+        $plan->{$time}++;
+      }
+    } );
+  },
+
+  updatePlanForAt => method(OP::Hash $plan, Num $start) {
+    my $len = $self->_planAhead * 1.5;
+
+    #
+    # Add to schedule from "at" rules:
+    #
+    $self->at->each( sub(OP::Recur::At $at) {
+      my $year   = $at->year;
+      my $month  = $at->month;
+      my $day    = $at->day;
+      my $hour   = $at->hour;
+      my $minute = $at->minute;
+      my $second = $at->second;
+
+      if ( $year && $month && $day == -1 ) {
+        $day = Date::Calc::Days_in_Month($year,$month);
+      }
+
+      for (
+        my $time = $start; $time < ( $start + $len ); $time++
+      ) {
+        my @time = localtime($time);
+
+        my $thisYear   = defined($year) ? $year : $time[5] + 1900;
+        my $thisMonth  = defined($month) ? $month : $time[4] + 1;
+        my $thisDay    = defined($day) ? $day : $time[3];
+        my $thisHour   = defined($hour) ? $hour : $time[2];
+        my $thisMinute = defined($minute) ? $minute : $time[1];
+        my $thisSecond = defined($second) ? $second : $time[0];
+
+        my $thisKey = Time::Local::timelocal(
+          $thisSecond, $thisMinute, $thisHour,
+          $thisDay, $thisMonth - 1, $thisYear - 1900
+        );
+
+        $plan->{$thisKey}++;
+      }
+    } );
+  },
+
+  updatePlanForOn => method(OP::Hash $plan) {
+    #
+    # Add "on" rules:
+    #
+    $self->on->each( sub(OP::Recur::On $on) {
+      $plan->each( sub( Num $time ) {
+        my @time = localtime($time);
+
+        my ( $wantYear, $wantMonth, $wantDay ) =
+          Date::Calc::Nth_Weekday_of_Month_Year(
+            ( defined $on->year  ? $on->year  : ( $time[5] + 1900 ) ),
+            ( defined $on->month ? $on->month : ( $time[4] + 1 ) ),
+            ( defined $on->wday  ? $on->wday  : ( $time[6] ) ),
+            $on->n,
+          );
+
+        my $haveYear  = $time[5] + 1900;
+        my $haveMonth = $time[4] + 1;
+        my $haveDay   = $time[3];
+
+        if (
+          ( $haveYear != $wantYear )
+          || ( $haveMonth != $wantMonth )
+          || ( $haveDay != $wantDay )
+        ) {
+          delete $plan->{$time};
+        }
+      } );
+    } );
+  },
+
+  updatePlanForExceptOn => method(OP::Hash $plan) {
+    #
+    # Subtract "exceptOn" rules:
+    #
+    $self->exceptOn->each( sub(OP::Recur::On $on) {
+      $plan->each( sub( Num $time ) {
+        my @time = localtime($time);
+
+        my ( $wantYear, $wantMonth, $wantDay ) =
+          Date::Calc::Nth_Weekday_of_Month_Year(
+            ( defined $on->year  ? $on->year  : ( $time[5] + 1900 ) ),
+            ( defined $on->month ? $on->month : ( $time[4] + 1 ) ),
+            ( defined $on->wday  ? $on->wday  : ( $time[6] ) ),
+            $on->n,
+          );
+
+        my $haveYear  = $time[5] + 1900;
+        my $haveMonth = $time[4] + 1;
+        my $haveDay   = $time[3];
+
+        if (
+          ( $haveYear == $wantYear )
+          || ( $haveMonth == $wantMonth )
+          || ( $haveDay == $wantDay )
+        ) {
+          delete $plan->{$time};
+        }
+      } );
+    } );
+  },
+
+  updatePlanForExceptAt => method(OP::Hash $plan, Num $start) {
+    my $len = $self->_planAhead * 1.5;
+
+    #
+    # Subtract "exceptAt" rules:
+    #
+    $self->exceptAt->each( sub(OP::Recur::At $at) {
+      my $year   = $at->year;
+      my $month  = $at->month;
+      my $day    = $at->day;
+      my $hour   = $at->hour;
+      my $minute = $at->minute;
+      my $second = $at->second;
+
+      if ( $year && $month && $day == -1 ) {
+        $day = Date::Calc::Days_in_Month($year,$month);
+      }
+
+      for (
+        my $time = $start; $time < ( $start + $len ); $time++
+      ) {
+        my @time = localtime($time);
+
+        my $thisYear   = defined($year) ? $year : $time[5] + 1900;
+        my $thisMonth  = defined($month) ? $month : $time[4] + 1;
+        my $thisDay    = defined($day) ? $day : $time[3];
+        my $thisHour   = defined($hour) ? $hour : $time[2];
+        my $thisMinute = defined($minute) ? $minute : $time[1];
+        my $thisSecond = defined($second) ? $second : $time[0];
+
+        my $thisKey = Time::Local::timelocal(
+          $thisSecond, $thisMinute, $thisHour,
+          $thisDay, $thisMonth - 1, $thisYear - 1900
+        );
+
+        delete $plan->{$thisKey};
+      }
+    } );
+  },
+
+  makePlan => method() {
+    my $planKeys = OP::Hash->new;
+
+    #
+    #
+    #
+    my $start = int(time);
+
+    my $ustart = $start * 1000;
+
+    #
+    # Additive
+    #
+    $self->updatePlanForEvery($planKeys, $ustart);
+
+    $self->updatePlanForAt($planKeys, $start);
+
+    #
+    # Limiting
+    #
+    $self->updatePlanForOn($planKeys);
+
+    #
+    # Subtractive
+    #
+    $self->updatePlanForExceptAt($planKeys, $start);
+
+    $self->updatePlanForExceptOn($planKeys);
+
+    my $plan = OP::Array->new;
+
+    my $now = time;
+
+    $planKeys->keys->reversed->each( sub {
+      return if $_ <= $now;
+      
+      $plan->unshift( OP::DateTime->new($_) );
+    } );
+
+    $self->{_lastPlanTime} = $start;
+
+    return $plan;
   },
 
 };

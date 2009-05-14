@@ -133,15 +133,11 @@ use OP::RRNode;
 use OP::Series;
 
 create "OP::Log" => {
-  __numRows  => sub {
-    my $class = shift;
-
+  __numRows  => method(OP::Class $class:) {
     return $class->get("__numRows") || 100;
   },
 
-  __baseAsserts => sub($) {
-    my $class = shift;
-
+  __baseAsserts => method(OP::Class $class:) {
     my $asserts = OP::Node->__baseAsserts();
 
     $asserts->{numRows} = OP::Int->assert(
@@ -186,9 +182,7 @@ create "OP::Log" => {
   #
   # These will become table names; can't use GUID for that.
   #
-  _newId => sub($) {
-    my $self = shift;
-
+  _newId => method() {
     return OP::Utility::randstr();
   },
 
@@ -199,8 +193,12 @@ create "OP::Log" => {
   # which translates to an InnoDB table name of log_9dj3J4
   # in the "op" database
   #
-  messageClass => sub($) {
-    my $self = shift;
+  messageClass => method() {
+    if ( !ref($self) ) {
+my ($package, $filename, $line) = caller(1);
+
+die "Not a class method, check $filename:$line";
+    }
 
     if ( !$self->exists() ) {
       warn "Log must exist before message class (call log->save first)";
@@ -223,15 +221,11 @@ create "OP::Log" => {
     return $self->{__messageClass};
   },
 
-  messageTable => sub($) {
-    my $self = shift;
-
+  messageTable => method() {
     return $self->messageClass();
   },
 
-  newMessage => sub($) {
-    my $self = shift;
-
+  newMessage => method() {
     my $messageClass = $self->messageClass();
 
     if ( !$messageClass ) {
@@ -242,9 +236,13 @@ create "OP::Log" => {
     return $messageClass->new();
   },
 
-  write => sub($$) {
-    my $self = shift;
-    my $text = shift;
+  write => method(Str $text){
+    #
+    # Class method delegates to Persistence
+    #
+    if ( !$self->class ) {
+      return OP::Persistence::write($self, $text);
+    }
 
     my $message = $self->newMessage();
 
@@ -260,10 +258,7 @@ create "OP::Log" => {
     return $message;
   },
 
-  record => sub($$) {
-    my $self = shift;
-    my $number = shift;
-
+  record => method(Num $number){
     my $message = $self->newMessage();
 
     if ( !$message ) {
@@ -278,11 +273,7 @@ create "OP::Log" => {
     return $message;
   },
 
-  series => sub($$$) {
-    my $self = shift;
-    my $startTime = shift;
-    my $endTime = shift;
-
+  series => method(Num $startTime, Num $endTime){
     my $series = OP::Series->new({
       xMin       => $startTime,
       xMax       => $endTime,

@@ -38,6 +38,7 @@ use OP::Class qw| true false |;
 use OP::Num;
 use Perl6::Subs;
 use Scalar::Util qw| blessed |;
+use Time::Local;
 
 use base qw| Time::Piece::Nonpolluting OP::Array |;
 
@@ -81,6 +82,17 @@ method new(OP::Class $class: Any $time) {
   my $self = Time::Piece::Nonpolluting->new($epoch);
 
   return bless $self, $class;
+};
+
+method newFrom(OP::Class $class:
+  Num $year, Num $month, Num $day, Num $hour, Num $minute, Num $sec
+) {
+  return $class->new(
+    Time::Local::timelocal(
+      $sec, $minute, $hour,
+      $day, $month - 1, $year - 1900
+    )
+  );
 };
 
 #
@@ -141,7 +153,13 @@ OP::DateTime - Overloaded Time object class
 
   use OP::DateTime;
 
+From Epoch:
+
   my $time = OP::DateTime->new( time() );
+
+From YYYY MM DD hh mm ss:
+
+  my $time = OP::DateTime->newFrom(1999,12,31,23,59,59);
 
 =head1 DESCRIPTION
 

@@ -79,7 +79,7 @@ create "OP::RRNode" => {
     my $numRows = $class->get("__numRows");
 
     if ( !$numRows ) {
-      $numRows = 10;
+      $numRows = 1000;
       $class->set("__numRows", $numRows);
     }
 

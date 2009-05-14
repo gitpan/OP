@@ -28,7 +28,7 @@ sub DESTROY {
 
 package OP;
 
-our $VERSION = '0.211';
+our $VERSION = '0.212';
 
 use strict;
 use diagnostics;
@@ -144,7 +144,7 @@ OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
-This documentation is for version B<0.211> of OP.
+This documentation is for version B<0.212> of OP.
 
 =head1 STATUS
 
@@ -161,6 +161,8 @@ L<strict>, L<diagnostics>, L<OP::Class>, L<OP::Type>, L<Perl6::Subs>,
 and L<Error> to be imported by the caller. These may alternately be
 imported individually.
 
+A cheat sheet, C<cheat.html>, is included with this distribution.
+
 =head1 DESCRIPTION
 
 Compact and concise class prototyping, with object persistence.
@@ -171,48 +173,41 @@ formality and consistency than one may be accustomed to seeing in Perl.
 
 This document covers the high-level concepts implemented in OP.
 
-=head1 GETTING STARTED
+=head1 FEATURES
 
-Subclassing instructions are provided in the "Subclassing" section of
-this document, and also outlined in L<OP::Class>.
+=head2 Class Prototyping with Transparent Persistence
 
-Instance variable assertions are outlined in L<OP::Type> and L<OP::Subtype>.
+Inspired by I<Prototype.js> in the JavaScript world, L<OP::Class>
+provides the C<create> function, enabling developers to craft
+database-backed Perl 5 classes in a compact and concise manner.
 
-See L<Perl6::Subs> for an overview of the Perl 6-style methods used by OP.
+Database tables are derived from object classes. By default, new
+classes include methods to C<save> to and C<load> from persistent
+backing stores. Complex schemas may be quickly modeled in code and
+put to use.
 
-See L<Error> for an overview of exception handling in Perl 5.
+=head2 Instance Variable Assertions
 
-=head1 PARTIAL FEATURE LIST
+Mitigate garbage input through the use of typing and subtype
+rules (L<OP::Type>). Enforce strict control of instance variables,
+table column behavior, and automatically derive database constraints.
 
-=head2 Assertions
+=head2 List Collectors
 
-Strict and straight-forward control of attribute types (L<OP::Type>),
-subtypes (L<OP::Subtype>), and duck-types.
+Inspired by language features in Ruby and Python, OP implements list
+collection methods, complemented by a set of functions which may be used
+to finely control the flow of execution.
 
-=head2 Prototyping
-
-Inspired by I<Prototype.js> in the JavaScript world, L<OP::Class> provides
-the C<create> function, enabling developers to craft database-backed
-Perl 5 classes in a compact and concise manner. Complex schemas may be
-quickly modeled in code and put to use.
-
-=head2 Persistence
-
-After a class has been prototyped, saving its instantiated objects to
-a SQL backing store is as easy as C<$object>->C<save()>.
-
-=head2 Exceptions
+=head2 Formal Methods & Exceptions
 
 Exception handling is brought in from the L<Error> module. C<try>,
 C<throw>, and C<catch> are first-class citizens in the OP runtime.
-
-=head2 Formal Methods
 
 Perl 6-style method support is provided by the L<Perl6::Subs> source
 filter, and is used extensively throughout OP source and its examples. OP
 also implements a generalized subset of Perl 6-derived object types.
 
-=head2 Async Programming
+=head2 Async-Ready
 
 OP provides first-class support for L<Coro> and L<POE>. See L<OP::Recur>
 and L<OP::Persistence::Async>.
@@ -231,7 +226,8 @@ L<strict>, L<warnings>, L<Error>, and L<Perl6::Subs> are on by default.
 
 Classes allocated with C<create> will receive an InnoDB backing store,
 by virtue of being a subclass of L<OP::Node>. This can be overridden if
-needed, see "Inheritance" in L<OP::Class> for details.
+needed, see the subclassing examples in this document, as well as
+"Inheritance" in L<OP::Class>, for details.
 
 Various backing store options are covered in the L<OP::Persistence>
 module.
@@ -270,7 +266,7 @@ C<name> may be may be keyed in combination with multiple attributes via
 the C<::unique> L<OP::Subtype> argument, which adds InnoDB reference
 options to the schema.
 
-  create "My::Class" => {
+  create "YourApp::Class" => {
     #
     # Don't require named objects:
     #
@@ -303,7 +299,7 @@ undefined object instance. This may change at some point.
 =head2 Namespace Matters
 
 OP's core packages live under the OP:: namespace. Your classes should
-live in their own top-level namespace, e.g. "MyApp::".
+live in their own top-level namespace, e.g. "YourApp::".
 
 =head1 OBJECT TYPES
 
@@ -312,31 +308,32 @@ several others which are specific to dealing with a SQL backing store
 (e.g. Double, ExtId), as well as datatypes commonly used in network
 operations (e.g. EmailAddr, IPv4Addr, URI).
 
-=head2 Usage
-
 OP object types are used when asserting attributes within a class, and are
 also suitable for instantiation or subclassing in a self-standing manner.
 
 The usage of these types is not mandatory outside the context of creating
 a new class-- OP always returns data in object form, but these object
 types are not a replacement for Perl's native data types in general usage,
-unless you want them to be.
+unless the developer wishes them to be.
 
 These modes of usage are shown below, and covered in greater detail
 in specific object class docs.
 
-=head3 Subclassing
+=head2 DECLARING AS SUBCLASS
+
+By default, a superclass of L<OP::Node> is used for new classes. This
+may be overridden using __BASE__:
 
   use OP;
 
-  create "MyApp::Example" => {
+  create "YourApp::Example" => {
     __BASE__ => "OP::Hash",
 
   };
 
 or
 
-  package My::Example;
+  package YourApp::Example;
 
   use strict;
   use warnings;
@@ -345,7 +342,7 @@ or
 
   1;
 
-=head3 Object Types as Attributes
+=head2 ASSERTING AS ATTRIBUTES
 
 When defining the allowed instance variables for a class, the C<assert()>
 method is used:
@@ -355,13 +352,13 @@ method is used:
   #
   use OP;
 
-  create "MyApp::Example" => {
-    someString => OP::Str->assert(),
-    someInt    => OP::Int->assert(),
+  create "YourApp::Example" => {
+    someString => OP::Str->assert,
+    someInt    => OP::Int->assert,
 
   };
 
-=head3 As Objects
+=head2 INSTANTIATING AS OBJECTS
 
 When instantiating, the class method C<new()> is used, typically with
 a prototype object for its argument.
@@ -372,9 +369,9 @@ a prototype object for its argument.
   use strict;
   use warnings;
 
-  use MyApp::Example;
+  use YourApp::Example;
 
-  my $example = MyApp::Example->new(
+  my $example = YourApp::Example->new(
     name       => "Hello",
     someString => "foo",
     someInt    => 12345,
@@ -382,29 +379,21 @@ a prototype object for its argument.
 
   $example->save("Saving my first object");
 
-  $example->print();
+  $example->print;
 
-=head3 In Method Args
+=head2 IN METHODS
 
 To ensure method arguments are always of the appropriate type, specify
 the desired type(s) in a L<Perl6::Subs> prototype.
 
-You may specify OP object types or their more general Perl6::Subs
-counterparts (with the type names not prefixed by OP::), depending on
-how "picky" you want the receiver to be. If a specific OP object type is
-specified, the received arg must be of that object type or a subclass (ie,
-it must pass the L<UNIVERSAL>C<::isa()> test). The Perl6::Subs equivalent
-pseudo-types are designed around Perl 5's native data types, and are
-suitable for testing non-objects.
-
-Note that constructors and setter methods accept both native Perl 5 data
+Constructors and setter methods accept both native Perl 5 data
 types and their OP object class equivalents. The setters will
 automatically handle any necessary conversion, or throw an exception if
 the received arg doesn't quack like a duck.
 
-Native types are OK for constructors:
+To wit, native types are OK for constructors:
 
-  my $example = MyApp::Example->new(
+  my $example = YourApp::Example->new(
     someString => "foo",
     someInt    => 123,
   );
@@ -412,85 +401,53 @@ Native types are OK for constructors:
   #
   # someStr became a string object:
   #
-  say $example->someString()->class();
+  say $example->someString->class;
   # "OP::Str"
 
-  say $example->someString()->size();
+  say $example->someString->size;
   # "3"
 
-  say $example->someString();
+  say $example->someString;
   # "foo"
 
   #
   # someInt became an integer object:
   #
-  say $example->someInt()->class();
+  say $example->someInt->class;
   # "OP::Int"
 
-  say $example->someInt()->sqrt();
+  say $example->someInt->sqrt;
   # 11.0905365064094
 
 Native types are OK for setters:
 
   $example->setSomeInt(456);
 
-  say $example->someInt()->class();
+  say $example->someInt->class;
   # "OP::Int"
 
 
 =head1 ABSTRACT CLASSES & MIX-INS
 
-=head2 L<OP::Class>
+=over 4
 
-B<Abstract "Class" class>
+=item * L<OP::Class> - B<Abstract "Class" class>
 
-Base package for OP object classes, and lexical prototyping wrapper.
+=item * L<OP::Class::Dumper> - B<Introspection mix-in>
 
-=head2 L<OP::Class::Dumper>
+=item * L<OP::Object> - B<Abstract object class>
 
-B<Inspect attributes and methods>
+=item * L<OP::Persistence> - B<Storage and retrieval mix-in>
 
-Introspection mix-in for classes and objects
+=item * L<OP::Persistence::Async> - B<Async DB access mix-in>
 
-=head2 L<OP::Object>
+=item * L<OP::Node> - B<Abstract stored object class>
 
-B<Abstract object class>
+=item * L<OP::Type> - B<Instance variable typing>
 
-Extends L<OP::Class> with constructor, getters, setters,
-asserts.
+=item * L<OP::Subtype> - B<Instance variable subtyping>
 
-=head2 L<OP::Persistence>
-
-B<Object storage and retrieval>
-
-Mix-in for providing backing store support to objects
-
-Specific DBI-type mix-ins are L<OP::Persistence::MySQL> and
-L<OP::Persistence::SQLite>. Asynchronous DB access is provided
-by the L<OP::Persistence::Async> mix-in.
-
-=head2 L<OP::Node>
-
-B<Abstract stored object class>
-
-Extends L<OP::Hash> and L<OP::Persistence> to form the abstract
-base storable object class in OP.
-
-=head2 L<OP::Type>
-
-B<Instance variable typing>
-
-Extends L<OP::Class>. Used by L<OP::Object> subclasses to "assert"
-parameters for instance variables and database table columns.
-
-=head2 L<OP::Subtype>
-
-B<Instance variable subtyping>
-
-Extends L<OP::Class>. Used in L<OP::Type> instances to define subtype
-restrictions for instance variables and database table columns.
-
-The L<OP::Subtype> module lists the available rule types.
+=back
 
 =head1 OBJECT TYPES
 
@@ -505,177 +462,73 @@ and to have less things to remember when coding.
 The basic types listed here may be instantiated as objects, or asserted
 as inline attributes.
 
-=head2 L<OP::Any>
+=over 4
 
-B<Overloaded, any value>
+=item * L<OP::Any> - B<Wrapper for any type of variable>
 
-Extends L<OP::Scalar>. Generally treats the value in a string-like manner,
-but may be any Perl 5 value.
+=item * L<OP::Array> - B<List>
 
-=head2 L<OP::Array>
+=item * L<OP::Bool> - B<Overloaded boolean>
 
-B<List>
+=item * L<OP::Code> - B<Any CODE reference>
 
-Extends L<OP::Object> with Ruby-esque collectors and other array methods.
+=item * L<OP::DateTime> - B<Overloaded time object>
 
-=head2 L<OP::Bool>
+=item * L<OP::Domain> - B<Overloaded domain name>
 
-B<Overloaded binary boolean>
+=item * L<OP::Double> - B<Overloaded double-precision number>
 
-Extends L<OP::Scalar>. Implements methods around L<OP::Enum::Bool> in
-a transparent manner, where C<true> = 1 and C<false> = 0.
+=item * L<OP::EmailAddr> - B<Overloaded email address>
 
-=head2 L<OP::Code>
+=item * L<OP::ExtID> - B<Overloaded foreign GUID>
 
-B<Any CODE reference>
+=item * L<OP::Float> - B<Overloaded floating point number>
 
-Extends L<OP::Ref>
+=item * L<OP::Hash> - B<Hashtable>
 
-Differs from the Perl 6 spec, in that it is more of an envelope
-for any CODE ref than a base for other classes of executable code.
+=item * L<OP::ID> - B<Overloaded GUID>
 
-=head2 L<OP::DateTime>
+=item * L<OP::Int> - B<Overloaded integer>
 
-B<Overloaded time object class>
+=item * L<OP::IPv4Addr> - B<Overloaded IPv4 address>
 
-Extends L<OP::Array>, L<Time::Piece>. Overloaded for numeric comparisons,
-stringifies as unix timestamp unless overridden.
+=item * L<OP::Name> - B<Unique secondary key>
 
-=head2 L<OP::Domain>
+=item * L<OP::Num> - B<Overloaded number>
 
-B<Overloaded domain name object class>
+=item * L<OP::Ref> - B<Any reference value>
 
-Extends L<OP::Str>. Uses L<Data::Validate::Domain> to verify input.
+=item * L<OP::Rule> - B<Regex reference (qr/ /)>
 
-=head2 L<OP::Double>
+=item * L<OP::Scalar> - B<Any Perl 5 scalar>
 
-B<Overloaded double-precision number>
+=item * L<OP::Str> - B<Overloaded unicode string>
 
-Extends L<OP::Float>. Perl 5 number. Use L<bignum> to control runtime
-precision.  This datatype is specific to OP, and is used when asserting
-a double-precision database table column. It is otherwise just a scalar
-value.
+=item * L<OP::TimeSpan> - B<Overloaded time range object>
 
-=head2 L<OP::EmailAddr>
+=item * L<OP::URI> - B<Overloaded URI>
 
-B<Overloaded RFC 2822 email address object class>
-  
-Extends L<Email::Address>, L<OP::Array>. Uses L<Data::Validate::Email>
-to verify input.
-
-=head2 L<OP::ExtID>
-
-B<Overloaded foreign GUID value>
-
-Extends L<OP::ID>. Scalar GUID object. This datatype is specific to OP,
-and represents the ID of a foreign object. When asserting a property
-backed by an InnoDB table, ExtID sets up foreign key constraints.
-
-=head2 L<OP::Float>
-
-B<Overloaded floating point number>
-
-Extends L<OP::Num> and L<Data::Float>
-
-=head2 L<OP::Hash>
-
-B<Hash reference>
-
-Extends L<OP::Object> with Ruby-esque collectors and other hashtable
-methods.
-
-=head2 L<OP::ID>
-
-B<Overloaded primary GUID value>
-
-Extends L<OP::Scalar> and L<Data::GUID>. Represents the primary key
-in an object.
-
-=head2 L<OP::Int>
-
-B<Overloaded integer>
-
-Extends L<OP::Num> and L<Data::Integer>
-
-=head2 L<OP::IPv4Addr>
-
-B<Overloaded IPv4 address object class>
-
-Extends L<OP::Str>. Uses L<Data::Validate::IP> to verify input.
-
-=head2 L<OP::Name>
-
-B<Human-readable secondary key>
-
-Extends L<OP::Str>. Represents the secondary key within a class.
-
-=head2 L<OP::Num>
-
-B<Overloaded, any number>
-
-Extends L<OP::Scalar> and L<Scalar::Number>. Implements instance
-methods around Perl 5's built-in math functions.
-
-=head2 L<OP::Ref>
-
-B<Any reference value>
-
-Extends L<OP::Any>
-
-=head2 L<OP::Rule>
-
-B<Regex reference (qr/ /)>
-
-Extends L<OP::Ref>
-
-=head2 L<OP::Scalar>
-
-B<Any Perl 5 scalar>
-
-Extends L<OP::Object>. Overloaded with L<overload>.
-
-=head2 L<OP::Str>
-
-B<Overloaded unicode string>
-
-Extends L<OP::Scalar>, L<Mime::Base64>, and L<Unicode::String>.
-Implements instance methods around Perl 5's built-in string functions.
-
-=head2 L<OP::TimeSpan>
-
-B<Overloaded time range object class>
-
-Extends L<OP::Scalar>, L<Time::Seconds>. Represents a number of seconds.
-
-=head2 L<OP::URI>
-
-B<Overloaded URI object class>
-
-Extends L<URI>, L<OP::Str>. Uses L<Data::Validate::URI> to verify input.
+=back
 
 =head1 CONSTANTS & ENUMERATIONS
 
-=head2 L<OP::Constants>
+=over 4
 
-B<"dot rc" values as constants>
+=item * L<OP::Constants> -  B<"dot rc" values as constants> 
 
-Exposes values from the C<.oprc> file as Perl 5 constants
+=item * L<OP::Enum> - B<C-style enumerated types as constants>
 
-=head2 L<OP::Enum>
-
-B<C-style enumerated types as constants>
-
-Enumerations are groups of hard-coded constants used internally by OP.
+=back
 
 =head1 HELPER MODULES
 
-=head2 L<OP::Utility>
+=over 4
 
-System functions required globally by OP
+=item * L<OP::Utility> - B<System functions required globally by OP>
 
-=head2 L<OP::Exceptions>
+=item * L<OP::Exceptions> - B<Errors thrown by OP>
 
-Exceptions are subclasses of L<Error> which may be thrown by OP
+=back
 
 =head1 EXPERIMENTAL*: INFOMATICS
 
@@ -684,54 +537,56 @@ documentation, and unexplained disappearances. They represent proof of
 concept in their respective areas, and may move out of experimental status
 at some point.
 
-=head2 L<OP::Log>
+=over 4
 
-B<OP::RRNode factory class>
+=item * L<OP::Log> - B<OP::RRNode factory class>
 
-Generates and loads L<OP::RRNode> subclasses on the fly.
+=item * L<OP::RRNode> - B<Round Robin Database Table>
 
-=head2 L<OP::RRNode>
+=item * L<OP::Series> - B<Cooked OP::RRNode Series Data>
 
-B<Round Robin Database Table>
-
-Objects live in a FIFO table of fixed length.
-
-=head2 L<OP::Series>
-
-B<Cooked OP::RRNode Series Data>
-
-Consolidate L<OP::RRNode> data for easy plotting.
+=back
 
 =head1 EXPERIMENTAL: SCHEDULING
 
-=head2 L<OP::Recur>
+=over 4
 
-B<Recurring time specification>
+=item * L<OP::Recur> - B<Recurring time specification>
 
-Experimental class for describing recurring points in time.
+=back
 
 =head1 EXPERIMENTAL: FOREIGN DB ACCESS
 
-=head2 L<OP::ForeignTable>
+=over 4
 
-B<Any Non-OP Database Table>
+=item * L<OP::ForeignRow> - B<Non-OP Database Access>
 
-Experimental class for using an arbitrary table as a backing store.
+=item * L<OP::ForeignTable> - B<ForeignRow class factory>
 
-=head1 EXPERMENTAL: INTERACTIVE SHELL
+=back
 
-=head2 L<OP::Shell>
+=head1 EXPERIMENTAL: INTERACTIVE SHELL
 
-B<Interactive Perl Shell>
+=over 4
 
-Interactive shell with ReadLine support and lexical persistence.
+=item * L<OP::Shell> - B<Persistent Perl Shell>
+
+=back
+
+=head1 EXPERIMENTAL: BULK TABLE WRITER
+
+=over 4
+
+=item * L<OP::Persistence::Bulk> - B<Deferred fast bulk table writes>
+
+=back
 
 =head1 SEE ALSO
 
 L<Perl6::Subs>, L<OP::Class>, L<OP::Type>
 
-Object Types from perl6 Synopsis 2:
-  - http://dev.perl.org/perl6/doc/design/syn/S02.html
+Perl6 Synopsis 02: Bits and Pieces (Object Types)
+  - http://svn.pugscode.org/pugs/docs/Perl6/Spec/S02-bits.pod
 
 =head1 AUTHOR
 

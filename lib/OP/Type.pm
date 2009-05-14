@@ -273,8 +273,8 @@ use constant isFloat => sub(Num $value) {
 use constant isInt => sub(Num $value) {
   if ( !defined($value)
     || (
-      !UNIVERSAL::isa($value, "OP::Int")
-      && $value !~ /^\d+$/
+      !UNIVERSAL::isa($value, "Data::Integer")
+      && "$value" !~ /^\d+$/
     )
   ) {
     throw OP::AssertFailed("Received value is not an integer");

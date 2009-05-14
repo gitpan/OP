@@ -715,8 +715,10 @@ the same as C<unshift(@{ $self })>.
 
 =cut
 
-method unshift() {
-  return unshift(@{ $self }, @_);
+sub unshift {
+  my $self = CORE::shift();
+
+  return CORE::unshift(@{ $self }, @_);
 };
 
 
@@ -797,7 +799,7 @@ method includes(Any $item) {
 
 =pod
 
-=item * $self->grep($expression, [$mod])
+=item * $self->grep($expr, [$mod])
 
 Returns an array of scalar matches if the expression has any hits in
 the array. Wrapper for Perl's built-in C<grep()> function.
@@ -807,7 +809,7 @@ The second argument is an optional regex modifier string (e.g. "i",
 
   my $array = OP::Array->new( qw| Jimbo Jimbob chucky | );
 
-  for ( @{ $array->grep(q/^jim/, "i") } ) {
+  for ( @{ $array->grep(qr/^jim/, "i") } ) {
     print "Matched $_\n";
   };
 
@@ -823,7 +825,7 @@ The second argument is an optional regex modifier string (e.g. "i",
 #
 # XXX TODO Revisit this with smart matching
 #
-method grep(Str $expr, Str $mod) {
+method grep(Rule $expr, Str ?$mod) {
   return if !$expr;
 
   $mod ||= "";
@@ -837,8 +839,8 @@ method grep(Str $expr, Str $mod) {
   my $results;
 
   eval qq|
-    \$results = \$self->class()->new(
-      grep { \$_ =~ /\$expr/$mod } \@{ \$self }
+    \$results = OP::Array->new(
+      grep { \$_ =~ /$expr/$mod } \@{ \$self }
     );
   |;
 
@@ -1106,6 +1108,25 @@ method uniq() {
 
 =pod
 
+=item * $self->reversed();
+
+Returns a copy of self with elements in reverse order
+
+=cut
+
+method reversed() {
+  my $reversed = $self->class->new;
+
+  $self->each( sub {
+    $reversed->unshift($_);
+  } );
+
+  return $reversed;
+};
+
+
+=pod
+
 =item * $self->pop()
 
 Object wrapper for Perl's built-in C<pop()> function. Functionally
@@ -1162,15 +1183,11 @@ the same as C<shift(@{ $self })>.
 
 =cut
 
-#
-# You'd think this could live anywhere, but shift() is special.
-#
-# To trick Perl 5, shift() must be the final sub in the package.
-#
-method shift() {
-  return CORE::shift @{ $self };
-};
+sub shift {
+  my $self = CORE::shift();
 
+  return CORE::shift(@{ $self });
+};
 
 
 method value() {

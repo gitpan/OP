@@ -16,7 +16,7 @@ OP::Bool - Overloaded object class for booleans
 
 =head1 DESCRIPTION
 
-Extends L<OP::Scalar>.
+Extends L<OP::Num>.
 
 =head1 SYNOPSIS
 
@@ -56,7 +56,7 @@ use OP::Num;
 
 use Perl6::Subs;
 
-use base qw| OP::Scalar |;
+use base qw| OP::Num |;
 
 use overload %OP::Num::overload;
 
