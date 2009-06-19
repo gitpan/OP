@@ -39,7 +39,6 @@ use warnings;
 
 use Clone qw| clone |;
 use Error qw| :try |;
-use Perl6::Subs;
 
 use OP::Type;
 use OP::Enum::Bool;
@@ -99,7 +98,11 @@ Meanwhile, in caller:
 
 =cut
 
-method new(OP::Class $class: *@args)  {
+# method new(OP::Class $class: *@args)  {
+sub new {
+  my $class = shift;
+  my @args = @_;
+
   my $hash;
 
   if ( @args == 0 ) {
@@ -224,7 +227,10 @@ must be populated before calling C<save()>.
 
 =cut
 
-method proto (OP::Class $class:) {
+# method proto (OP::Class $class:) {
+sub proto {
+  my $class = shift;
+
   my $self = bless { }, $class;
 
   my $asserts = $class->asserts();
@@ -236,13 +242,21 @@ method proto (OP::Class $class:) {
 
     next if !defined($default);
 
-    try {
+    eval {
       $self->set($attr, $default);
-    } catch OP::AssertFailed with {
-      my $error = $_[0];
-
-      warn "Prototype warning (possibly harmless): $error";
     };
+
+    ###
+    ### This works, but ended up being really spammy in the logs.
+    ### Changed to just eval instead, above.
+    ###
+    # try {
+      # $self->set($attr, $default);
+    # } catch OP::AssertFailed with {
+      # my $error = $_[0];
+
+      # warn "Prototype warning (possibly harmless): $error";
+    # };
   }
 
   return $self;
@@ -260,7 +274,10 @@ this class. Includes any attribute names in C<__baseAsserts()>.
 
 =cut
 
-method attributes(OP::Class $class:) {
+# method attributes(OP::Class $class:) {
+sub attributes {
+  my $class = shift;
+
   if ( $class->class() ) {
     $class = $class->class();
   }
@@ -314,7 +331,11 @@ Meanwhile, in caller...
 
 =cut
 
-method isAttributeAllowed(OP::Class $class: Str $key) {
+# method isAttributeAllowed(OP::Class $class: Str $key) {
+sub isAttributeAllowed {
+  my $class = shift;
+  my $key = shift;
+
   my $asserts = $class->asserts();
 
   if ( keys %{ $asserts } ) {
@@ -342,7 +363,10 @@ assertion objects, including any base assertions which may be present.
 
 =cut
 
-method asserts(OP::Class $class:) {
+# method asserts(OP::Class $class:) {
+sub asserts {
+  my $class = shift;
+
   throw OP::ClassIsAbstract(
     "Abstract class $class will never have assertions"
   );
@@ -416,17 +440,26 @@ L<OP::Hash> elements, and also provides the best performance.
 
 =cut
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   throw OP::ClassIsAbstract(
     "You may not assert attributes for abstract class $class"
   );
 };
 
 
-method elementClass(OP::Class $class: Str $key) {
+# method elementClass(OP::Class $class: Str $key) {
+sub elementClass {
+  my $class = shift;
+  my $key = shift;
+
   #
-  # No-op is fine for abstract method
+  # Fine for abstract method
   #
+  return undef;
 };
 
 
@@ -447,7 +480,11 @@ with Types and Bools.
 
 =cut
 
-method import(OP::Class $class: *@what) {
+# method import(OP::Class $class: *@what) {
+sub import {
+  my $class = shift;
+  my @what = @_;
+
   my $caller = caller();
 
   #
@@ -543,13 +580,19 @@ To inherit no base assertions:
 
 =cut
 
-method __baseAsserts(OP::Class $class:) {
+# method __baseAsserts(OP::Class $class:) {
+sub __baseAsserts {
+  my $class = shift;
+
   throw OP::ClassIsAbstract(
     "Abstract class $class has no base asserts"
   );
 };
 
-method __assertClass(OP::Class $class:) {
+# method __assertClass(OP::Class $class:) {
+sub __assertClass {
+  my $class = shift;
+
   my $assertClass = $class->get("__assertClass");
 
   if ( !defined $assertClass ) {
@@ -589,7 +632,11 @@ If using assertions, OP *DIES* if the key is invalid!
 
 =cut
 
-method get(Str $key) {
+# method get(Str $key) {
+sub get {
+  my $self = shift;
+  my $key = shift;
+
   my $class = $self->class();
 
   if ( $class ) {
@@ -612,7 +659,12 @@ If using assertions, OP *DIES* on purpose here if key or value are invalid.
 
 =cut
 
-method set(Str $key, *@value) {
+# method set(Str $key, *@value) {
+sub set {
+  my $self = shift;
+  my $key = shift;
+  my @value = @_;
+
   my $class = $self->class();
 
   if ( $class ) {
@@ -657,7 +709,10 @@ Removes all items, leaving self with zero elements.
 
 =cut
 
-method clear() {
+# method clear() {
+sub clear {
+  my $self = shift;
+
   %{ $self } = ( );
 
   return $self;
@@ -672,7 +727,10 @@ Object wrapper for Perl's built-in ref() function
 
 =cut
 
-method class() {
+# method class() {
+sub class {
+  my $self = shift;
+
   return ref($self);
 };
 
@@ -685,7 +743,10 @@ Returns self's value as a native data type, ie dereferences it
 
 =cut
 
-method value() {
+# method value() {
+sub value {
+  my $self = shift;
+
   return %{ $self };
 };
 
@@ -728,7 +789,11 @@ working object. Performs lcfirst on the attribute named in the message.
 
 =cut
 
-method AUTOLOAD(*@args) {
+# method AUTOLOAD(*@args) {
+sub AUTOLOAD {
+  my $self = shift;
+  my @args = @_;
+
   my $message = $AUTOLOAD;
   $message =~ s/.*:://;
 
@@ -798,7 +863,10 @@ Override in subclass to handle additional logic if needed.
 
 =cut
 
-method _init() {
+# method _init() {
+sub _init {
+  my $self = shift;
+
   return true;
 };
 

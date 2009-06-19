@@ -159,69 +159,12 @@ Returns a CODE ref which tests the received value for regex-ness.
 
 Returns a CODE ref which tests the received value for scalar-ness.
 
-=head1 FUNCTIONS
-
-OP::Type's exported functions are used to bootstrap OP::Class
-subclasses.
-
-=over 4
-
-=item * C<member($key,$type)>
-
-Instance variable assertion function.
-
-C<member()> is only needed when using C<package>. If using C<create()>,
-assertions are just inline keys in the prototype, and this function should
-not be used directly.
-
-The C<member()> function defines allowed instance variables for any
-objects of a class, and is exported by the OP::Class module for this
-purpose. Assertions restrict the attributes and values which objects
-of a class may have. The attributes asserted in a class translate to
-same-named database table columns.
-
-If no class members are asserted, objects will receive "free-form"
-getters and setters. These "schema-less" instances may be saved to disk,
-but not to a database.
-
-  package OP::Example;
-
-  use OP;
-
-  use base "OP::Node";
-
-  our @__someClassVar = true;
-
-  member someInstanceVar => OP::Str->assert();
-
-  member anotherInstanceVar => OP::Str->assert();
-
-  method publicInstanceMethod() {
-    # Code here, $self will be set for you.
-  }
-
-  method _privateInstanceMethod() {
-    # Code here, $self will be set for you.
-  }
-
-  method publicClassMethod(OP::Class $class:) {
-    # Code here, $class will be set for you.
-  }
-
-  method __privateClassMethod(OP::Class $class:) {
-    # Code here, $class will be set for you.
-  }
-
-  true;
-
 =back
 
 =cut
 
 use strict;
 use warnings;
-
-use Perl6::Subs;
 
 use Error qw| :try |;
 
@@ -234,9 +177,19 @@ use base qw| Exporter OP::Class::Dumper OP::Class |;
 
 our @EXPORT;
 
-sub insist(Any $value, Code $code) { &$code($value) }
+# sub insist(Any $value, Code $code) { &$code($value) }
+sub insist{
+  my $value = shift;
+  my $code = shift;
 
-sub member(Str $key, OP::Type $type) {
+  return &$code($value)
+}
+
+# sub member(Str $key, OP::Type $type) {
+sub member {
+  my $key = shift;
+  my $type = shift;
+
   return false unless defined($key);
 
   my $caller = caller();
@@ -248,7 +201,10 @@ sub member(Str $key, OP::Type $type) {
   return true;
 }
 
-use constant isStr => sub(Str $value) {
+# use constant isStr => sub(Str $value) {
+use constant isStr => sub {
+  my $value = shift;
+
   my ($package, $filename, $line) = caller(1);
 
   throw OP::AssertFailed("undef is not a string, check $package:$line")
@@ -260,7 +216,10 @@ use constant isStr => sub(Str $value) {
   return true;
 };
 
-use constant isFloat => sub(Num $value) {
+# use constant isFloat => sub(Num $value) {
+use constant isFloat => sub {
+  my $value = shift;
+
   throw OP::AssertFailed("undef is not a number")
     if !defined $value;
 
@@ -270,7 +229,9 @@ use constant isFloat => sub(Num $value) {
   return true;
 };
 
-use constant isInt => sub(Num $value) {
+use constant isInt => sub {
+  my $value = shift;
+
   if ( !defined($value)
     || (
       !UNIVERSAL::isa($value, "Data::Integer")
@@ -283,7 +244,9 @@ use constant isInt => sub(Num $value) {
   return true;
 };
 
-use constant isArray => sub(Array $value) {
+use constant isArray => sub {
+  my $value = shift;
+
   if ( ref($value) && UNIVERSAL::isa($value, 'ARRAY') ) {
     return true;
   }
@@ -291,7 +254,9 @@ use constant isArray => sub(Array $value) {
   throw OP::AssertFailed("Received value is not an Array");
 };
 
-use constant isBool => sub(Bool $value) {
+use constant isBool => sub {
+  my $value = shift;
+
   if (
     !defined($value)
       || !Scalar::Util::looks_like_number($value)
@@ -303,7 +268,9 @@ use constant isBool => sub(Bool $value) {
   return true;
 };
 
-use constant isCode => sub(Code $code) {
+use constant isCode => sub {
+  my $code = shift;
+
   if ( !defined($code) ) {
     throw OP::AssertFailed("Code ref must not be undef");
   }
@@ -311,7 +278,9 @@ use constant isCode => sub(Code $code) {
   return true;
 };
 
-use constant isHash => sub(Hash $value) {
+use constant isHash => sub {
+  my $value = shift;
+
   if ( ref($value) && UNIVERSAL::isa($value, 'HASH') ) {
     return true;
   }
@@ -319,7 +288,9 @@ use constant isHash => sub(Hash $value) {
   throw OP::AssertFailed("Received value is not a Hash");
 };
 
-use constant isIO => sub(IO $io) {
+use constant isIO => sub {
+  my $io = shift;
+
   if ( !defined($io) ) {
     throw OP::AssertFailed("IO ref must not be undef");
   }
@@ -327,7 +298,9 @@ use constant isIO => sub(IO $io) {
   return true;
 };
 
-use constant isRef => sub(Ref $ref) {
+use constant isRef => sub {
+  my $ref = shift;
+
   if ( !defined($ref) ) {
     throw OP::AssertFailed("Ref must not be undef");
   }
@@ -335,7 +308,9 @@ use constant isRef => sub(Ref $ref) {
   return true;
 };
 
-use constant isRule => sub(Rule $rule) {
+use constant isRule => sub {
+  my $rule = shift;
+
   if ( !defined($rule) ) {
     throw OP::AssertFailed("Rule must not be undef");
   }
@@ -343,7 +318,9 @@ use constant isRule => sub(Rule $rule) {
   return true;
 };
 
-use constant isScalar => sub(Str $scalar) {
+use constant isScalar => sub {
+  my $scalar = shift;
+
   if ( !defined($scalar) ) {
     throw OP::AssertFailed("Scalar must not be undef");
   }
@@ -398,7 +375,11 @@ Consumed args are as follows:
 
 =cut
 
-method new(OP::Type $class: *%args) {
+# method new(OP::Type $class: *%args) {
+sub new {
+  my $class = shift;
+  my %args = @_;
+
   my $self = { };
 
   for my $key ( keys %args ) {
@@ -426,7 +407,11 @@ XXX TODO This would be much faster as a hash table keyed on value
 
 =cut
 
-method allowed(Str ?$key) {
+# method allowed(Str ?$key) {
+sub allowed {
+  my $self = shift;
+  my $key = shift;
+
   return if !$self->{__allowed} || !ref $self->{__allowed};
 
   if ( ref($self->{__allowed}) eq 'CODE' ) {
@@ -455,7 +440,10 @@ value as an argument, and returns a true or false value.
 
 =cut
 
-method code() {
+# method code() {
+sub code {
+  my $self = shift;
+
   insist( $self->{__code}, isCode );
 
   return $self->{__code};
@@ -471,7 +459,10 @@ object) which is unrolled for array elements.
 
 =cut
 
-method memberType() {
+# method memberType() {
+sub memberType {
+  my $self = shift;
+
   return $self->{__memberType};
 }
 
@@ -485,7 +476,10 @@ class which this attribute is a pointer to.
 
 =cut
 
-method memberClass() {
+# method memberClass() {
+sub memberClass {
+  my $self = shift;
+
   return $self->{__memberClass};
 }
 
@@ -506,7 +500,10 @@ attribute is a pointer to.
 
 =cut
 
-method externalClass() {
+# method externalClass() {
+sub externalClass {
+  my $self = shift;
+
   my $extClass;
 
   if ( $self->isa("OP::Type::ExtID") ) {
@@ -530,7 +527,10 @@ Returns the concrete object class which this type is for.
 
 =cut
 
-method objectClass() {
+# method objectClass() {
+sub objectClass {
+  my $self = shift;
+
   #
   # Allow usage as class or instance method:
   #
@@ -553,7 +553,10 @@ Object wrapper for Perl's built-in ref() function
 
 =cut
 
-method class() {
+# method class() {
+sub class {
+  my $self = shift;
+
   return ref($self);
 }
 
@@ -573,7 +576,12 @@ and into the assertion code tests. Will make things cleaner and faster.
 
 =cut
 
-method test(Str $key, Any $value) {
+# method test(Str $key, Any $value) {
+sub test {
+  my $self = shift;
+  my $key = shift;
+  my $value = shift;
+
   #
   # Reject undefined values
   #
@@ -768,15 +776,24 @@ method test(Str $key, Any $value) {
 # assertion rules (you'll need to modify test() to handle new cases)
 #
 our %RULES = (
-  max => sub(Num $value) {
+  # max => sub(Num $value) {
+  max => sub {
+    my $value = shift;
+
     insist( $value, isFloat ) && return $value;
   },
 
-  columnType => sub(Str $value) {
+  # columnType => sub(Str $value) {
+  columnType => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 
-  default => sub(*@value) {
+  # default => sub(*@value) {
+  default => sub {
+    my @value = @_;
+
     if ( scalar(@value) == 0 ) {
       return undef;
     } elsif ( scalar(@value) == 1 ) {
@@ -786,28 +803,46 @@ our %RULES = (
     }
   },
 
-  descript => sub(Str $value) {
+  # descript => sub(Str $value) {
+  descript => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 
-  example => sub(Str $value) {
+  # example => sub(Str $value) {
+  example => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 
-  min => sub(Num $value) {
+  # min => sub(Num $value) {
+  min => sub {
+    my $value = shift;
+
     insist( $value, isFloat ) && return $value;
   },
 
-  maxSize => sub(Int $value) {
+  # maxSize => sub(Int $value) {
+  maxSize => sub {
+    my $value = shift;
+
     insist( $value, isInt ) && return $value;
   },
 
-  minSize => sub(Int $value) {
+  # minSize => sub(Int $value) {
+  minSize => sub {
+    my $value = shift;
+
     insist( $value, isInt ) && return $value;
   },
 
   # CASCADE, SET NULL, etc
-  onDelete => sub(Str $value) {
+  # onDelete => sub(Str $value) {
+  onDelete => sub {
+    my $value = shift;
+
     insist( $value, isStr )
       && ( grep { uc($value) eq $_ } @{ ( OP::Persistence::MySQL::RefOpts ) } )
       || ( throw OP::InvalidArgument("Invalid reference option specified") );
@@ -815,7 +850,10 @@ our %RULES = (
     return uc($value);
   },
 
-  onUpdate => sub(Str $value) {
+  # onUpdate => sub(Str $value) {
+  onUpdate => sub {
+    my $value = shift;
+
     insist( $value, isStr )
       && ( grep { uc($value) eq $_ } @{ ( OP::Persistence::MySQL::RefOpts ) } )
       || ( throw OP::InvalidArgument("Invalid reference option specified") );
@@ -823,7 +861,8 @@ our %RULES = (
     return uc($value);
   },
 
-  optional => sub() {
+  # optional => sub() {
+  optional => sub {
     throw OP::InvalidArgument(
       "Extra arguments received by optional()"
     ) if @_ > 1;
@@ -831,11 +870,14 @@ our %RULES = (
     return true;
   },
 
-  regex => sub(Rule $regex) {
+  # regex => sub(Rule $regex) {
+  regex => sub {
+    my $regex = shift;
+
     return $regex;
   },
 
-  serial => sub() {
+  serial => sub {
     throw OP::InvalidArgument(
       "Extra arguments received by serial()"
     ) if @_ > 1;
@@ -843,23 +885,38 @@ our %RULES = (
     return true;
   },
 
-  size => sub(Int $value) {
+  # size => sub(Int $value) {
+  size => sub {
+    my $value = shift;
+
     insist( $value, isInt ) && return $value;
   },
 
-  sqlValue => sub(Str $value) {
+  # sqlValue => sub(Str $value) {
+  sqlValue => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 
-  sqlInsertValue => sub(Str $value) {
+  # sqlInsertValue => sub(Str $value) {
+  sqlInsertValue => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 
-  sqlUpdateValue => sub(Str $value) {
+  # sqlUpdateValue => sub(Str $value) {
+  sqlUpdateValue => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 
-  unique => sub(Any ?$value) {
+  # unique => sub(Any ?$value) {
+  unique => sub {
+    my $value = shift;
+
     #
     # Kind of a hack, but this allows any of:
     #
@@ -894,7 +951,10 @@ our %RULES = (
     return $value;
   },
 
-  uom => sub(Str $value) {
+  # uom => sub(Str $value) {
+  uom => sub {
+    my $value = shift;
+
     insist( $value, isStr ) && return $value;
   },
 );
@@ -939,7 +999,11 @@ for ( keys %RULES ) {
 # Helper function so Str, Int, and Float don't have
 # to repeat this bit of code:
 #
-sub __parseTypeArgs(Code $testSub, *@args) {
+# sub __parseTypeArgs(Code $testSub, *@args) {
+sub __parseTypeArgs {
+  my $testSub = shift;
+  my @args = @_;
+
   my %parsed;
 
   my @allowedValues;

@@ -9,58 +9,12 @@
 # http://opensource.org/licenses/cpl1.0.txt
 #
 
-#
-# Add any cleanup/shutdown items to the DESTROY method below.
-#
-# Right now, this just flushes any pending POE Sessions.
-#
-package OP::Cleanup;
-
-sub new {
-  my $class = shift;
-
-  return bless { }, $class;
-}
-
-sub DESTROY {
-  POE::Kernel->run;
-}
-
 package OP;
 
-our $VERSION = '0.212';
+our $VERSION = '0.300';
 
 use strict;
 use diagnostics;
-
-use Filter::Simple; # Force stricture and diagnostics in caller...
-                    # because that's just the way it's going to be.
-
-FILTER {
-  my $filterText = q[ use strict; use diagnostics; use Perl6::Subs; ];
-
-  s/^/$filterText/s;
-};
-
-do {
-  #
-  # Workaround for AutoLoader: Using Coro with OP makes AutoLoader throw
-  # undef warnings in the context of a "require" statement when objects
-  # without an explicit DESTROY method are culled.
-  #
-  # To work around this, OP adds an abstract DESTROY method to the the
-  # UNIVERSAL package, which all objects in Perl inherit from. The DESTROY
-  # method may be overridden as usual on a per-class basis.
-  #
-  no strict "refs";
-
-  *{"UNIVERSAL::DESTROY"} = sub { };
-};
-
-use Encode; # Load this legacy module before all else...
-            # or suffer the undefined consequences!
-
-use Error qw| :try |;
 
 #
 # Abstract classes
@@ -132,7 +86,32 @@ our @EXPORT = (
   keys %OP::Type::RULES
 );
 
-my $cleanup = OP::Cleanup->new;
+#
+#
+#
+
+do {
+  #
+  # Workaround for AutoLoader: AutoLoader emits undef warnings in the
+  # context of a "require" statement, when objects without an explicit
+  # DESTROY method are culled.
+  #
+  # To work around this, OP adds an abstract DESTROY method to the the
+  # UNIVERSAL package, which all objects in Perl inherit from. The DESTROY
+  # method may be overridden as usual on a per-class basis.
+  #
+  no strict "refs";
+
+  *{"UNIVERSAL::DESTROY"} = sub { };
+};
+
+END {
+  #
+  # Flush pending POE Sessions:
+  #
+
+  POE::Kernel->run;
+};  
 
 true;
 __END__
@@ -144,7 +123,7 @@ OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
-This documentation is for version B<0.212> of OP.
+This documentation is for version B<0.300> of OP.
 
 =head1 STATUS
 
@@ -156,85 +135,23 @@ progress.
 
   use OP;
 
-Using the OP module initializes all built-in object types, and causes
-L<strict>, L<diagnostics>, L<OP::Class>, L<OP::Type>, L<Perl6::Subs>,
-and L<Error> to be imported by the caller. These may alternately be
-imported individually.
-
 A cheat sheet, C<cheat.html>, is included with this distribution.
 
 =head1 DESCRIPTION
 
-Compact and concise class prototyping, with object persistence.
-
-OP is a Perl 5 dialect for deriving object classes and database
-schemas. Apps developed and executed under OP have a greater degree of
-formality and consistency than one may be accustomed to seeing in Perl.
+OP is a Perl 5 framework for prototyping InnoDB-backed object classes.
 
 This document covers the high-level concepts implemented in OP.
 
-=head1 FEATURES
-
-=head2 Class Prototyping with Transparent Persistence
-
-Inspired by I<Prototype.js> in the JavaScript world, L<OP::Class>
-provides the C<create> function, enabling developers to craft
-database-backed Perl 5 classes in a compact and concise manner.
-
-Database tables are derived from object classes. By default, new
-classes include methods to C<save> to and C<load> from persistent
-backing stores. Complex schemas may be quickly modeled in code and
-put to use.
-
-=head2 Instance Variable Assertions
-
-Mitigate garbage input through the use of typing and subtype
-rules (L<OP::Type>). Enforce strict control of instance variables,
-table column behavior, and automatically derive database constraints.
-
-=head2 List Collectors
-
-Inspired by language features in Ruby and Python, OP implements list
-collection methods, complemented by a set of functions which may be used
-to finely control the flow of execution.
-
-=head2 Formal Methods & Exceptions
-
-Exception handling is brought in from the L<Error> module. C<try>,
-C<throw>, and C<catch> are first-class citizens in the OP runtime.
-
-Perl 6-style method support is provided by the L<Perl6::Subs> source
-filter, and is used extensively throughout OP source and its examples. OP
-also implements a generalized subset of Perl 6-derived object types.
-
-=head2 Async-Ready
-
-OP provides first-class support for L<Coro> and L<POE>. See L<OP::Recur>
-and L<OP::Persistence::Async>.
-
 =head1 FRAMEWORK ASSUMPTIONS
 
-When using OP, a number of things "just happen" by design. Trying
-to go against the flow of any of these base assumptions is not
-recommended.
-
-=head2 Default Modules
-
-L<strict>, L<warnings>, L<Error>, and L<Perl6::Subs> are on by default.
-
-=head2 Persistent Objects Extend L<OP::Node>
-
-Classes allocated with C<create> will receive an InnoDB backing store,
-by virtue of being a subclass of L<OP::Node>. This can be overridden if
-needed, see the subclassing examples in this document, as well as
-"Inheritance" in L<OP::Class>, for details.
-
-Various backing store options are covered in the L<OP::Persistence>
-module.
+When using OP, as with any framework, a number of things "just happen"
+by design. Trying to go against the flow of any of these base assumptions
+is not recommended.
 
 =head2 Default Base Attributes
 
-Unless overridden in C<__baseAsserts>, L<OP::Node> subclasses have
+Unless overridden in C<__baseAsserts>, OP classes always have
 the following baseline attributes:
 
 =over 4
@@ -299,14 +216,10 @@ undefined object instance. This may change at some point.
 =head2 Namespace Matters
 
 OP's core packages live under the OP:: namespace. Your classes should
-live in their own top-level namespace, e.g. "YourApp::".
+live in their own top-level namespace, e.g. "YourApp::". This will translate
+to the name of the app's database, unless overridden.
 
 =head1 OBJECT TYPES
-
-OP implements the same object class types referred to in L<Perl6::Subs>,
-several others which are specific to dealing with a SQL backing store
-(e.g. Double, ExtId), as well as datatypes commonly used in network
-operations (e.g. EmailAddr, IPv4Addr, URI).
 
 OP object types are used when asserting attributes within a class, and are
 also suitable for instantiation or subclassing in a self-standing manner.
@@ -383,9 +296,6 @@ a prototype object for its argument.
 
 =head2 IN METHODS
 
-To ensure method arguments are always of the appropriate type, specify
-the desired type(s) in a L<Perl6::Subs> prototype.
-
 Constructors and setter methods accept both native Perl 5 data
 types and their OP object class equivalents. The setters will
 automatically handle any necessary conversion, or throw an exception if
@@ -419,6 +329,9 @@ To wit, native types are OK for constructors:
   say $example->someInt->sqrt;
   # 11.0905365064094
 
+  say $example->someInt;
+  # 123
+
 Native types are OK for setters:
 
   $example->setSomeInt(456);
@@ -450,14 +363,6 @@ Native types are OK for setters:
 =back
 
 =head1 OBJECT TYPES
-
-These Perl 5 classes represent a generalization of their Perl 6
-counterparts, at best, also introducing several object types specific
-to dealing with a SQL backing store. OP is not intended to be a Perl
-6 implementation at all; there are inconsistencies and cut corners in
-the usage of these classes, compared to what Perl 6 will look like. OP
-borrows many of these class names for consistency with L<Perl6::Subs>,
-and to have less things to remember when coding.
 
 The basic types listed here may be instantiated as objects, or asserted
 as inline attributes.
@@ -583,10 +488,7 @@ at some point.
 
 =head1 SEE ALSO
 
-L<Perl6::Subs>, L<OP::Class>, L<OP::Type>
-
-Perl6 Synopsis 02: Bits and Pieces (Object Types)
-  - http://svn.pugscode.org/pugs/docs/Perl6/Spec/S02-bits.pod
+L<OP::Class>, L<OP::Type>
 
 =head1 AUTHOR
 

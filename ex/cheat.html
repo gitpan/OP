@@ -102,6 +102,9 @@ In file <i>YourApp/Example.pm</i>:
 </p>
 
 <pre>
+use strict;
+use warnings;
+
 use OP;
 
 create "<i>YourApp::Example</i>" => { };
@@ -283,26 +286,12 @@ create "YourApp::ThisClass" => {
 
 <pre>
 create "YourApp::Example" => {
-  someMethod => method(OP::Class $class:) {
-    print "No need to shift $class etc\n";
+  someMethod => sub {
+    my $class = shift;
+
+    # ...
   },
 
-  methodWithArgs => method(
-    OP::Class $class: Str $arg, *@slurp
-  ) {
-    print "No need to shift $class etc\n";
-  },
-
-};
-</pre>
-
-<p>Free standing:</p>
-
-<pre>
-method methodWithArgs(
-  OP::Class $class: Str $arg, *@slurp
-) {
-  print "No need to shift $class etc\n";
 };
 </pre>
 </div>
@@ -314,22 +303,12 @@ method methodWithArgs(
 
 <pre>
 create "YourApp::Example" => {
-  someMethod => method() {
-    print "No need to shift $self etc\n";
+  someMethod => sub {
+    my $self = shift;
+
+    # ...
   },
 
-  methodWithArgs => method(Str $arg, *@slurp) {
-    print "No need to shift $self etc\n";
-  },
-
-};
-</pre>
-
-<p>Free standing:</p>
-
-<pre>
-method methodWithArgs(Str $arg, *@slurp) {
-  print "No need to shift $self etc\n";
 };
 </pre>
 </div>
@@ -432,7 +411,9 @@ as inline attributes (<i>$class->assert(...)</i>).</p>
 <h3><i>collect</i> array elements</h3>
 
 <pre>
-my $collected = $array->collect( sub(Any $item) {
+my $collected = $array->collect( sub {
+  my $item = shift;
+
   print "Working with element $item\n"
 
   return if $item == $foo; # Yield nothing

@@ -15,7 +15,6 @@ use strict;
 use warnings;
 
 use OP::Class qw| true false |;
-use Perl6::Subs;
 
 use Data::Validate::Domain;
 
@@ -24,7 +23,11 @@ use base qw| OP::Str |;
 use constant AssertFailureMessage
   => "Received value is not a domain name";
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     sub {
        Data::Validate::Domain::is_domain("$_[0]")
@@ -37,7 +40,11 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 };
 
-method new(OP::Class $class: Str $string) {
+# method new(OP::Class $class: Str $string) {
+sub new {
+  my $class = shift;
+  my $string = shift;
+
   Data::Validate::Domain::is_domain("$string")
     || throw OP::AssertFailed(AssertFailureMessage);
 

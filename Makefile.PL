@@ -30,7 +30,6 @@ my $prereqs = {
             Math::VecStat => 0.08,
               Net::Syslog => 0.03,
                Parse::RPN => 2.43,
-              Perl6::Subs => 0.05,
                       POE => 1.003,
                       Rcs => 1.05,
            Scalar::Number => 0.002,

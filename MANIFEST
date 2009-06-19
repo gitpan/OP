@@ -25,7 +25,6 @@ lib/OP/Persistence/SQLite.pm
 lib/OP/Persistence/Async.pm
 lib/OP/Persistence/MySQL.pm
 lib/OP/Bool.pm
-lib/OP/Example.pm
 lib/OP/Array.pm
 lib/OP/IPv4Addr.pm
 lib/OP/EmailAddr.pm

@@ -36,7 +36,6 @@ use constant DefaultSubclass => 'OP::Node';
 use Error qw| :try |;
 use OP::Enum::Bool;
 use OP::Utility;
-use Perl6::Subs;
 use Scalar::Util qw| blessed reftype |;
 
 ##
@@ -59,7 +58,11 @@ our @EXPORT_OK = (
 #
 #
 #
-method __checkVarName (OP::Class $class: Str $varName) {
+# method __checkVarName (OP::Class $class: Str $varName) {
+sub __checkVarName {
+  my $class = shift;
+  my $varName = shift;
+
   if ( $varName !~ /^[\w\_]{1,64}$/xsm ) {
     throw OP::InvalidArgument(
       "Bad class var name \"$varName\" specified" );
@@ -71,7 +74,10 @@ method __checkVarName (OP::Class $class: Str $varName) {
 #
 #
 #
-method __init (OP::Class $class:) {
+# method __init (OP::Class $class:) {
+sub __init {
+  my $class = shift;
+
   return true;
 };
 
@@ -82,7 +88,11 @@ method __init (OP::Class $class:) {
 #
 #
 #
-method create (Str $class: Hash $args) {
+# method create (Str $class: Hash $args) {
+sub create {
+  my $class = shift;
+  my $args = shift;
+
   my $reftype = reftype( $args );
 
   if ( !$reftype ) {
@@ -198,7 +208,11 @@ method create (Str $class: Hash $args) {
 #
 #
 #
-method get (OP::Class $class: Str $key) {
+# method get (OP::Class $class: Str $key) {
+sub get {
+  my $class = shift;
+  my $key = shift;
+
   $class->__checkVarName( $key );
 
   my @value;
@@ -216,7 +230,10 @@ method get (OP::Class $class: Str $key) {
 #
 #
 #
-method members (OP::Class $class:) {
+# method members (OP::Class $class:) {
+sub members {
+  my $class = shift;
+
   my @members;
 
   do {
@@ -232,7 +249,10 @@ method members (OP::Class $class:) {
 #
 #
 #
-method membersHash (OP::Class $class:) {
+# method membersHash (OP::Class $class:) {
+sub membersHash {
+  my $class = shift;
+
   my %members;
 
   for my $key ( @{$class->members()} ) {
@@ -245,7 +265,11 @@ method membersHash (OP::Class $class:) {
 #
 #
 #
-method pretty (OP::Class $class: Str $key) {
+# method pretty (OP::Class $class: Str $key) {
+sub pretty {
+  my $class = shift;
+  my $key = shift;
+
   my $pretty = $key;
 
   $pretty =~ s/(.)([A-Z])/$1 $2/gxsm;
@@ -256,7 +280,12 @@ method pretty (OP::Class $class: Str $key) {
 #
 #
 #
-method set (OP::Class $class: Str $key, *@value) {
+# method set (OP::Class $class: Str $key, *@value) {
+sub set {
+  my $class = shift;
+  my $key = shift;
+  my @value = @_;
+
   $class->__checkVarName( $key );
 
   do {
@@ -468,7 +497,7 @@ Instance variables are declared with the C<assert> class method:
 
 Instance methods are declared as keys in the class prototype. The name
 of the method is the key, and its value in the prototype is a Perl 5
-C<sub{}> or L<Perl6::Subs> C<method(){}> block.
+C<sub{}>.
 
   create "OP::Example" => {
     #
@@ -501,7 +530,9 @@ to prefix them with a single underscore.
     #
     # private instance method
     #
-    _handleFoo => method() {
+    _handleFoo => sub {
+      my $self = shift;
+
       say "The value of foo is $self->{foo}";
     }
   };
@@ -545,8 +576,11 @@ only difference is that the class will be the receiver.
     #
     # Add a public class method
     #
-    loadXml => method(OP::Class $class: Str $xml) {
-      # Code here, $class and $xml are already set!
+    loadXml => sub {
+      my $class = shift;
+      my $xml = shift;
+
+      # ...
     }
   };
 
@@ -557,7 +591,9 @@ to prefix them with double underscores.
     #
     # Override a private class method
     #
-    __basePath => method(OP::Class $class:) {
+    __basePath => sub {
+      my $class = shift;
+
       return join('/', '/tmp', $class);
     }
   };
@@ -608,9 +644,6 @@ L<OP::Type> module for more about assertions.
 OP classes are regular old Perl packages. C<create()> is just a wrapper
 to the C<package> keyword, with some shortcuts thrown in.
 
-The inline methods for these examples are using C<method> from
-L<Perl6::Subs>.
-
   use OP qw| create true false |;
 
   create "OP::Example" => {
@@ -620,30 +653,29 @@ L<Perl6::Subs>.
 
     anotherInstanceVar => OP::Str->assert(),
 
-    publicInstanceMethod => method() {
-      # Code here, $self will be set for you.
-    },
-
-    _privateInstanceMethod => method() {
-      # Code here, $self will be set for you.
-    },
-
-    publicClassMethod => method(OP::Class $class:) {
-      # Code here, $class will be set for you
-    },
-
-    __privateClassMethod => method(OP::Class $class:) {
-      # Code here, $class will be set for you
-    }
-
-    #
-    # Yes, you can still make methods with sub { } blocks.
-    #
-    oldschoolPerlMethod => sub {
+    publicInstanceMethod => sub {
       my $self = shift;
 
-      warn "$self fears change :-(";
-    }
+      # ...
+    },
+
+    _privateInstanceMethod => sub {
+      my $self = shift;
+
+      # ...
+    },
+
+    publicClassMethod => sub {
+      my $class = shift;
+
+      # ...
+    },
+
+    __privateClassMethod => sub {
+      my $class = shift;
+
+      # ...
+    },
   };
 
 
@@ -729,29 +761,11 @@ a current list of prerequisites.
 
 =head1 INCOMPATIBILITIES
 
-Code which parses Perl source, such as L<Perl::Tidy> and L<PPI>,
-(not to mention L<Perl::Critic>, which uses both of those packages)
-are easily confused by tokens in the Perl 6 C<method> prototype-- this
-may result in not-very-tidy C<perltidy> output and possibly malformed
-PPI DOM trees. This also limits the brutality which the L<criticism>
-module is capable of dishing out by default. Quite unfortunate.
-
-Ending method blocks with a semicolon character has been found to help
-PPI do the right thing when parsing OP documents.
+Probably.
 
 =head1 BUGS AND LIMITATIONS
 
-OP uses source filters, so the usual source filter warnings apply,
-not the least of which is that compilation takes longer than usual. OP
-is best suited for daemonized applications, not short-lived scripts
-which frequently spawn new Perl interpreters.
-
-OP and the modules it uses tweak Perl in some low level ways. I've seen
-undef warnings manifest from third-party or builtin Perl packages, when
-requiring modules that wrap require statements inside of evals, which many
-Perl modules seem to do. I don't currently understand why this happens,
-but have worked around this by loading any modules which exhibit this
-behavior before loading OP.
+Likely.
 
 Test suite is currently incomplete.
 

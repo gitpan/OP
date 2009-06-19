@@ -14,7 +14,6 @@ use strict;
 use warnings;
 
 use Error qw| :try |;
-use Perl6::Subs;
 use OP::Array qw| yield emit |;
 use OP::Bool;
 use OP::Enum::Bool;
@@ -66,7 +65,8 @@ do {
     return if $subs->isEmpty;
 
     $running = $running->collect(
-      sub( OP::Bool $done ) { yield $done if !$done }
+      # sub( OP::Bool $done ) { yield $done if !$done }
+      sub { my $done = shift; yield $done if !$done }
     );
 
     return if $running->size > $maxWorkers;
@@ -80,7 +80,13 @@ do {
   } );
 };
 
-sub __queryInSubproc(OP::Class $class, Str $query, Code ?$sub, Code ?$callback) {
+# sub __queryInSubproc(OP::Class $class, Str $query, Code ?$sub, Code ?$callback) {
+sub __queryInSubproc {
+  my $class = shift;
+  my $query = shift;
+  my $sub = shift;
+  my $callback = shift;
+
   return convey(
     sub {
       my $sth = $class->query($query);
@@ -91,11 +97,25 @@ sub __queryInSubproc(OP::Class $class, Str $query, Code ?$sub, Code ?$callback) 
   );
 };
 
-sub convey(Code $sub, Code ?$callback) {
+# sub convey(Code $sub, Code ?$callback) {
+sub convey {
+  my $sub = shift;
+  my $callback = shift;
+
   my $done = OP::Bool->new(false);
 
+  my $child;
+
+  $SIG{INT} = sub {
+    print "Killing child...\n";
+    $child->kill if defined $child;
+
+    print "Exiting...\n";
+    exit 2;
+  };
+
   my $onStart = sub {
-    my $child = POE::Wheel::Run->new(
+    $child = POE::Wheel::Run->new(
       Program      => $sub,
       StdoutEvent  => "onChildStdout",
       StderrEvent  => "onChildStderr",
@@ -146,17 +166,29 @@ sub convey(Code $sub, Code ?$callback) {
   return $done;
 };
 
-sub coquery(OP::Class $class, Str $query, Code $sub, Code $callback) {
+# sub coquery(OP::Class $class, Str $query, Code $sub, Code $callback) {
+sub coquery {
+  my $class = shift;
+  my $query = shift;
+  my $sub = shift;
+  my $callback = shift;
+
   $classes->push($class);
   $queries->push($query);
   $subs->push($sub);
   $callbacks->push($callback);
 };
 
-sub transmit ( *@data ) {
-  for ( @data ) {
+# sub transmit ( *@data ) {
+sub transmit {
+  for ( @_ ) {
     print "OP_XMIT:";
-    print JSON::Syck::Dump($_);
+
+    if ( UNIVERSAL::can($_, "toJson") ) {
+      print $_->toJson;
+    } else {
+      print JSON::Syck::Dump($_);
+    }
     print "\n";
   }
 };
@@ -176,7 +208,8 @@ sub finish {
     }
 
     $running = $running->collect(
-      sub ( OP::Bool $done ) { yield $done if !$done }
+      # sub ( OP::Bool $done ) { yield $done if !$done }
+      sub { my $done = shift; yield $done if !$done }
     );
 
     break if $running->isEmpty;
@@ -185,6 +218,8 @@ sub finish {
   #
   # Let any remaining POE sessions finish:
   $kernel->run;
+
+  $SIG{INT} = 'DEFAULT';
 };
 
 sub onChildStdout {
@@ -225,7 +260,11 @@ package OP::Persistence;
 use strict;
 use warnings;
 
-*coquery = \&OP::Persistence::Async::coquery;
+do {
+  no warnings "once";
+
+  *coquery = \&OP::Persistence::Async::coquery;
+};
 
 true;
 

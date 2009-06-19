@@ -8,8 +8,10 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
-use OP;
+use strict;
+use warnings;
 
+use OP;
 use OP::Constants qw| dbHost dbPass dbPort dbUser |;
 
 create "OP::ForeignRow" => {
@@ -34,7 +36,7 @@ create "OP::ForeignRow" => {
       # Type: float
 
       while ( my $row = $sth->fetchrow_hashref() ) {
-        $asserts->{$row->{Field}} = OP::Scalar->assert(::optional, ::maxSize(1024*5));
+        $asserts->{$row->{Field}} = OP::Scalar->assert(::optional());
       }
 
       $class->set('DBIASSERTS', $asserts);

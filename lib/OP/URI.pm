@@ -14,7 +14,6 @@ use strict;
 use warnings;
 
 use OP::Class qw| true false |;
-use Perl6::Subs;
 
 use Data::Validate::URI;
 
@@ -22,7 +21,11 @@ use base qw| URI OP::Str |;
 
 use constant AssertFailureMessage => "Received value is not a URI";
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     sub {
        Data::Validate::URI::is_uri("$_[0]")
@@ -35,7 +38,11 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 };
 
-method new(OP::Class $class: Str $string) {
+# method new(OP::Class $class: Str $string) {
+sub new {
+  my $class = shift;
+  my $string = shift;
+
   Data::Validate::URI::is_uri($string)
     || throw OP::AssertFailed(AssertFailureMessage);
 

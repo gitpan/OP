@@ -124,6 +124,8 @@ object.
   } );
 
 =cut
+use strict;
+use warnings;
 
 use OP;
 
@@ -195,9 +197,8 @@ create "OP::Log" => {
   #
   messageClass => method() {
     if ( !ref($self) ) {
-my ($package, $filename, $line) = caller(1);
-
-die "Not a class method, check $filename:$line";
+      my ($package, $filename, $line) = caller(1);
+      die "Not a class method, check $filename:$line";
     }
 
     if ( !$self->exists() ) {
@@ -205,24 +206,21 @@ die "Not a class method, check $filename:$line";
       return undef;
     }
 
-    if ( !$self->{__messageClass} ) {
-      my $class = $self->class();
-      my $base  = $self->baseMessageClass();
+    my $class = $self->class();
+    my $base  = $self->baseMessageClass();
+    my $messageClassName = join("::", $class, $self->id());
 
-      $self->{__messageClass} = join("::", $class, $self->id());
-
-      create $self->{__messageClass} => {
-        __BASE__  => $base,
-        __numRows => $self->numRows(),
-        name      => OP::Name->assert(::optional()),
-      };
+    if ( UNIVERSAL::isa($messageClassName, $base) ) {
+      return $messageClassName;
     }
 
-    return $self->{__messageClass};
-  },
+    create $messageClassName => {
+      __BASE__  => $base,
+      __numRows => $self->numRows(),
+      name      => OP::Name->assert(::optional()),
+    };
 
-  messageTable => method() {
-    return $self->messageClass();
+    return $messageClassName;
   },
 
   newMessage => method() {

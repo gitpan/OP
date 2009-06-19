@@ -76,13 +76,19 @@ L<OP::Class> > L<OP::Object> > OP::Array
 use Math::VecStat;
 
 use Error::Simple qw| :try |;
-use Perl6::Subs;
 
 use OP::Class qw| true false |;
 
 use base qw| Exporter OP::Class::Dumper OP::Object |;
 
 our @EXPORT_OK = qw| yield emit |;
+
+# method value() {
+sub value {
+  my $self = shift;
+
+  return @{ $self };
+}
 
 =pod
 
@@ -101,7 +107,11 @@ Usage is cited in the SYNOPSIS section of this document.
 
 =cut
 
-method new(OP::Class $class: *@self) {
+# method new(OP::Class $class: *@self) {
+sub new {
+  my $class = shift;
+  my @self  = @_;
+
   #
   # Received a single argument as self, and it was already a reference.
   #
@@ -220,7 +230,12 @@ In caller:
 
 =cut
 
-method assert(OP::Class $class: OP::Type $memberType, *@rules) {
+# method assert(OP::Class $class: OP::Type $memberType, *@rules) {
+sub assert {
+  my $class = shift;
+  my $memberType = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isArray, @rules
   );
@@ -252,7 +267,11 @@ Get the received array index. Functionally the same as $ref->[$index].
 
 =cut
 
-method get(Any $index) {
+# method get(Any $index) {
+sub get {
+  my $self = shift;
+  my $index = shift;
+
   if ( $self->class() ) {
     return $self->[$index];
   } else {
@@ -274,7 +293,12 @@ same as $ref->[$index] = $value.
 
 =cut
 
-method set(Any $index, *@value) {
+# method set(Any $index, *@value) {
+sub set {
+  my $self = shift;
+  my $index = shift;
+  my @value = @_;
+
   if ( $self->class() ) {
     throw OP::RuntimeError("Extra args received by set()")
       if @value > 1;
@@ -303,7 +327,11 @@ same as C<push(@$ref, @list)>.
 
 =cut
 
-method push(*@value) {
+# method push(*@value) {
+sub push {
+  my $self = shift;
+  my @value = @_;
+
   return push(@{ $self }, @value);
 };
 
@@ -325,7 +353,10 @@ same as C<scalar(@$ref)>.
 do {
   no warnings "redefine";
 
-  method size() {
+  # method size() {
+  sub size {
+    my $self = shift;
+
     return scalar(@{$self});
   };
 };
@@ -372,18 +403,19 @@ A working example - return a new array containing capitalized versions
 of each element in the original. Collection is performed using C<collect>;
 C<each> may be used when there is code to run with no return values.
 
-Rather than C<shift>ing arguments, this example uses L<Perl6::Subs>
-prototypes.
-
   my $array = OP::Array->new(
     foo bar baz whiskey tango foxtrot
   );
 
-  my $capped = $array->collect( sub(Str $item) {
+  my $capped = $array->collect( sub {
+    my $item = shift;
+
     yield uc($item)
   } );
 
-  $capped->each( sub(Str $item) {
+  $capped->each( sub {
+    my $item = shift;
+
     print "Capitalized array contains item: $item\n";
   } );
 
@@ -434,7 +466,9 @@ skip ahead without yielding items (ie C<next>).
   # For example, create a new Array ($quoted) containing quoted elements
   # from the original, omitting items which aren't wanted.
   #
-  my $quoted = $array->collect( sub ( Any $item ) {
+  my $quoted = $array->collect( sub {
+    my $item = shift;
+
     print "Have item: $item\n";
 
     return if $item =~ /donotwant/;
@@ -475,7 +509,9 @@ the interpreter get to that final C<print> statement.
   # For example, create a new Array ($quoted) containing quoted elements
   # from the original, omitting items which aren't wanted.
   #
-  my $quoted = $array->collect( sub ( Any $item ) {
+  my $quoted = $array->collect( sub {
+    my $item = shift;
+
     print "Have item: $item\n";
 
     return if $item =~ /donotwant/;
@@ -503,13 +539,21 @@ the interpreter get to that final C<print> statement.
 The indexed version of C<collect> is C<collectWithIndex>. It provides
 the index integer as a second argument to the received CODE block.
 
-  my $new = $array->collectWithIndex( sub ( Any $item, Int $index ) {
+  my $new = $array->collectWithIndex( sub {
+    my $item = shift;
+    my $index = shift;
+
     print "Working on item $index: $item\n";
   } );
 
 =cut
 
-method collect(Code $sub, Bool ?$withIndex) {
+# method collect(Code $sub, Bool ?$withIndex) {
+sub collect {
+  my $self = shift;
+  my $sub = shift;
+  my $withIndex = shift;
+
   my $results = OP::Array->new();
 
   my $i = 0;
@@ -553,16 +597,25 @@ method collect(Code $sub, Bool ?$withIndex) {
   return $results;
 };
 
-method collectWithIndex(Code $sub) {
+# method collectWithIndex(Code $sub) {
+sub collectWithIndex {
+  my $self = shift;
+  my $sub = shift;
+
   return $self->collect($sub, true);
 };
 
-sub emit(*@results) {
+# sub emit(*@results) {
+sub emit {
+  my $self = shift;
+  my @results = @_;
+
   $OP::Array::EmittedItems->push(@results);
 };
 
-sub yield(*@results) {
-  OP::Array::YieldedItems->throw(@results);
+# sub yield(*@results) {
+sub yield {
+  OP::Array::YieldedItems->throw(@_);
 };
 
 
@@ -584,7 +637,9 @@ C<collect>.
 
   my $arr = OP::Array->new( qw| foo bar rebar | );
 
-  $arr->each( sub(Str $item) {
+  $arr->each( sub {
+    my $item = shift;
+
     print "Have item: $item\n";
   } );
 
@@ -599,7 +654,10 @@ C<collect>.
 The indexed version of C<each> is C<eachWithIndex>. It provides the
 index integer as a second argument to the received CODE block.
 
-  $array->eachWithIndex( sub ( Any $item, Int $index ) {
+  $array->eachWithIndex( sub {
+    my $item = shift;
+    my $index = shift;
+
     print "Have item $index: $item\n";
   } );
 
@@ -613,7 +671,12 @@ index integer as a second argument to the received CODE block.
 
 =cut
 
-method each(Code $sub, Bool ?$withIndex) {
+# method each(Code $sub, Bool ?$withIndex) {
+sub each {
+  my $self = shift;
+  my $sub = shift;
+  my $withIndex = shift;
+
   my $i = 0;
 
   for ( @{$self} ) {
@@ -652,7 +715,11 @@ method each(Code $sub, Bool ?$withIndex) {
   }
 };
 
-method eachWithIndex(Code $sub) {
+# method eachWithIndex(Code $sub) {
+sub eachWithIndex {
+  my $self = shift;
+  my $sub = shift;
+
   return $self->each($sub, true);
 };
 
@@ -670,7 +737,11 @@ same as C<join($joinStr, @{ $self })>.
 
 =cut
 
-method join(Str $string) {
+# method join(Str $string) {
+sub join {
+  my $self = shift;
+  my $string = shift;
+
   return join($string, @{ $self });
 };
 
@@ -687,7 +758,10 @@ Removes any undefined elements from self.
 
 =cut
 
-method compact() {
+# method compact() {
+sub compact {
+  my $self = shift;
+
   my $newSelf = $self->class()->new();
 
   $self->each( sub {
@@ -734,7 +808,10 @@ Returns a pseudo-random array element.
 
 =cut
 
-method rand() {
+# method rand() {
+sub rand {
+  my $self = shift;
+
   return $self->[ int(rand($self->size())) ];
 };
 
@@ -765,7 +842,10 @@ Returns a true value if self contains no values, otherwise false.
 
 =cut
 
-method isEmpty() {
+# method isEmpty() {
+sub isEmpty {
+  my $self = shift;
+
   return ( $self->size() == 0 );
 };
 
@@ -792,7 +872,11 @@ Returns a true value if self includes the received value, otherwise false.
 
 =cut
 
-method includes(Any $item) {
+# method includes(Any $item) {
+sub includes {
+  my $self = shift;
+  my $item = shift;
+
   return grep { $_ eq $item } @{ $self };
 };
 
@@ -825,7 +909,12 @@ The second argument is an optional regex modifier string (e.g. "i",
 #
 # XXX TODO Revisit this with smart matching
 #
-method grep(Rule $expr, Str ?$mod) {
+# method grep(Rule $expr, Str ?$mod) {
+sub grep {
+  my $self = shift;
+  my $expr = shift;
+  my $mod = shift;
+
   return if !$expr;
 
   $mod ||= "";
@@ -864,8 +953,14 @@ Removes all items, leaving self with zero array elements.
 
 =cut
 
-method clear() {
-  @{ $self } = ( );
+# method clear() {
+sub clear {
+  my $self = shift;
+
+  # @{ $self } = ( );
+  while ( @{ $self } ) {
+    $self->shift;
+  }
 
   return $self;
 };
@@ -882,7 +977,10 @@ up by Perl's GC.
 
 =cut
 
-method purge() {
+# method purge() {
+sub purge {
+  my $self = shift;
+
   while(1) {
     $self->shift();
 
@@ -909,8 +1007,13 @@ Returns the average of all items in self.
 
 =cut
 
-method average() {
-  return Math::VecStat::average(@{ $self });
+# method average() {
+sub average {
+  my $self = shift;
+
+  my $n = Math::VecStat::average(@{ $self });
+
+  return $n;
 };
 
 
@@ -930,16 +1033,19 @@ Returns the median value of all items in self.
 
 =cut
 
-method median() {
+# method median() {
+sub median {
+  my $self = shift;
+
   my $median = Math::VecStat::median(@{ $self });
 
   if ( defined $median ) {
-    return $median->[0];
+    my $n = shift @{ $median };
+
+    return $n;
   } else {
     return;
   }
-
-  return Math::VecStat::median(@{ $self })->[0];
 };
 
 
@@ -962,8 +1068,13 @@ Returns the highest value of all items in self.
 do {
   no warnings "redefine";
 
-  method max() {
-    return Math::VecStat::max($self);
+  # method max() {
+  sub max {
+    my $self = shift;
+
+    my $n = Math::VecStat::max($self); # Avoid VecStat wantarray
+
+    return $n;
   };
 };
 
@@ -987,8 +1098,13 @@ Returns the lowest value of all items in self.
 do {
   no warnings "redefine";
 
-  method min() {
-    return Math::VecStat::min($self);
+  # method min() {
+  sub min {
+    my $self = shift;
+
+    my $n = Math::VecStat::min($self); # Avoid VecStat wantarray
+
+    return $n;
   };
 };
 
@@ -1008,8 +1124,13 @@ Returns the sum of all items in self.
 
 =cut
 
-method sum() {
-  return Math::VecStat::sum(@{ $self });
+# method sum() {
+sub sum {
+  my $self = shift;
+
+  my $n = Math::VecStat::sum(@{ $self });
+
+  return $n;
 };
 
 =pod
@@ -1027,7 +1148,11 @@ should take $a and $b as arguments.
   
 =cut
 
-method sort(Code ?$function) {
+# method sort(Code ?$function) {
+sub sort {
+  my $self = shift;
+  my $function = shift;
+
   my $newSelf = $self->class()->new();
 
   if ( $function ) {
@@ -1055,7 +1180,10 @@ Returns the first item in the array. Same as $self->[0].
 
 =cut
 
-method first() {
+# method first() {
+sub first {
+  my $self = shift;
+
   return $self->isEmpty() ? undef : $self->[0];
 };
 
@@ -1075,7 +1203,10 @@ Returns the final item in the array. Same as $self->[-1].
 
 =cut
 
-method last() {
+# method last() {
+sub last {
+  my $self = shift;
+
   return $self->isEmpty() ? undef : $self->[-1];
 };
 
@@ -1088,7 +1219,10 @@ Returns a copy of self with duplicate elements removed.
 
 =cut
 
-method uniq() {
+# method uniq() {
+sub uniq {
+  my $self = shift;
+
   my %seen;
 
   my $class = $self->class();
@@ -1114,7 +1248,10 @@ Returns a copy of self with elements in reverse order
 
 =cut
 
-method reversed() {
+# method reversed() {
+sub reversed {
+  my $self = shift;
+
   my $reversed = $self->class->new;
 
   $self->each( sub {
@@ -1151,7 +1288,10 @@ the same as C<pop(@{ $self })>.
 
 =cut
 
-method pop() {
+# method pop() {
+sub pop {
+  my $self = shift;
+
   return CORE::pop @{ $self };
 };
 
@@ -1189,10 +1329,6 @@ sub shift {
   return CORE::shift(@{ $self });
 };
 
-
-method value() {
-  return @{ $self };
-}
 
 =pod
 

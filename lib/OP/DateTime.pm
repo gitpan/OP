@@ -36,7 +36,6 @@ do {
 
 use OP::Class qw| true false |;
 use OP::Num;
-use Perl6::Subs;
 use Scalar::Util qw| blessed |;
 use Time::Local;
 
@@ -47,7 +46,11 @@ use overload
   '""'  => '_sprint',
   '<=>' => '_compare';
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     sub {
       UNIVERSAL::isa($_[0], "Time::Piece")
@@ -64,7 +67,11 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 };
 
-method new(OP::Class $class: Any $time) {
+# method new(OP::Class $class: Any $time) {
+sub new {
+  my $class = shift;
+  my $time = shift;
+
   my $epoch = 0;
 
   my $blessed = blessed($time);
@@ -84,9 +91,17 @@ method new(OP::Class $class: Any $time) {
   return bless $self, $class;
 };
 
-method newFrom(OP::Class $class:
-  Num $year, Num $month, Num $day, Num $hour, Num $minute, Num $sec
-) {
+# method newFrom(OP::Class $class:
+#   Num $year, Num $month, Num $day, Num $hour, Num $minute, Num $sec
+sub newFrom {
+  my $class = shift;
+  my $year = shift;
+  my $month = shift;
+  my $day = shift;
+  my $hour = shift;
+  my $minute = shift;
+  my $sec = shift;
+
   return $class->new(
     Time::Local::timelocal(
       $sec, $minute, $hour,

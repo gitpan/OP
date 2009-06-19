@@ -24,7 +24,6 @@ use base qw| OP::Scalar |;
 ##
 
 use OP::Enum::Bool;
-use Perl6::Subs;
 
 ##
 ## Public Class Methods
@@ -33,7 +32,11 @@ use Perl6::Subs;
 #
 #
 #
-method assert (OP::Class $class: *@rules ) {
+# method assert (OP::Class $class: *@rules ) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs( sub { 1 }, @rules );
 
   $parsed{columnType} ||= 'TEXT';
@@ -45,7 +48,11 @@ method assert (OP::Class $class: *@rules ) {
 #
 #
 #
-method new (OP::Class $class: Any $self) {
+# method new (OP::Class $class: Any $self) {
+sub new {
+  my $class = shift;
+  my $self  = shift;
+
   if ( ref( $self ) ) {
     return bless $self, $class;
   } else {

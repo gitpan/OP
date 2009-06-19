@@ -8,6 +8,9 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+use strict;
+use warnings;
+
 use OP;
 
 use OP::Enum::Inter;
@@ -16,6 +19,10 @@ use Image::Magick;
 use Time::HiRes;
 
 create "OP::SeriesChart" => {
+  name => OP::Name->assert(
+    ::optional(),
+  ),
+
   yMin => OP::Int->assert(
     ::optional(),
   ),
@@ -38,16 +45,26 @@ create "OP::SeriesChart" => {
     ),
   ),
 
+  font => OP::Str->assert(
+    default('/usr/share/X11/fonts/TTF/luxisb.ttf'),
+  ),
+
   bgColor => OP::Array->assert(
-    OP::Int->assert(),
+    OP::Float->assert(min(0), max(255)),
+    default([ 255, 255, 255, 1 ]),
+    size(4)
   ),
 
   gridColor => OP::Array->assert(
-    OP::Float->assert(),
+    OP::Float->assert(min(0), max(255)),
+    default([ 200, 200, 200, .5 ]),
+    size(4)
   ),
 
   unitColor => OP::Array->assert(
-    OP::Float->assert(),
+    OP::Float->assert(min(0), max(255)),
+    default([ 0,0,0,1 ]),
+    size(4)
   ),
 
   stacked => OP::Int->assert(
@@ -194,7 +211,7 @@ create "OP::SeriesChart" => {
   xcFloor => sub($) {
     my $self = shift;
 
-    return 30;
+    return 15;
     # return 0;
   },
 
@@ -204,9 +221,9 @@ create "OP::SeriesChart" => {
     return undef if !$self->{_series};
 
     # $self->setBgColor(32,32,32);
-    $self->setBgColor(255,255,255);
-    $self->setGridColor(128,128,128,.1);
-    $self->setUnitColor(96,96,96,.6);
+    # $self->setBgColor(255,255,255);
+    # $self->setGridColor(128,128,128,.1);
+    # $self->setUnitColor(96,96,96,.6);
 
     $self->setColors(
       # Neat site
@@ -235,7 +252,7 @@ create "OP::SeriesChart" => {
 
       $image->Set(size=> join("x", $self->width(), $self->height()));
    
-      $image->ReadImage(sprintf('xc:rgba(%s,0)',$self->bgColor()->join(',')));
+      $image->ReadImage(sprintf('xc:rgba(%s)',$self->bgColor()->join(',')));
 
       $self->{_image} = $image;
     }
@@ -422,11 +439,11 @@ create "OP::SeriesChart" => {
           $pointsize = 18 if $pointsize > 18;
 
           my $err = $self->{_image}->Annotate(
-            font => '/tmp/Lucida_Grande.ttf',
+            font => $self->font,
             pointsize => $pointsize,
             x => $adjXC + $xNudge + 1,
             y => $self->stacked() ? $yc+($offset*2.75) + 1 : $yc + 1,
-            fill => sprintf('rgba(%s)', join(',',@{ $self->bgColor() },.75)),
+            fill => sprintf('rgba(%s)', $self->bgColor->join(",")),
             text => sprintf('%.02f',$rawY),
             align => $align
           );
@@ -434,7 +451,7 @@ create "OP::SeriesChart" => {
           die $err if $err;
 
           $err = $self->{_image}->Annotate(
-            font => '/tmp/Lucida_Grande.ttf',
+            font => $self->font,
             pointsize => $pointsize,
             x => $adjXC + $xNudge,
             y => $self->stacked() ? $yc+($offset*2.75) : $yc,
@@ -463,7 +480,7 @@ create "OP::SeriesChart" => {
         $lastY = $rawY;
         $lastYC = $yc;
 
-        OP::Array::yield @$pointset;
+        OP::Array::yield(@$pointset);
       } );
 
       my $labelHeight = $firstYC;
@@ -482,11 +499,11 @@ create "OP::SeriesChart" => {
           my $align = "Left";
 
           my $err = $self->{_image}->Annotate(
-            font => '/tmp/Lucida_Grande.ttf',
+            font => $self->font,
             pointsize => $pointsize,
             x => $self->xcFloor() + 1,
             y => $labelHeight,
-            fill => sprintf('rgba(%s)', $self->bgColor()->join(","),.5),
+            fill => sprintf('rgba(%s)', $self->bgColor()->join(",")),
             text => $series->name(),
             align => $align
           );
@@ -494,7 +511,7 @@ create "OP::SeriesChart" => {
           die $err if $err;
 
           $err = $self->{_image}->Annotate(
-            font => '/tmp/Lucida_Grande.ttf',
+            font => $self->font,
             pointsize => $pointsize,
             x => $self->xcFloor() + 2,
             y => $labelHeight - 1,
@@ -523,7 +540,7 @@ create "OP::SeriesChart" => {
           my $err = $self->{_image}->Draw(
             primitive => 'polygon',
             points => $points->join(" "),
-            fill => sprintf('rgba(%s,.5)', $self->bgColor()->join(',')),
+            fill => sprintf('rgba(%s)', $self->bgColor()->join(',')),
             stroke => "none",
           );
 
@@ -575,10 +592,9 @@ create "OP::SeriesChart" => {
       }
 
       $err = $self->{_image}->Annotate(
-        font => '/tmp/Lucida_Grande.ttf',
+        font => $self->font,
         pointsize => 10,
         x => $x + 3,
-        # y => 4,
         y => $self->ycCeil() + 10,
         fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
         text => OP::Utility::date($xTicks->{$x}) ."\n".
@@ -644,7 +660,7 @@ create "OP::SeriesChart" => {
       # next if $prevLabel && $label == $prevLabel;
 
       $err = $self->{_image}->Annotate(
-        font => '/tmp/Lucida_Grande.ttf',
+        font => $self->font,
         pointsize => 10,
         x => $self->xcFloor()-2,
         y => $y + 8,
@@ -660,22 +676,22 @@ create "OP::SeriesChart" => {
 
     if ( $self->{_series}->size() == 1 ) {
       $self->{_image}->Annotate(
-        font => '/tmp/Lucida_Grande.ttf',
+        font => $self->font,
         pointsize => 11,
         x => ( $self->xcFloor() + $self->width() - 1 ) / 2,
         y => 14,
         fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
-        text => $self->{_series}->first()->name(),
+        text => $self->{_series}->first()->name() || "Untitled",
         align => "Center",
       );
 
       $self->{_image}->Annotate(
-        font => '/usr/share/X11/fonts/TTF/luxisb.ttf',
+        font => $self->font,
         pointsize => 24,
         x => $self->width() - 20,
         y => $self->ycCeil() - 20,
         fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
-        text => sprintf('Avg: %.02f%', $self->{_series}->first()->_prepped()->values()->average()),
+        text => sprintf('Avg: %.02f Pct', $self->{_series}->first()->_prepped()->values()->average()),
         align => "Right",
       );
     }
@@ -684,7 +700,7 @@ create "OP::SeriesChart" => {
 
     my @blobs = $self->{_image}->ImageToBlob();
 
-    OP::Array::yield( $blobs[0] );
+    return $blobs[0];
   },
 };
 __END__
@@ -696,7 +712,30 @@ OP::SeriesChart - Experimental image-based series visualizer
 
 =head1 SYNOPSIS
 
-TODO: Write me
+  #
+  # Load Series data:
+  #
+  my $log = OP::Log->load($logName);
+
+  my $series = $log->series($start, $end);
+
+  # ... set series opts (consolidation, interpolation, etc)
+
+  my $chart = OP::SeriesChart->new;
+
+  # ... set chart opts (dimensions, limits, etc)
+
+  $chart->addSeries( $series );
+
+  #
+  # Render chart to a PNG image:
+  #
+  open(OOT, ">", "oot.png");
+
+  print OOT $chart->render();
+
+  close(OOT);
+
 
 =head1 SEE ALSO
 

@@ -12,7 +12,6 @@ package OP::Redefines;
 #
 
 $Carp::Internal{"OP::Redefines"}++;
-$Carp::Internal{"Perl6::Subs"}++;
 
 do {
   #
@@ -31,25 +30,6 @@ do {
     return 1 if ($] >= 5.008 and /^(Inf(inity)?|NaN)$/i) or ($] >= 5.006001 and /^Inf$/i);
 
     0;
-  }
-};
-
-do {
-  #
-  # Prettify exceptions
-  #
-  no strict "refs";
-  no warnings "redefine";
-
-  *{"Perl6::Subs::_error"} = sub {
-    my $sub = (caller(0))[3];
-    my ($c_file, $c_line) = (caller(0))[1, 2];
-
-    my $msg = join '', @_;
-    $msg .= " in call to $sub" unless $sub =~ /^\(/;
-    $msg .= " at $c_file line $c_line";
-
-    throw OP::InvalidArgument( $msg );
   }
 };
 

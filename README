@@ -4,38 +4,25 @@ NAME
 
 SYNOPSIS
 
+      use strict;
+      use warnings;
+
       use OP;
 
-      create "My::Class" => { };
-
-    Using the OP module initializes all built-in object types, and causes
-    strict, diagnostics, OP::Class, OP::Type, Perl6::Subs, and Error to be
-    imported by the caller.
+      create "YourApp::YourClass" => { };
 
 DESCRIPTION
 
-    Compact and concise class prototyping, with object persistence.
-
-    OP is a Perl 5 dialect for deriving object classes and database
-    schemas. Apps developed and executed under OP have a greater degree of
-    formality and consistency than one may be accustomed to seeing in Perl.
+    OP is a Perl 5 framework for prototyping InnoDB-backed object
+    classes.
 
 GETTING STARTED
 
     See OP.pm for a high level overview of the OP framework.
 
-    Subclassing instructions are provided in the "Subclassing" section of
-    OP. Additional examples are outlined in OP::Class.
-
-    Instance variable assertions are outlined in OP::Type and OP::Subtype.
-
-    See Perl6::Subs for an overview of the Perl 6-style methods used by OP.
-
-    See Error for an overview of exception handling in Perl 5.
-
 COPYRIGHT
 
-    Copyright (c) 2005 TiVo Inc.
+    Copyright (c) 2009 TiVo Inc.
  
     All rights reserved. This program and the accompanying materials
     are made available under the terms of the Common Public License v1.0

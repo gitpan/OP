@@ -54,19 +54,25 @@ use warnings;
 use OP::Enum::Bool;
 use OP::Num;
 
-use Perl6::Subs;
-
 use base qw| OP::Num |;
 
 use overload %OP::Num::overload;
 
-method new(OP::Class $class: Bool $self) {
+# method new(OP::Class $class: Bool $self) {
+sub new {
+  my $class = shift;
+  my $self = shift;
+
   OP::Type::insist $self, OP::Type::isBool;
   
   return $class->SUPER::new($self);
 }
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isBool, @rules
   );
@@ -79,7 +85,10 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 }
 
-method isTrue() {
+# method isTrue() {
+sub isTrue {
+  my $self = shift;
+
   my $class = $self->class();
 
   return $self
@@ -87,7 +96,10 @@ method isTrue() {
     : $class->new(false);
 }
 
-method isFalse() {
+# method isFalse() {
+sub isFalse {
+  my $self = shift;
+
   my $class = $self->class();
 
   return $self

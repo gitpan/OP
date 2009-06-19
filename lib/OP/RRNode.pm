@@ -54,6 +54,8 @@ This file is part of L<OP>.
 $Id: //depotit/tools/source/snitchd-0.20/lib/OP/RRNode.pm#6 $
 
 =cut
+use strict;
+use warnings;
 
 use OP;
 

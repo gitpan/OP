@@ -33,20 +33,26 @@ package OP::Ref;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 no overload;
 
 use base qw| OP::Any |;
 
-method new(OP::Class $class: Str $self) {
+# method new(OP::Class $class: Str $self) {
+sub new {
+  my $class = shift;
+  my $self = shift;
+
   throw OP::InvalidArgument("$class->new() requires a reference for arg")
     if !ref($self);
 
   return bless $self, $class;
 }
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isRef, @rules
   );

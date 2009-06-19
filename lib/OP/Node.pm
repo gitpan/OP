@@ -41,12 +41,17 @@ use warnings;
 #
 use OP::Hash;
 
-use Perl6::Subs;
-
 use base qw| OP::Persistence OP::Hash |;
 
-method assert(OP::Class $class: *@rules) {
-  my $test = sub(OP::Class $value) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
+  # my $test = sub(OP::Class $value) {
+  my $test = sub {
+    my $value = shift;
+
     if ( ref($value) && UNIVERSAL::isa($value, $class) ) {
       return true;
     }
@@ -61,13 +66,21 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 };
 
-method new(OP::Class $class: *@args) {
+# method new(OP::Class $class: *@args) {
+sub new {
+  my $class = shift;
+  my @args = @_;
+
   my $self = $class->SUPER::new(@args);
 
   return $self;
 }
 
-method save(*@args) {
+# method save(*@args) {
+sub save {
+  my $self = shift;
+  my @args = @_;
+
   $self->SUPER::save(@args);
 }
 

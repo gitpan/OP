@@ -26,7 +26,6 @@ use strict;
 use warnings;
 
 use OP::Enum::Bool;
-use Perl6::Subs;
 use JSON::Syck;
 use YAML::Syck;
 
@@ -43,7 +42,10 @@ in this class.
 
 =cut
 
-method members(OP::Class $class:) {
+# method members(OP::Class $class:) {
+sub members {
+  my $class = shift;
+
   return OP::Array->new(OP::Class::members($class));
 };
 
@@ -56,7 +58,10 @@ this class, keyed on message (symbol) name.
 
 =cut
 
-method membersHash(OP::Class $class:) {
+# method membersHash(OP::Class $class:) {
+sub membersHash {
+  my $class = shift;
+
   return OP::Hash->new(OP::Class::membersHash($class));
 };
 
@@ -74,7 +79,10 @@ for non-abstract classes.
 
 =cut
 
-method asserts(OP::Class $class:) {
+# method asserts(OP::Class $class:) {
+sub asserts {
+  my $class = shift;
+
   my $asserts = $class->get('ASSERTS');
 
   if ( !$asserts ) {
@@ -110,7 +118,9 @@ any other Perl operation to derive the appropriate values:
     #
     # Inherit parent class's base asserts, tack on "foo"
     #
-    __baseAsserts => method(OP::Class $class:) {
+    __baseAsserts => sub {
+      my $class = shift;
+
       my $base = $class->SUPER::__baseAsserts();
 
       $base->{foo} = OP::Str->assert();
@@ -153,7 +163,10 @@ for non-abstract classes.
 
 =cut
 
-method __baseAsserts(OP::Class $class:) {
+# method __baseAsserts(OP::Class $class:) {
+sub __baseAsserts {
+  my $class = shift;
+
   my $asserts = $class->get("__baseAsserts");
 
   if ( !defined $asserts ) {
@@ -185,7 +198,10 @@ Returns a string containing a YAML representation of the current object.
 
 =cut
 
-method toYaml() {
+# method toYaml() {
+sub toYaml {
+  my $self = shift;
+
   if ( !$self->isa("OP::Hash") ) {
     return YAML::Syck::Dump($self);
   }
@@ -195,7 +211,10 @@ method toYaml() {
   # return YAML::Syck::Dump($self);
 };
 
-method sprint() {
+# method sprint() {
+sub sprint {
+  my $self = shift;
+
   return $self->toYaml();
 }
 
@@ -207,7 +226,10 @@ Prints a YAML representation of the current object to STDOUT.
 
 =cut
 
-method print() {
+# method print() {
+sub print {
+  my $self = shift;
+
   return CORE::print($self->sprint());
 };
 
@@ -220,7 +242,10 @@ Returns a nicely formatted string representing the contents of self
 
 =cut
 
-method prettySprint() {
+# method prettySprint() {
+sub prettySprint {
+  my $self = shift;
+
   my $str = "";
 
   print "-----\n";
@@ -242,11 +267,17 @@ Prints a nicely formatted string representing self to STDOUT
 
 =cut
 
-method prettyPrint() {
+# method prettyPrint() {
+sub prettyPrint {
+  my $self = shift;
+
   return CORE::print($self->prettySprint());
 };
 
-method escape() {
+# method escape() {
+sub escape {
+  my $self = shift;
+
   my $asserts = $self->class->asserts;
 
   my $class = $self->class;
@@ -284,7 +315,10 @@ method escape() {
   return $escaped;
 };
 
-method toJson() {
+# method toJson() {
+sub toJson {
+  my $self = shift;
+
   return JSON::Syck::Dump($self->escape());
 };
 

@@ -14,7 +14,6 @@ use strict;
 use warnings;
 
 use OP::Class qw| true false |;
-use Perl6::Subs;
 
 use Data::Validate::Email;
 use Email::Address;
@@ -24,7 +23,11 @@ use base qw| Email::Address OP::Array |;
 use constant AssertFailureMessage
   => "Received value is not an email address";
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     sub {
       my $self = shift;
@@ -43,7 +46,11 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 };
 
-method new(OP::Class $class: *@components) {
+# method new(OP::Class $class: *@components) {
+sub new {
+  my $class = shift;
+  my @components = @_;
+
   my $self = ( @components > 1 )
     ? Email::Address->new(@components)
     : ( Email::Address->parse($components[0]) )[0];
@@ -56,7 +63,11 @@ method new(OP::Class $class: *@components) {
   return bless $self, $class;
 };
 
-method isa(OP::Class $class: Str $what) {
+# method isa(OP::Class $class: Str $what) {
+sub isa {
+  my $class = shift;
+  my $what = shift;
+
   return false if $what eq 'OP::Array';
 
   return UNIVERSAL::isa($class, $what);

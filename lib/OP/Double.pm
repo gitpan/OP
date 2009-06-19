@@ -40,15 +40,17 @@ package OP::Double;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 use OP::Enum::Bool;
 
 use base qw| OP::Float |;
 
 use overload fallback => true, %OP::Num::overload;
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isFloat, @rules
   );

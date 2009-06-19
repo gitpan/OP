@@ -8,6 +8,9 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+use strict;
+use warnings;
+
 use OP;
 
 require Math::Spline;
@@ -65,7 +68,9 @@ create "OP::Series" => {
     ::default("value"),
   ),  # key to use for y axis
 
-  yRpn      => OP::Str->assert(),  # optional rpn expression
+  yRpn      => OP::Str->assert(
+    ::optional(),
+  ),  # optional rpn expression
 
   yType     => OP::Int->assert(
     OP::Enum::StatType::Gauge,

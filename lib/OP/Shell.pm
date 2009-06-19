@@ -8,6 +8,9 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+use strict;
+use warnings;
+
 use OP;
 
 use Lexical::Persistence;

@@ -13,8 +13,6 @@ package OP::Scalar;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 use OP::Class qw| true false |;
 
 use overload fallback => true,
@@ -84,7 +82,11 @@ Usage is cited in the SYNOPSIS section of this document.
 
 =cut
 
-method new(OP::Class $class: Str $self) {
+# method new(OP::Class $class: Str $self) {
+sub new {
+  my $class = shift;
+  my $self = shift;
+
   # throw OP::InvalidArgument("$class instances may not be undefined")
   #  if !defined $self;
 
@@ -101,7 +103,11 @@ method new(OP::Class $class: Str $self) {
   }
 }
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isScalar, @rules
   );
@@ -125,7 +131,11 @@ Delegates to superclass if class method.
 
 =cut
 
-method get(*@args) {
+# method get(*@args) {
+sub get {
+  my $self = shift;
+  my @args = @_;
+
   if ( $self->class() ) {
     my ($package, $filename, $line) = caller(1);
 
@@ -148,7 +158,11 @@ Delegates to superclass if class method.
 
 =cut
 
-method set(*@args) {
+# method set(*@args) {
+sub set {
+  my $self = shift;
+  my @args = @_;
+
   if ( $self->class() ) {
     throw OP::MethodIsAbstract("set() not implemented for scalars");
   } else {
@@ -173,7 +187,10 @@ same as C<length(@$ref)>.
 ### imported function size() is redef'd
 no warnings "redefine";
 
-method size() {
+# method size() {
+sub size {
+  my $self = shift;
+
   return $self->length();
 }
 
@@ -200,7 +217,10 @@ Returns a true value if self contains no values, otherwise false.
 
 =cut
 
-method isEmpty() {
+# method isEmpty() {
+sub isEmpty {
+  my $self = shift;
+
   return ( $self->size() == 0 );
 }
 
@@ -213,7 +233,10 @@ Truncate self to zero length.
 
 =cut
 
-method clear() {
+# method clear() {
+sub clear {
+  my $self = shift;
+
   ${ $self } = "";
 
   return $self;
@@ -228,7 +251,10 @@ Returns the actual de-referenced value of self. Same as ${ $self };
 
 =cut
 
-method value() {
+# method value() {
+sub value {
+  my $self = shift;
+
   return ${ $self };
 }
 
@@ -241,7 +267,10 @@ Overrides superclass to sprint the actual de-referenced value of self.
 
 =cut
 
-method sprint() {
+# method sprint() {
+sub sprint {
+  my $self = shift;
+
   return "$self";
 }
 
@@ -254,7 +283,10 @@ Prints the de-referenced value of self with a line break at the end.
 
 =cut
 
-method say() {
+# method say() {
+sub say {
+  my $self = shift;
+
   $self->print();
 
   print "\n";

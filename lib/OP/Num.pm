@@ -35,7 +35,6 @@ package OP::Num;
 use strict;
 use warnings;
 
-use Perl6::Subs;
 use Scalar::Number;
 use OP::Enum::Bool;
 
@@ -64,7 +63,11 @@ our %overload = (
 
 use overload fallback => true, %overload;
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isFloat, @rules
   );
@@ -75,22 +78,68 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 }
 
-method abs() { CORE::abs(${ $self }) }
+# method abs() { CORE::abs(${ $self }) }
+sub abs {
+  my $self = shift;
 
-method atan2(Num $num) { CORE::atan2(${ $self }, $num) }
+  return CORE::abs(${ $self })
+}
 
-method cos() { CORE::cos(${ $self }) }
+# method atan2(Num $num) { CORE::atan2(${ $self }, $num) }
+sub atan2 {
+  my $self = shift;
+  my $num = shift;
 
-method exp() { CORE::exp(${ $self }) }
+  return CORE::atan2(${ $self }, $num);
+}
 
-method int() { CORE::int(${ $self }) }
+# method cos() { CORE::cos(${ $self }) }
+sub cos {
+  my $self = shift;
 
-method log() { CORE::log(${ $self }) }
+  return CORE::cos(${ $self });
+}
 
-method rand() { CORE::rand(${ $self }) }
+# method exp() { CORE::exp(${ $self }) }
+sub exp {
+  my $self = shift;
 
-method sin() { CORE::sin(${ $self }) }
+  return CORE::exp(${ $self });
+}
 
-method sqrt() { CORE::sqrt(${ $self }) }
+# method int() { CORE::int(${ $self }) }
+sub int {
+  my $self = shift;
 
-1;
+  CORE::int(${ $self });
+}
+
+# method log() { CORE::log(${ $self }) }
+sub log {
+  my $self = shift;
+
+  return CORE::log(${ $self });
+}
+
+# method rand() { CORE::rand(${ $self }) }
+sub rand {
+  my $self = shift;
+
+  return CORE::rand(${ $self });
+}
+
+# method sin() { CORE::sin(${ $self }) }
+sub sin {
+  my $self = shift;
+
+  return CORE::sin(${ $self });
+}
+
+# method sqrt() { CORE::sqrt(${ $self }) }
+sub sqrt {
+  my $self = shift;
+
+  return CORE::sqrt(${ $self });
+}
+
+true;

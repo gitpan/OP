@@ -35,14 +35,22 @@ use warnings;
 
 use OP::Enum::Bool;
 
-use Perl6::Subs;
-
 use overload
-  '""' => sub { shift->value() };
+  '=~' => sub {
+    my $self = shift;
+    my $value = shift;
+    my $reg = qr/$self/x;
 
-use base qw| OP::Ref |;
+    return $value =~ /$reg/;
+   };
 
-method assert(OP::Class $class: *@rules) {
+use base qw| OP::Str |;
+
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isRule, @rules
   );
@@ -50,7 +58,22 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 }
 
-method sprint() {
+# method isa(OP::Class $class: Str $what) {
+sub isa {
+  my $class = shift;
+  my $what = shift;
+
+  if ( $what eq 'Regexp' ) {
+    return true;
+  }
+
+  return UNIVERSAL::isa($class,$what);
+}
+
+# method sprint() {
+sub sprint {
+  my $self = shift;
+
   return "$self";
 }
 

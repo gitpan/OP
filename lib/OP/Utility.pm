@@ -44,7 +44,6 @@ use IO::File;
 use IO::String;
 use LWP::UserAgent;
 use Net::Syslog;
-use Perl6::Subs;
 use POSIX qw| strftime |;
 use Scalar::Util qw| blessed |;
 use YAML::Syck;
@@ -117,7 +116,12 @@ and returns undef if a lock could not be acquired.
 
 =cut
 
-sub grabLock(Str $lockName, Int ?$timeout, Str ?$lockType) {
+# sub grabLock(Str $lockName, Int ?$timeout, Str ?$lockType) {
+sub grabLock {
+  my $lockName = shift;
+  my $timeout = shift;
+  my $lockType = shift;
+
   $timeout ||= 90;
 
   $lockType = ( $lockType && $lockType eq 'LOCK_SH' ) ?
@@ -167,7 +171,10 @@ Release the received resource back to the system.
 
 =cut
 
-sub releaseLock(IO $lock) {
+# sub releaseLock(IO $lock) {
+sub releaseLock {
+  my $lock = shift;
+
   close($lock);
 
   return 1;
@@ -183,7 +190,11 @@ Kilo, Mega, Giga). Optionally acceps a second argument to use as a
 
 =cut
 
-sub humanSize(Int $int, Str $label) {
+# sub humanSize(Int $int, Str $label) {
+sub humanSize {
+  my $int = shift;
+  my $label = shift;
+
   $label ||= "Bytes";
 
   if ( $label eq 'timeticks' ) {
@@ -216,7 +227,10 @@ Convert the received number of seconds into something more human-readable
 
 =cut
 
-sub humanTime(Num $num) {
+# sub humanTime(Num $num) {
+sub humanTime {
+  my $num = shift;
+
   my $str;
 
   my $sign = ( $num < 0 ) ? '-' : '';
@@ -253,7 +267,10 @@ Load the YAML file at the specified path into a native Perl data structure.
 
 =cut
 
-sub loadYaml(Str $path) {
+# sub loadYaml(Str $path) {
+sub loadYaml {
+  my $path = shift;
+
   return undef unless -e $path;
 
   my $yaml;
@@ -294,7 +311,10 @@ current time if none is provided.
 
 =cut
 
-sub timestamp(Num ?$unix) {
+# sub timestamp(Num ?$unix) {
+sub timestamp {
+  my $unix = shift;
+
   $unix ||= CORE::time();
 
   my @localtime = localtime($unix);
@@ -320,7 +340,10 @@ time if none is provided.
 
 =cut
 
-sub date(Num ?$unix) {
+# sub date(Num ?$unix) {
+sub date {
+  my $unix = shift;
+
   $unix ||= CORE::time();
 
   my @localtime = localtime($unix);
@@ -342,7 +365,10 @@ time if none is provided.
 
 =cut
 
-sub time(Num ?$unix) {
+# sub time(Num ?$unix) {
+sub time {
+  my $unix = shift;
+
   $unix ||= CORE::time();
 
   my @localtime = localtime($unix);
@@ -364,7 +390,10 @@ Uses the current time if none is provided.
 
 =cut
 
-sub hour(Num ?$unix) {
+# sub hour(Num ?$unix) {
+sub hour {
+  my $unix = shift;
+
   $unix ||= CORE::time();
 
   my @localtime = localtime($unix);

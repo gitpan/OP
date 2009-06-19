@@ -33,15 +33,21 @@ package OP::Code;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 use base qw| OP::Ref |;
 
-method new(OP::Class $class: Code $code) {
+# method new(OP::Class $class: Code $code) {
+sub new {
+  my $class = shift;
+  my $code = shift;
+
   return $class->SUPER::new($code);
 }
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isCode, @rules
   );

@@ -35,15 +35,17 @@ package OP::Int;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 use OP::Enum::Bool;
 
 use base qw| OP::Num Data::Integer |;
 
 use overload fallback => true, %OP::Num::overload;
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isInt, @rules
   );
@@ -54,4 +56,4 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 }
 
-1;
+true;

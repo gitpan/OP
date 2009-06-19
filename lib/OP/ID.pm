@@ -60,7 +60,6 @@ use warnings;
 
 use OP::Enum::Bool;
 
-use Perl6::Subs;
 use URI::Escape;
 
 use overload fallback => true,
@@ -68,13 +67,21 @@ use overload fallback => true,
 
 use base qw| Data::GUID OP::Scalar |;
 
-method new(OP::Class $class: Str ?$self) {
+# method new(OP::Class $class: Str ?$self) {
+sub new {
+  my $class = shift;
+  my $self = shift;
+
   return $self
     ? Data::GUID::from_base64($class, $self)
     : Data::GUID::new($class);
 }
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isStr, @rules
   );
@@ -88,7 +95,10 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 }
 
-method escaped() {
+# method escaped() {
+sub escaped {
+  my $self = shift;
+
   return uri_escape($self->as_base64);
 }
 

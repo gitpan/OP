@@ -109,7 +109,7 @@ sub init {
 
   my $path = join('/',$ENV{OP_HOME},$RC);
 
-  my $override = join('/',$ENV{OP_HOME},hostname(),$RC);
+  my $override = join('/',$ENV{OP_HOME},".oprc-".hostname());
 
   if ( $ENV{OP_HOME} && -f $path ) {
     my $file = IO::File->new($path, 'r')

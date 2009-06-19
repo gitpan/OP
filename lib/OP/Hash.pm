@@ -19,7 +19,6 @@ use OP::Class qw| true false |;
 use base qw| OP::Class::Dumper OP::Object |;
 
 use Error qw| :try |;
-use Perl6::Subs;
 use Hash::Util;
 
 =pod
@@ -100,7 +99,11 @@ In caller:
 
 =cut
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isHash, @rules
   );
@@ -137,7 +140,11 @@ usage of C<collect>, C<yield>, and C<emit>.
 
 =cut
 
-method collect(Code $sub) {
+# method collect(Code $sub) {
+sub collect {
+  my $self = shift;
+  my $sub = shift;
+
   return $self->keys()->collect($sub);
 };
 
@@ -169,7 +176,11 @@ on success.
 
 =cut
 
-method each(Code $sub) {
+# method each(Code $sub) {
+sub each {
+  my $self = shift;
+  my $sub = shift;
+
   return $self->keys()->each($sub);
 }
 
@@ -187,7 +198,10 @@ Returns an L<OP::Array> object containing self's alpha sorted keys.
 
 =cut
 
-method keys() {
+# method keys() {
+sub keys {
+  my $self = shift;
+
   return OP::Array->new(sort keys %{ $self });
 }
 
@@ -206,7 +220,10 @@ Returns an L<OP::Array> object containing self's values, alpha sorted by key.
 
 =cut
 
-method values() {
+# method values() {
+sub values {
+  my $self = shift;
+
   return $self->keys()->collect( sub {
     yield $self->{$_};
   } );
@@ -226,7 +243,12 @@ use OP::Hash and L<OP::Array> when it can.
 
 =cut
 
-method set(Str $key, *@value) {
+# method set(Str $key, *@value) {
+sub set {
+  my $self = shift;
+  my $key = shift;
+  my @value = @_;
+
   my $class = $self->class();
 
   #
@@ -271,7 +293,10 @@ Returns the number of key/value pairs in self
 ### imported function size() is redef'd
 no warnings "redefine";
 
-method size() {
+# method size() {
+sub size {
+  my $self = shift;
+
   return scalar( CORE::keys(%{$self}) );
 }
 
@@ -286,7 +311,10 @@ Returns true if self's size is 0, otherwise false.
 
 =cut
 
-method isEmpty() {
+# method isEmpty() {
+sub isEmpty {
+  my $self = shift;
+
   return $self->size() ? false : true;
 }
 

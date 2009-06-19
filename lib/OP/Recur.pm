@@ -446,7 +446,6 @@ use OP::Recur::On;
 
 use Date::Calc;
 use Date::Manip;
-use Perl6::Subs;
 use Time::HiRes;
 use Time::Local;
 use POE;
@@ -458,14 +457,9 @@ use Coro;
 #
 POE::Session->create(
   inline_states => {
-    _start => sub { }
+    _start => sub { },
   }
 );
-
-#
-# run_one_timeslice needs to be an instance method
-#
-my $kernel = POE::Kernel->new;
 
 do {
   package OP::Recur;
@@ -532,7 +526,11 @@ create "OP::Recur" => {
 
   _lastPlanTime => OP::DateTime->assert,
 
-  every => method(*@args) {
+  # every => method(*@args) {
+  every => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       $self->{_every}->push( OP::Recur::Every->new(@args) );
     } else {
@@ -540,7 +538,11 @@ create "OP::Recur" => {
     }
   },
 
-  at => method(*@args) {
+  # at => method(*@args) {
+  at => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       $self->{_at}->push( OP::Recur::At->new(@args) );
     } else {
@@ -548,7 +550,11 @@ create "OP::Recur" => {
     }
   },
 
-  exceptAt => method(*@args) {
+  # exceptAt => method(*@args) {
+  exceptAt => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       $self->{_exceptAt}->push( OP::Recur::At->new(@args) );
     } else {
@@ -556,7 +562,11 @@ create "OP::Recur" => {
     }
   },
 
-  on => method(*@args) {
+  # on => method(*@args) {
+  on => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       $self->{_on}->push( OP::Recur::On->new(@args) );
     } else {
@@ -564,7 +574,11 @@ create "OP::Recur" => {
     }
   },
 
-  exceptOn => method(*@args) {
+  # exceptOn => method(*@args) {
+  exceptOn => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       $self->{_exceptOn}->push( OP::Recur::On->new(@args) );
     } else {
@@ -572,7 +586,11 @@ create "OP::Recur" => {
     }
   },
 
-  each => method(*@args) {
+  # each => method(*@args) {
+  each => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       #
       # Multi-method - allow iterator usage like other OP classes
@@ -587,7 +605,11 @@ create "OP::Recur" => {
     }
   },
 
-  exceptEach => method(*@args) {
+  # exceptEach => method(*@args) {
+  exceptEach => sub {
+    my $self = shift;
+    my @args = @_;
+
     if ( @args ) {
       $self->{_exceptEach}->push( OP::Recur::Each->new(@args) );
     } else {
@@ -599,7 +621,9 @@ create "OP::Recur" => {
     OP::Recur::Break->throw();
   },
 
-  snooze => sub (Num $amt) {
+  snooze => sub {
+    my $amt = shift;
+
     my $until = Time::HiRes::time() + $amt;
 
     while(1) {
@@ -610,17 +634,25 @@ create "OP::Recur" => {
 
       cede;
 
-      $kernel->run_one_timeslice;
+      $poe_kernel->run_one_timeslice;
     }
   },
 
-  coloop => method(Code $sub) {
+  # coloop => method(Code $sub) {
+  coloop => sub {
+    my $self = shift;
+    my $sub = shift;
+
     async {
       $self->_loop($sub);
     };
   },
 
-  loop => method(Code $sub) {
+  # loop => method(Code $sub) {
+  loop => sub {
+    my $self = shift;
+    my $sub = shift;
+
     $self->coloop($sub);
 
     while(1) {
@@ -628,8 +660,12 @@ create "OP::Recur" => {
     }
   },
 
-  _loop => method(Code $sub) {
-    local $OP::Recur::TIME = OP::DateTime->new(
+  # _loop => method(Code $sub) {
+  _loop => sub {
+    my $self = shift;
+    my $sub = shift;
+
+    $OP::Recur::TIME = OP::DateTime->new(
       sprintf('%.03f', Time::HiRes::time())
     );
     my $now = $OP::Recur::TIME;
@@ -683,6 +719,9 @@ create "OP::Recur" => {
       if ( $now >= $nextPlanTime ) {
         $self->{_lastPlanTime} = $now;
 
+        $plan->clear;
+        undef $plan;
+
         $plan = $self->makePlan;
 
         OP::Recur::snooze(.001);
@@ -695,18 +734,28 @@ create "OP::Recur" => {
         my $wakeIn = $nextPlanTime - $now;
         if ( $wakeIn > 0 ) {
           OP::Recur::snooze($wakeIn);
+        } else {
+          OP::snooze(.001);
         }
       }
     }
   },
 
-  updatePlanForEvery => method(OP::Hash $plan, Num $ustart) {
+  # updatePlanForEvery => method(OP::Hash $plan, Num $ustart) {
+  updatePlanForEvery => sub {
+    my $self = shift;
+    my $plan = shift;
+    my $ustart = shift;
+
     my $ulen = $self->_planAhead * 1.5 * 1000;
 
     #
     # Add to schedule from the "every" rules:
     #
-    $self->every->each( sub(OP::Recur::Every $every) {
+    # $self->every->each( sub(OP::Recur::Every $every) {
+    $self->every->each( sub {
+      my $every = shift;
+
       my $uint = $every * 1000;
 
       for (
@@ -721,13 +770,21 @@ create "OP::Recur" => {
     } );
   },
 
-  updatePlanForAt => method(OP::Hash $plan, Num $start) {
+  # updatePlanForAt => method(OP::Hash $plan, Num $start) {
+  updatePlanForAt => sub {
+    my $self = shift;
+    my $plan = shift;
+    my $start = shift;
+
     my $len = $self->_planAhead * 1.5;
 
     #
     # Add to schedule from "at" rules:
     #
-    $self->at->each( sub(OP::Recur::At $at) {
+    # $self->at->each( sub(OP::Recur::At $at) {
+    $self->at->each( sub {
+      my $at = shift;
+
       my $year   = $at->year;
       my $month  = $at->month;
       my $day    = $at->day;
@@ -744,10 +801,10 @@ create "OP::Recur" => {
       ) {
         my @time = localtime($time);
 
-        my $thisYear   = defined($year) ? $year : $time[5] + 1900;
-        my $thisMonth  = defined($month) ? $month : $time[4] + 1;
-        my $thisDay    = defined($day) ? $day : $time[3];
-        my $thisHour   = defined($hour) ? $hour : $time[2];
+        my $thisYear   = defined($year)   ? $year   : $time[5] + 1900;
+        my $thisMonth  = defined($month)  ? $month  : $time[4] + 1;
+        my $thisDay    = defined($day)    ? $day    : $time[3];
+        my $thisHour   = defined($hour)   ? $hour   : $time[2];
         my $thisMinute = defined($minute) ? $minute : $time[1];
         my $thisSecond = defined($second) ? $second : $time[0];
 
@@ -761,12 +818,22 @@ create "OP::Recur" => {
     } );
   },
 
-  updatePlanForOn => method(OP::Hash $plan) {
+  # updatePlanForOn => method(OP::Hash $plan) {
+  updatePlanForOn => sub {
+    my $self = shift;
+    my $plan = shift;
+
     #
     # Add "on" rules:
     #
-    $self->on->each( sub(OP::Recur::On $on) {
-      $plan->each( sub( Num $time ) {
+    # $self->on->each( sub(OP::Recur::On $on) {
+    $self->on->each( sub {
+      my $on = shift;
+
+      # $plan->each( sub( Num $time ) {
+      $plan->each( sub {
+        my $time = shift;
+
         my @time = localtime($time);
 
         my ( $wantYear, $wantMonth, $wantDay ) =
@@ -792,12 +859,22 @@ create "OP::Recur" => {
     } );
   },
 
-  updatePlanForExceptOn => method(OP::Hash $plan) {
+  # updatePlanForExceptOn => method(OP::Hash $plan) {
+  updatePlanForExceptOn => sub {
+    my $self = shift;
+    my $plan = shift;
+
     #
     # Subtract "exceptOn" rules:
     #
-    $self->exceptOn->each( sub(OP::Recur::On $on) {
-      $plan->each( sub( Num $time ) {
+    # $self->exceptOn->each( sub(OP::Recur::On $on) {
+    $self->exceptOn->each( sub {
+      my $on = shift;
+
+      # $plan->each( sub( Num $time ) {
+      $plan->each( sub {
+        my $time = shift;
+
         my @time = localtime($time);
 
         my ( $wantYear, $wantMonth, $wantDay ) =
@@ -823,13 +900,21 @@ create "OP::Recur" => {
     } );
   },
 
-  updatePlanForExceptAt => method(OP::Hash $plan, Num $start) {
+  # updatePlanForExceptAt => method(OP::Hash $plan, Num $start) {
+  updatePlanForExceptAt => sub {
+    my $self = shift;
+    my $plan = shift;
+    my $start = shift;
+
     my $len = $self->_planAhead * 1.5;
 
     #
     # Subtract "exceptAt" rules:
     #
-    $self->exceptAt->each( sub(OP::Recur::At $at) {
+    # $self->exceptAt->each( sub(OP::Recur::At $at) {
+    $self->exceptAt->each( sub {
+      my $at = shift;
+
       my $year   = $at->year;
       my $month  = $at->month;
       my $day    = $at->day;
@@ -863,7 +948,10 @@ create "OP::Recur" => {
     } );
   },
 
-  makePlan => method() {
+  # makePlan => method() {
+  makePlan => sub {
+    my $self = shift;
+
     my $planKeys = OP::Hash->new;
 
     #

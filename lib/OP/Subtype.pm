@@ -250,14 +250,16 @@ This file is part of L<OP>.
 
 =cut
 
-use Perl6::Subs;
-
 use strict;
 use warnings;
 
 use base qw| OP::Class OP::Class::Dumper |;
 
-method new(OP::Subtype $class: *@value) {
+# method new(OP::Subtype $class: *@value) {
+sub new {
+  my $class = shift;
+  my @value = @_;
+
   my $value = ( scalar(@value) > 1 ) ? \@value : $value[0];
   
   return bless {
@@ -265,7 +267,10 @@ method new(OP::Subtype $class: *@value) {
   }, $class;
 }
 
-method value() {
+# method value() {
+sub value {
+  my $self = shift;
+
   return $self->{__value};
 }
 

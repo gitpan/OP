@@ -13,11 +13,13 @@ package OP::Name;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 use base qw| OP::Str |;
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isStr, @rules
   );

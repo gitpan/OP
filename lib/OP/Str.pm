@@ -66,11 +66,13 @@ package OP::Str;
 use strict;
 use warnings;
 
-use Perl6::Subs;
-
 use base qw| Unicode::String OP::Scalar MIME::Base64 |;
 
-method assert(OP::Class $class: *@rules) {
+# method assert(OP::Class $class: *@rules) {
+sub assert {
+  my $class = shift;
+  my @rules = @_;
+
   my %parsed = OP::Type::__parseTypeArgs(
     OP::Type::isStr, @rules
   );
@@ -81,34 +83,110 @@ method assert(OP::Class $class: *@rules) {
   return $class->__assertClass()->new(%parsed);
 }
 
-method split(Rule $regex) {
+# method split(Rule $regex) {
+sub split {
+  my $self = shift;
+  my $regex = shift;
+
   return OP::Array->new( CORE::split($regex, $self) );
 }
 
-method chomp() { CORE::chomp($self) }
+# method chomp() { CORE::chomp($self) }
+sub chomp {
+  my $self = shift;
 
-method chop() { CORE::chop($self) }
+  return CORE::chomp($self)
+}
 
-method chr() { CORE::chr($self) }
+# method chop() { CORE::chop($self) }
+sub chop {
+  my $self = shift;
 
-method crypt(Str $salt) { CORE::crypt($self, $salt) }
+  return CORE::chop($self);
+}
 
-method eval() { CORE::eval($self) }
+# method chr() { CORE::chr($self) }
+sub chr {
+  my $self = shift;
 
-method index(Str $substr, Int $pos) { CORE::index($self, $substr, $pos) }
+  return CORE::chr($self);
+}
 
-method lc() { CORE::lc($self) }
+# method crypt(Str $salt) { CORE::crypt($self, $salt) }
+sub crypt {
+  my $self = shift;
+  my $salt = shift;
 
-method lcfirst() { CORE::lcfirst($self) }
+  return CORE::crypt($self, $salt);
+}
 
-method length() { CORE::length($self) }
+# method eval() { CORE::eval($self) }
+sub eval {
+  my $self = shift;
 
-method rindex(Str $substr, Int $pos) { CORE::rindex($self, $substr, $pos) }
+  return CORE::eval($self);
+}
 
-method substr(Int $offset, Int $len) { CORE::substr($self, $offset, $len) }
+# method index(Str $substr, Int $pos) { CORE::index($self, $substr, $pos) }
+sub index {
+  my $self = shift;
+  my $substr = shift;
+  my $pos = shift;
 
-method uc() { CORE::uc($self) }
+  return CORE::index($self, $substr, $pos);
+}
 
-method ucfirst() { CORE::ucfirst($self) }
+# method lc() { CORE::lc($self) }
+sub lc {
+  my $self = shift;
+
+  return CORE::lc($self);
+}
+
+# method lcfirst() { CORE::lcfirst($self) }
+sub lcfirst {
+  my $self = shift;
+
+  return CORE::lcfirst($self);
+}
+
+# method length() { CORE::length($self) }
+sub length {
+  my $self = shift;
+
+  return CORE::length($self);
+}
+
+# method rindex(Str $substr, Int $pos) { CORE::rindex($self, $substr, $pos) }
+sub rindex {
+  my $self = shift;
+  my $substr = shift;
+  my $pos = shift;
+
+  return CORE::rindex($self, $substr, $pos);
+}
+
+# method substr(Int $offset, Int $len) { CORE::substr($self, $offset, $len) }
+sub substr {
+  my $self = shift;
+  my $offset = shift;
+  my $len = shift;
+
+  return CORE::substr($self, $offset, $len);
+}
+
+# method uc() { CORE::uc($self) }
+sub uc {
+  my $self = shift;
+
+  return CORE::uc($self);
+}
+
+# method ucfirst() { CORE::ucfirst($self) }
+sub ucfirst {
+  my $self = shift;
+
+  return CORE::ucfirst($self);
+}
 
 1;
