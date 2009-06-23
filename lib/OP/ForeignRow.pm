@@ -15,9 +15,17 @@ use OP;
 use OP::Constants qw| dbHost dbPass dbPort dbUser |;
 
 create "OP::ForeignRow" => {
-  __init => method(OP::Class $class:) { },
+  __init => sub {
+    my $class = shift;
 
-  __baseAsserts => method(OP::Class $class:) {
+    #
+    # Abstract Method
+    #
+  },
+
+  __baseAsserts => sub {
+    my $class = shift;
+
     my $asserts = $class->get('DBIASSERTS');
 
     if ( !$asserts ) {
@@ -45,13 +53,17 @@ create "OP::ForeignRow" => {
     return $asserts;
   },
 
-  __DSN => method(OP::Class $class:) {
+  __DSN => sub {
+    my $class = shift;
+
     return sprintf( $class->__DSNSTRING(),
       $class->__DBNAME(), $class->__DBHOST(), $class->__DBPORT()
     );
   },
 
-  __DSNSTRING => method(OP::Class $class:) {
+  __DSNSTRING => sub {
+    my $class = shift;
+
     my $str = $class->get("__DSNSTRING");
 
     if ( !$str ) {
@@ -62,7 +74,9 @@ create "OP::ForeignRow" => {
     return $str;
   },
 
-  __DBNAME  => method(OP::Class $class:) {
+  __DBNAME  => sub {
+    my $class = shift;
+
     my $dbName = $class->get("__DBNAME");
 
     if ( !$dbName ) {
@@ -73,7 +87,9 @@ create "OP::ForeignRow" => {
     return $dbName;
   },
 
-  __DBHOST  => method(OP::Class $class:) {
+  __DBHOST  => sub {
+    my $class = shift;
+
     my $dbHost = $class->get("__DBHOST");
 
     if ( !$dbHost ) {
@@ -84,7 +100,9 @@ create "OP::ForeignRow" => {
     return $dbHost;
   },
 
-  __DBPORT  => method(OP::Class $class:) {
+  __DBPORT  => sub {
+    my $class = shift;
+
     my $dbPort = $class->get("__DBPORT");
 
     if ( !$dbPort ) {
@@ -95,7 +113,9 @@ create "OP::ForeignRow" => {
     return $dbPort;
   },
 
-  __DBUSER  => method(OP::Class $class:) {
+  __DBUSER  => sub {
+    my $class = shift;
+
     my $dbUser = $class->get("__DBUSER");
 
     if ( !$dbUser ) {
@@ -106,7 +126,9 @@ create "OP::ForeignRow" => {
     return $dbUser;
   },
 
-  __DBPASS  => method(OP::Class $class:) {
+  __DBPASS  => sub {
+    my $class = shift;
+
     my $dbPass = $class->get("__DBPASS");
 
     if ( !$dbPass ) {
@@ -117,7 +139,9 @@ create "OP::ForeignRow" => {
     return $dbPass;
   },
 
-  __dbh => method(OP::Class $class:) {
+  __dbh => sub {
+    my $class = shift;
+
     my $dbName = $class->__DBNAME();
 
     my $dbi = $class->get("__DBI");
@@ -147,7 +171,9 @@ create "OP::ForeignRow" => {
     return $dbi->{$dbName}->{$$}->get_dbh();
   },
 
-  tableName => method(OP::Class $class:) {
+  tableName => sub {
+    my $class = shift;
+
     my $tableName = $class->get("__TABLENAME");
 
     if ( !$tableName ) {
@@ -159,7 +185,10 @@ create "OP::ForeignRow" => {
     return $tableName;
   },
 
-  loadByName => method(OP::Class $class: Str $name) {
+  loadByName => sub {
+    my $class = shift;
+    my $name = shift;
+
     my $query = sprintf( q|
       select * from %s where name = %s
     |, $class->tableName, $class->quote($name) );
@@ -175,11 +204,15 @@ create "OP::ForeignRow" => {
     return $self;
   },
 
-  save => method() {
+  save => sub {
+    my $self = shift;
+
     die "This isn't happening today";
   },
 
-  exists => method() {
+  exists => sub {
+    my $self = shift;
+
     return $self->class->doesNameExist($self->name);
   },
 

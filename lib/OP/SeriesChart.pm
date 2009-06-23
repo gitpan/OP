@@ -41,7 +41,30 @@ create "OP::SeriesChart" => {
 
   colors => OP::Array->assert(
     OP::Array->assert(
-      OP::Int->assert()
+      OP::Int->assert(
+        ::min(0),
+        ::max(255),
+      ),
+      ::size(3),
+    ),
+    ::default(
+      # Neat site
+      # http://www.personal.psu.edu/cab38/ColorBrewer/ColorBrewer.html
+
+      # green
+      [ 35, 200, 69 ],
+      # orange
+      [ 250, 92, 1 ],
+      # red
+      [ 250, 24, 29 ],
+      # gray
+      [ 150, 150, 150 ],
+      # pink
+      [ 250, 64, 126 ],
+      # lavender i guess
+      [ 106, 81, 163 ],
+      # blue
+      [ 33, 113, 181 ],
     ),
   ),
 
@@ -204,46 +227,21 @@ create "OP::SeriesChart" => {
   ycCeil => sub($) {
     my $self = shift;
 
-    return $self->height()-25;
-    # return $self->height()-1;
+    # return $self->height()-25;
+    return $self->height()-1;
   },
 
   xcFloor => sub($) {
     my $self = shift;
 
-    return 15;
-    # return 0;
+    # return 15;
+    return 0;
   },
 
   render => sub($) {
     my $self = shift;
 
     return undef if !$self->{_series};
-
-    # $self->setBgColor(32,32,32);
-    # $self->setBgColor(255,255,255);
-    # $self->setGridColor(128,128,128,.1);
-    # $self->setUnitColor(96,96,96,.6);
-
-    $self->setColors(
-      # Neat site
-      # http://www.personal.psu.edu/cab38/ColorBrewer/ColorBrewer.html
-
-      # green
-      [ 35, 200, 69 ], [ 116, 196, 118 ], [ 186, 228, 179 ],
-      # orange
-      [ 250, 92, 1 ], [ 253, 161, 60 ], [ 253, 210, 133 ],
-      # red
-      [ 250, 24, 29 ], [ 251, 106, 74 ], [ 252, 174, 145 ],
-      # gray
-      [ 150, 150, 150 ], [ 200, 200, 200 ], [ 250, 250, 250 ],
-      # pink
-      [ 250, 64, 126 ], [ 251, 104, 161 ], [ 252, 180, 185 ],
-      # lavender i guess
-      [ 106, 81, 163 ], [ 158, 154, 200 ], [ 203, 201, 226 ],
-      # blue
-      [ 33, 113, 181 ], [ 107, 174, 214 ], [ 189, 215, 231 ],
-    );
 
     if ( !$self->{_image} ) {
       my $image = Image::Magick->new(
@@ -278,12 +276,9 @@ create "OP::SeriesChart" => {
     my $base = { };
     my $prev = { };
     my $xTicks = OP::Hash->new();
-    my $xTicksY = OP::Hash->new();
-
-    my $prevLabelHeight;
 
     $self->{_series}->each( sub {
-      my $series = $_;
+      my $series = shift;
 
       my $color = $self->colors()->shift();
       $self->colors()->push($color);
@@ -297,10 +292,26 @@ create "OP::SeriesChart" => {
 
       my $firstYC;
 
+      my $minY;
+      my $minYX;
+
+      my $maxY;
+      my $maxYX;
+
       my $points = $keys->collect(sub {
-        my $x = $_;
+        my $x = shift;
         my $y = $data->{$x};
         my $rawY = $y;
+
+        if ( !defined($minY) || $y < $minY ) {
+          $minY = $y;
+          $minYX = $x;
+        }
+
+        if ( !defined($maxY) || $y > $maxY ) {
+          $maxY = $y;
+          $maxYX = $x;
+        }
 
         my $baseY = 0;
 
@@ -360,108 +371,6 @@ create "OP::SeriesChart" => {
         }
 
         $xTicks->{$xc} = $x;
-        $xTicksY->{$xc} = $yc;
-
-        my $coord;
-
-        if ( $self->stacked() ) {
-          $coord = sprintf(
-            '%i,%i %i,%i',
-            $xc+$xNudge,$yc+($offset*2.5),
-            $xc+$xNudge+$offset,$yc+($offset*4)
-          );
-        } else {
-          $coord = sprintf(
-            '%i,%i %i,%i',
-            $xc+$xNudge,$yc,
-            $xc+$xNudge+$offset,$yc+($offset*2)
-          );
-        }
-
-        my $smallStack = 6;
-
-        if ( $series->yInterpolate() == OP::Enum::Inter::Constant ){
-          $smallStack = 4;
-        }
-        $shapeStack->push( sub {
-          if ( !$self->stacked() ) {
-            return();
-          } elsif ( $xc < $self->xcFloor() + 20 &&
-              $series->yInterpolate() != OP::Enum::Inter::Constant
-          ) {
-            return();
-          } elsif ( $xc > $self->width() - 20 ) {
-            return();
-          } elsif ( $self->height() < 240 ) {
-            return();
-          } elsif ( $self->{_series}->size <= $smallStack ) {
-            return();
-          } else {
-            my $stroke = $self->height() < 240
-              ? sprintf('rgba(%s)', join(',',@$color,.16))
-              : 'none';
-       
-            my $err = $self->{_image}->Draw(
-              primitive => 'circle',
-              points => $coord,
-              fill => sprintf('rgba(%s)', join(',',@$color,.16)),
-              stroke => $stroke
-            );
-
-            die $err if $err;
-          };
-        } );
-
-        $labelStack->unshift( sub {
-          $self->{_image}->Draw(
-            primitive => 'circle',
-            points => sprintf('%i,%i %i,%i', $xc,$yc,$xc+4,$yc+4),
-            fill => sprintf('rgba(%s)', join(',',@$color,.16)),
-            stroke => "None"
-          );
-
-          my $adjXC = $xc;
-          my $align = "Center";
-
-          if (
-            ( $adjXC < $self->xcFloor() + 100 )
-              || ( $adjXC > $self->width() - 40 )
-              || ( $self->height() < 320 )
-          ) {
-            return();
-          }
-
-          my $pointsize = $self->stacked()
-            && $self->{_series}->size() > $smallStack 
-            ? 3 * sqrt($offset) : 2 * sqrt($offset);
-
-          $pointsize = 9 if $pointsize < 9;
-          $pointsize = 18 if $pointsize > 18;
-
-          my $err = $self->{_image}->Annotate(
-            font => $self->font,
-            pointsize => $pointsize,
-            x => $adjXC + $xNudge + 1,
-            y => $self->stacked() ? $yc+($offset*2.75) + 1 : $yc + 1,
-            fill => sprintf('rgba(%s)', $self->bgColor->join(",")),
-            text => sprintf('%.02f',$rawY),
-            align => $align
-          );
-
-          die $err if $err;
-
-          $err = $self->{_image}->Annotate(
-            font => $self->font,
-            pointsize => $pointsize,
-            x => $adjXC + $xNudge,
-            y => $self->stacked() ? $yc+($offset*2.75) : $yc,
-            fill => sprintf('rgba(%s)', join(',',@$color,1)),
-            text => sprintf('%.02f',$rawY),
-            align => $align
-          );
-
-          die $err if $err;
-        } );
 
         $lastXC = $xc;
         $prev->{$xc} = $yc;
@@ -483,59 +392,14 @@ create "OP::SeriesChart" => {
         OP::Array::yield(@$pointset);
       } );
 
-      my $labelHeight = $firstYC;
-
-      if ( $prevLabelHeight ) {
-        until ( $labelHeight < $prevLabelHeight - 10 ) {
-          $labelHeight--;
-        }
-      }
-
-      $prevLabelHeight = $labelHeight;
-
-      if ( $self->{_series}->size() > 1 && $series->name() ) {
-        $labelStack->push( sub {
-          my $pointsize = 9;
-          my $align = "Left";
-
-          my $err = $self->{_image}->Annotate(
-            font => $self->font,
-            pointsize => $pointsize,
-            x => $self->xcFloor() + 1,
-            y => $labelHeight,
-            fill => sprintf('rgba(%s)', $self->bgColor()->join(",")),
-            text => $series->name(),
-            align => $align
-          );
-
-          die $err if $err;
-
-          $err = $self->{_image}->Annotate(
-            font => $self->font,
-            pointsize => $pointsize,
-            x => $self->xcFloor() + 2,
-            y => $labelHeight - 1,
-            fill => sprintf('rgba(%s)', join(',',@$color,1)),
-            text => $series->name(),
-            align => $align
-          );
-
-          die $err if $err;
-        } );
-      }
-
       $points->unshift( sprintf('%i,%i',$self->xcFloor(),$firstYC) );
       $points->unshift( sprintf('%i,%i',$self->xcFloor(),$self->ycCeil()) );
       $points->push( sprintf('%i,%i',$self->width()-1,$lastYC));
       $points->push( sprintf('%i,%i',$self->width()-1,$self->ycCeil()) );
 
-      my $stroke = ($self->height() < 320) || $self->{_series}->size() <= 8
-        ? sprintf('rgba(%s)', join(',',@$color,.5))
-        : sprintf('rgba(%s)', join(',',@$color,.5));
-        # : 'none';
+      my $stroke = sprintf('rgba(%s)', join(',',@$color,1));
 
       $lineStack->unshift( sub {
-        # if ( $self->stacked() ) 
         {
           my $err = $self->{_image}->Draw(
             primitive => 'polygon',
@@ -556,6 +420,77 @@ create "OP::SeriesChart" => {
 
         die $err if $err;
       } );
+
+      $labelStack->push( sub {
+        my $minBaseY = 0;
+        my $maxBaseY = 0;
+
+        if ( $self->stacked() ) {
+          for ( @{ $self->{_series} } ) {
+            last if $_ == $series;
+
+            $minBaseY += $_->yForX($minYX);
+            $maxBaseY += $_->yForX($maxYX);
+          }
+        }
+
+        my $minYXC = $self->xValueToCoord($minYX);
+        my $minYC = $self->yValueToCoord($minY + $minBaseY);
+
+        my $err;
+
+        # my $err = $self->{_image}->Draw(
+          # primitive => 'line',
+          # points => join(',',$minYXC,$minYC,$minYXC,$self->height()-1),
+          # stroke => sprintf('rgba(%s)',join(',',@$color,.25)),
+        # );
+
+        # die $err if $err;
+
+        my $minText = sprintf('Min: %.02f', $minY) ."\n".
+          OP::Utility::date($minYX) ."\n".
+          OP::Utility::time($minYX);
+
+        $err = $self->{_image}->Annotate(
+          font => $self->font,
+          pointsize => 11,
+          x => $minYXC,
+          y => $minYC,
+          fill => sprintf('rgba(%s)',join(',',@$color,1)),
+          text => $minText,
+          align => "Center",
+        );
+
+        die $err if $err;
+
+        my $maxYXC = $self->xValueToCoord($maxYX);
+        my $maxYC = $self->yValueToCoord($maxY + $maxBaseY);
+
+        # $err = $self->{_image}->Draw(
+          # primitive => 'line',
+          # points => join(',',$maxYXC,$maxYC,$maxYXC,$self->height()-1),
+          # stroke => sprintf('rgba(%s)',join(',',@$color,.25)),
+        # );
+
+        # die $err if $err;
+
+        my $maxText = sprintf('Max: %.02f', $maxY) ."\n".
+          OP::Utility::date($maxYX) ."\n".
+          OP::Utility::time($maxYX);
+
+        $err = $self->{_image}->Annotate(
+          font => $self->font,
+          pointsize => 11,
+          x => $maxYXC,
+          y => $maxYC,
+          fill => sprintf('rgba(%s)',join(',',@$color,1)),
+          text => $maxText,
+          align => "Center",
+        );
+
+        die $err if $err;
+      } );
+
     } );
 
     #
@@ -568,7 +503,7 @@ create "OP::SeriesChart" => {
     my $prevXC = 0;
 
     $xTicks->keys()->sort(sub{ shift() <=> shift() })->each( sub {
-      my $x = $_;
+      my $x = shift;
 
       if ( $prevXC + 72 > $x ) { return(); }
 
@@ -585,17 +520,15 @@ create "OP::SeriesChart" => {
       if (
         ( $x == $xTicks->keys()->min() ) 
           || ( $x == $xTicks->keys()->max() )
-          || ( $x < $self->xcFloor() + 20 )
-          || ( $x > $self->width() - 20 )
       ) {
         return();
       }
 
       $err = $self->{_image}->Annotate(
         font => $self->font,
-        pointsize => 10,
+        pointsize => 9,
         x => $x + 3,
-        y => $self->ycCeil() + 10,
+        y => 10,
         fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
         text => OP::Utility::date($xTicks->{$x}) ."\n".
           OP::Utility::time($xTicks->{$x}),
@@ -605,96 +538,6 @@ create "OP::SeriesChart" => {
 
       die $err if $err;
     } );
-
-    #
-    # Left border
-    #
-    $self->{_image}->Draw(
-      primitive => 'line',
-      points => join(
-        ',',$self->xcFloor(),$self->ycCeil(),$self->width()-1,$self->ycCeil()
-      ),
-      stroke => "rgba(128,128,128,.85)",
-    );
-
-    #
-    # Bottom border
-    #
-    $self->{_image}->Draw(
-      primitive => 'line',
-      points => join(',',$self->xcFloor(),0,$self->xcFloor(),$self->ycCeil()),
-      stroke => "rgba(128,128,128,.85)",
-    );
-
-    #
-    # Right border
-    #
-    $self->{_image}->Draw(
-      primitive => 'line',
-      points => join(',',$self->width()-1,0,$self->width()-1,$self->ycCeil()),
-      stroke => "rgba(128,128,128,.85)",
-    );
-
-    #
-    # Top border
-    #
-    # $self->{_image}->Draw(
-      # primitive => 'line',
-      # points => join(',',$self->xcFloor(),0,$self->width()-1,0),
-      # stroke => "rgba(128,128,128,.85)",
-    # );
-
-    # my $prevLabel;
-
-    for ( my $y = $self->ycCeil(); $y >= 0; $y -= 35 ) {
-      my $err = $self->{_image}->Draw(
-        primitive => 'line',
-        points => join(',',0,$y,$self->width()-1,$y),
-        stroke => sprintf('rgba(%s)',$self->gridColor()->join(',')),
-      );
-
-      die $err if $err;
-
-      my $label = $self->yCoordToValue($y);
-
-      # next if $prevLabel && $label == $prevLabel;
-
-      $err = $self->{_image}->Annotate(
-        font => $self->font,
-        pointsize => 10,
-        x => $self->xcFloor()-2,
-        y => $y + 8,
-        fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
-        text => $label,
-        align => "Right",
-      );
-
-      die $err if $err;
-
-      # $prevLabel = $label;
-    }
-
-    if ( $self->{_series}->size() == 1 ) {
-      $self->{_image}->Annotate(
-        font => $self->font,
-        pointsize => 11,
-        x => ( $self->xcFloor() + $self->width() - 1 ) / 2,
-        y => 14,
-        fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
-        text => $self->{_series}->first()->name() || "Untitled",
-        align => "Center",
-      );
-
-      $self->{_image}->Annotate(
-        font => $self->font,
-        pointsize => 24,
-        x => $self->width() - 20,
-        y => $self->ycCeil() - 20,
-        fill => sprintf('rgba(%s)',$self->unitColor()->join(',')),
-        text => sprintf('Avg: %.02f Pct', $self->{_series}->first()->_prepped()->values()->average()),
-        align => "Right",
-      );
-    }
 
     while ( @{ $labelStack } ) { &{ $labelStack->shift() } }
 

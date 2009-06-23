@@ -13,13 +13,17 @@ use warnings;
 
 use OP;
 
+use Error qw| :try |;
+
 use Lexical::Persistence;
 use Term::ReadLine;
 
 create "OP::Shell" => {
   __BASE__ => "OP::Hash",
 
-  _init => method() {
+  _init => sub {
+    my $self = shift;
+
     my $class = $self->class();
 
     $self->{_perl} = Lexical::Persistence->new();
@@ -30,7 +34,9 @@ create "OP::Shell" => {
     return true;
   },
 
-  help => method() {
+  help => sub {
+    my $self = shift;
+
     print "Commands:\n";
     print "  empty line    # compile & continue\n";
     print "  exit          # exit\n";
@@ -39,7 +45,9 @@ create "OP::Shell" => {
     print "\n";
   },
 
-  historyFile => method() {
+  historyFile => sub {
+    my $self = shift;
+
     #
     # Set up history file
     #
@@ -48,7 +56,9 @@ create "OP::Shell" => {
       : ".op_history";
   },
 
-  run => method() {
+  run => sub {
+    my $self = shift;
+
     print "Welcome to the OP Perl shell.\n";
     print "\n";
 

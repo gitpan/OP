@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.300';
+our $VERSION = '0.301';
 
 use strict;
 use diagnostics;
@@ -79,7 +79,7 @@ our @EXPORT = (
   #
   # From Error:
   #
-  "try", "catch", "with", "finally",
+  # "try", "catch", "with", "finally",
   #
   # Subtyping functions:
   #
@@ -123,7 +123,7 @@ OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
-This documentation is for version B<0.300> of OP.
+This documentation is for version B<0.301> of OP.
 
 =head1 STATUS
 

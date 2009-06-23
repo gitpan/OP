@@ -503,7 +503,9 @@ C<sub{}>.
     #
     # Add a public instance method, $self->handleFoo()
     #
-    handleFoo => method() {
+    handleFoo => sub {
+      my $self = shift;
+
       printf 'The value of foo is %s', $self->foo();
       print "\n";
 

@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.300
+version:             0.301
 abstract:            Compact Perl 5 class prototyping with object persistence
 license:             ~
 author:              ~

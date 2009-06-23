@@ -540,7 +540,9 @@ any other Perl operation to derive the appropriate values:
     #
     # Inherit parent class's base asserts, tack on "foo"
     #
-    __baseAsserts => method(OP::Class $class:) {
+    __baseAsserts => sub {
+      my $class = shift;
+
       my $base = $class->SUPER::__baseAsserts();
 
       $base->{foo} = OP::Str->assert();

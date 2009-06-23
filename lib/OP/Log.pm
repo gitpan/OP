@@ -135,11 +135,15 @@ use OP::RRNode;
 use OP::Series;
 
 create "OP::Log" => {
-  __numRows  => method(OP::Class $class:) {
+  __numRows  => sub {
+    my $class = shift;
+
     return $class->get("__numRows") || 100;
   },
 
-  __baseAsserts => method(OP::Class $class:) {
+  __baseAsserts => sub {
+    my $class = shift;
+
     my $asserts = OP::Node->__baseAsserts();
 
     $asserts->{numRows} = OP::Int->assert(
@@ -184,7 +188,9 @@ create "OP::Log" => {
   #
   # These will become table names; can't use GUID for that.
   #
-  _newId => method() {
+  _newId => sub {
+    my $self = shift;
+
     return OP::Utility::randstr();
   },
 
@@ -195,7 +201,9 @@ create "OP::Log" => {
   # which translates to an InnoDB table name of log_9dj3J4
   # in the "op" database
   #
-  messageClass => method() {
+  messageClass => sub {
+    my $self = shift;
+
     if ( !ref($self) ) {
       my ($package, $filename, $line) = caller(1);
       die "Not a class method, check $filename:$line";
@@ -223,7 +231,9 @@ create "OP::Log" => {
     return $messageClassName;
   },
 
-  newMessage => method() {
+  newMessage => sub {
+    my $self = shift;
+
     my $messageClass = $self->messageClass();
 
     if ( !$messageClass ) {
@@ -234,7 +244,10 @@ create "OP::Log" => {
     return $messageClass->new();
   },
 
-  write => method(Str $text){
+  write => sub {
+    my $self = shift;
+    my $text = shift;
+
     #
     # Class method delegates to Persistence
     #
@@ -256,7 +269,10 @@ create "OP::Log" => {
     return $message;
   },
 
-  record => method(Num $number){
+  record => sub {
+    my $self = shift;
+    my $number = shift;
+
     my $message = $self->newMessage();
 
     if ( !$message ) {
@@ -271,7 +287,11 @@ create "OP::Log" => {
     return $message;
   },
 
-  series => method(Num $startTime, Num $endTime){
+  series => sub {
+    my $self = shift;
+    my $startTime = shift;
+    my $endTime = shift;
+
     my $series = OP::Series->new({
       xMin       => $startTime,
       xMax       => $endTime,
