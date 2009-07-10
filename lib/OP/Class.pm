@@ -555,19 +555,8 @@ the literal value to be used for the class variable.
     __dbiType => OP::DBIType::MySQL
   };
 
-OP class variables are just Perl package variables, scoped in a list
-using C<our>.
-
-  package OP::Example;
-
-  use OP qw| true false |;
-
-  use base qw| OP::Node |;
-
-  our @__useYaml = false;
-  our @__dbiType = OP::DBIType::MySQL;
-
-  true;
+OP class variables are just Perl package variables, scoped in list
+context.
 
 =head2 Class Methods
 

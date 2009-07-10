@@ -20,9 +20,7 @@ lib/OP/Exceptions.pm
 lib/OP/Subtype.pm
 lib/OP/Object.pm
 lib/OP/Int.pm
-lib/OP/Recur.pm
 lib/OP/Persistence/SQLite.pm
-lib/OP/Persistence/Async.pm
 lib/OP/Persistence/MySQL.pm
 lib/OP/Bool.pm
 lib/OP/Array.pm
@@ -41,11 +39,6 @@ lib/OP/Enum/Consol.pm
 lib/OP/TimeSpan.pm
 lib/OP/ID.pm
 lib/OP/Utility.pm
-lib/OP/Recur/On.pm
-lib/OP/Recur/Break.pm
-lib/OP/Recur/Each.pm
-lib/OP/Recur/At.pm
-lib/OP/Recur/Every.pm
 lib/OP/Float.pm
 lib/OP/Persistence.pm
 lib/OP/URI.pm

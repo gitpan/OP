@@ -8,12 +8,20 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
-package OP::Array::YieldedItems;
+
+package OP::Array::Break;
+
+#
+# Break may be thrown inside of collect() subs to make OP stop
+# iterating through elements.
+#
 
 use strict;
 use warnings;
 
 use base qw/ Error::Simple /;
+
+package OP::Array::YieldedItems;
 
 #
 # YieldedItems are thrown by OP::Array::yield()
@@ -21,6 +29,12 @@ use base qw/ Error::Simple /;
 # This is blatant abuse of Error.pm's ability to play tricks with
 # the state of the interpreter... but it works so well!
 #
+
+use strict;
+use warnings;
+
+use base qw/ Error::Simple /;
+
 sub new {
   my $class = shift;
 
@@ -81,7 +95,7 @@ use OP::Class qw| true false |;
 
 use base qw| Exporter OP::Class::Dumper OP::Object |;
 
-our @EXPORT_OK = qw| yield emit |;
+our @EXPORT_OK = qw| yield emit break |;
 
 # method value() {
 sub value {
@@ -256,7 +270,7 @@ sub assert {
 
 =over 4
 
-=item * $self->get($index)
+=item * $array->get($index)
 
 Get the received array index. Functionally the same as $ref->[$index].
 
@@ -282,7 +296,7 @@ sub get {
 
 =pod
 
-=item * $self->set($index, $value)
+=item * $array->set($index, $value)
 
 Set the received array index to the received value. Functionally the
 same as $ref->[$index] = $value.
@@ -314,7 +328,7 @@ sub set {
 
 =pod
 
-=item * $self->push(@list)
+=item * $array->push(@list)
 
 Object wrapper for Perl's built-in C<push()> function.  Functionally the
 same as C<push(@$ref, @list)>.
@@ -338,7 +352,7 @@ sub push {
 
 =pod
 
-=item * $self->size()
+=item * $array->size()
 
 Object wrapper for Perl's built-in C<scalar()> function. Functionally the
 same as C<scalar(@$ref)>.
@@ -363,9 +377,9 @@ do {
 
 =pod
 
-=item * $self->collect($sub)
+=item * $array->collect($sub)
 
-=item * $self->collectWithIndex($sub)
+=item * $array->collectWithIndex($sub)
 
 =item * yield(item, [item, ...]), emit(item, [item, ...]), return, break
 
@@ -426,7 +440,7 @@ The flow of the collect sub may be controlled using C<return>,
 C<yield>, C<emit>, and C<break>.
 
 C<break> invokes Perl's C<last>, breaking execution of the C<collect>
-loop. C<break> is exported from L<OP::Recur>.
+loop.
 
 In the context of the collect sub, C<return> is like Perl's C<next> or
 Javascript's C<continue>- that is, it stops execution of the sub in
@@ -575,7 +589,7 @@ sub collect {
 
       if ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::YieldedItems") ) {
         $results->push($thrown->items());
-      } elsif ( $thrown && UNIVERSAL::isa($thrown, "OP::Recur::Break") ) {
+      } elsif ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::Break") ) {
         #
         # "break" was called
         #
@@ -618,12 +632,16 @@ sub yield {
   OP::Array::YieldedItems->throw(@_);
 };
 
+sub break {
+  OP::Array::Break->throw();
+}
+
 
 =pod
 
-=item * $self->each($sub)
+=item * $array->each($sub)
 
-=item * $self->eachWithIndex($sub)
+=item * $array->eachWithIndex($sub)
 
 =item * return, break
 
@@ -695,7 +713,7 @@ sub each {
     if ( $@ ) {
       my $thrown = $Error::THROWN;
 
-      if ( $thrown && UNIVERSAL::isa($thrown, "OP::Recur::Break") ) {
+      if ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::Break") ) {
         #
         # "break" was called
         #
@@ -726,7 +744,7 @@ sub eachWithIndex {
 
 =pod
 
-=item * $self->join($joinStr)
+=item * $array->join($joinStr)
 
 Object wrapper for Perl's built-in C<join()> function. Functionally the
 same as C<join($joinStr, @{ $self })>.
@@ -748,7 +766,7 @@ sub join {
 
 =pod
 
-=item * $self->compact()
+=item * $array->compact()
 
 Removes any undefined elements from self.
 
@@ -778,7 +796,7 @@ sub compact {
 
 =pod
 
-=item * $self->unshift()
+=item * $array->unshift()
 
 Object wrapper for Perl's built-in C<unshift()> function. Functionally
 the same as C<unshift(@{ $self })>.
@@ -798,7 +816,7 @@ sub unshift {
 
 =pod
 
-=item * $self->rand()
+=item * $array->rand()
 
 Returns a pseudo-random array element.
 
@@ -818,19 +836,19 @@ sub rand {
 
 =pod
 
-=item * $self->isEmpty()
+=item * $array->isEmpty()
 
 Returns a true value if self contains no values, otherwise false.
 
   my $array = OP::Array->new();
 
-  if ( $self->isEmpty() ) {
+  if ( $array->isEmpty() ) {
     print "Foo\n";
   }
 
   $array->push('anything');
 
-  if ( $self->isEmpty() ) {
+  if ( $array->isEmpty() ) {
     print "Bar\n";
   }
 
@@ -852,7 +870,7 @@ sub isEmpty {
 
 =pod
 
-=item * $self->includes($value)
+=item * $array->includes($value)
 
 Returns a true value if self includes the received value, otherwise false.
 
@@ -883,7 +901,7 @@ sub includes {
 
 =pod
 
-=item * $self->grep($expr, [$mod])
+=item * $array->grep($expr, [$mod])
 
 Returns an array of scalar matches if the expression has any hits in
 the array. Wrapper for Perl's built-in C<grep()> function.
@@ -939,7 +957,7 @@ sub grep {
 
 =pod
 
-=item * $self->clear()
+=item * $array->clear()
 
 Removes all items, leaving self with zero array elements.
 
@@ -968,7 +986,7 @@ sub clear {
 
 =pod
 
-=item * $self->purge()
+=item * $array->purge()
 
 Explicitly purges each item in self, leaving self with zero array elements.
 
@@ -993,7 +1011,7 @@ sub purge {
 
 =pod
 
-=item * $self->average()
+=item * $array->average()
 
 Returns the average of all items in self.
 
@@ -1019,7 +1037,7 @@ sub average {
 
 =pod
 
-=item * $self->median()
+=item * $array->median()
 
 Returns the median value of all items in self.
 
@@ -1051,7 +1069,7 @@ sub median {
 
 =pod
 
-=item * $self->max()
+=item * $array->max()
 
 Returns the highest value of all items in self.
 
@@ -1081,7 +1099,7 @@ do {
 
 =pod
 
-=item * $self->min()
+=item * $array->min()
 
 Returns the lowest value of all items in self.
 
@@ -1110,7 +1128,7 @@ do {
 
 =pod
 
-=item * $self->sum()
+=item * $array->sum()
 
 Returns the sum of all items in self.
 
@@ -1135,16 +1153,41 @@ sub sum {
 
 =pod
 
-=item * $self->sort([$function])
+=item * $array->stddev()
+
+Return the standard deviation of the current set.
+
+  my $array = OP::Array->new(2, 4, 4, 4, 5, 5, 7, 9);
+
+  my $stddev = $array->stddev;
+  # 2
+
+=cut
+
+sub stddev {
+  my $self = shift;
+
+  my $avg = $self->average;
+
+  return sqrt( $self->collect( sub {
+    my $i = shift;
+
+    OP::Array::yield( ( $i - $avg ) ** 2 );
+  } )->average );
+}
+
+=pod
+
+=item * $array->sort([$function])
 
 Wrapper to Perl's built-in C<sort> function.
 
 Accepts an optional argument, a sort function to be used. Sort function
 should take $a and $b as arguments.
 
-  my $alphaSort = $self->sort();
+  my $alphaSort = $array->sort();
 
-  my $numSort = $self->sort(sub{ shift() <=> shift() });
+  my $numSort = $array->sort(sub{ shift() <=> shift() });
   
 =cut
 
@@ -1167,9 +1210,9 @@ sub sort {
 
 =pod
 
-=item * $self->first()
+=item * $array->first()
 
-Returns the first item in the array. Same as $self->[0].
+Returns the first item in the array. Same as $array->[0].
 
   my $array = OP::Array->new( qw| alpha larry omega | );
 
@@ -1190,9 +1233,9 @@ sub first {
 
 =pod
 
-=item * $self->last()
+=item * $array->last()
 
-Returns the final item in the array. Same as $self->[-1].
+Returns the final item in the array. Same as $array->[-1].
 
   my $array = OP::Array->new( qw| alpha larry omega | );
 
@@ -1213,7 +1256,7 @@ sub last {
 
 =pod
 
-=item * $self->uniq();
+=item * $array->uniq();
 
 Returns a copy of self with duplicate elements removed.
 
@@ -1242,7 +1285,7 @@ sub uniq {
 
 =pod
 
-=item * $self->reversed();
+=item * $array->reversed();
 
 Returns a copy of self with elements in reverse order
 
@@ -1264,7 +1307,7 @@ sub reversed {
 
 =pod
 
-=item * $self->pop()
+=item * $array->pop()
 
 Object wrapper for Perl's built-in C<pop()> function. Functionally
 the same as C<pop(@{ $self })>.
@@ -1298,7 +1341,7 @@ sub pop {
 
 =pod
 
-=item * $self->shift()
+=item * $array->shift()
 
 Object wrapper for Perl's built-in C<shift()> function. Functionally
 the same as C<shift(@{ $self })>.

@@ -21,7 +21,7 @@ eval { @EXPORT = @EXPORT_OK };
 
 =head1 NAME
 
-OP::Enum::MonthsOfYear - Named days of week (English)
+OP::Enum::MonthsOfYear - Named months of year (English)
 
 1-Index version constants (where January = 1) are:
 

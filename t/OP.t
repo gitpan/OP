@@ -1,7 +1,7 @@
 use strict;
 use diagnostics;
 
-use Test::More tests => 30;
+use Test::More tests => 29;
 
 my $temprc = "/tmp/.oprc";
 
@@ -10,7 +10,9 @@ my $temprc = "/tmp/.oprc";
 #
 # Set up a fake .oprc so testing may proceed.
 #
-# This gets removed when testing is complete.
+# The fake .oprc gets removed when testing is complete.
+#
+# Tests will fail if /tmp is not writable :-/
 #
 open(OPRC, ">", $temprc) || die $@;
 
@@ -116,8 +118,6 @@ isa_ok( OP::EmailAddr->new('root@example.com'), "OP::EmailAddr");
 # HASHES
 #
 isa_ok( OP::Hash->new, "OP::Hash");
-
-isa_ok( OP::Recur->new, "OP::Recur");
 
 #
 # Remove the tempfile

@@ -54,6 +54,7 @@ create "OP::Series" => {
     OP::Enum::Consol::First,
     OP::Enum::Consol::Last,
     OP::Enum::Consol::Random,
+    OP::Enum::Consol::StdDev,
     ::default( OP::Enum::Consol::Average )
   ),
 
@@ -252,6 +253,8 @@ create "OP::Series" => {
       return $array->min();
     } elsif ( $fn == OP::Enum::Consol::Median ) {
       return $array->median();
+    } elsif ( $fn == OP::Enum::Consol::StdDev ) {
+      return $array->stddev();
     } else {
       return $array->average();
     }

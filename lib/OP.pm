@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.301';
+our $VERSION = '0.302';
 
 use strict;
 use diagnostics;
@@ -26,15 +26,10 @@ use OP::Object;
 use OP::Node;
 
 #
-# Async functionality
-#
-use OP::Persistence::Async qw| finish transmit convey |;
-
-#
 # Core object classes
 #
 use OP::Any;
-use OP::Array qw| yield emit |;
+use OP::Array qw| yield emit break |;
 use OP::Bool;
 use OP::Code;
 use OP::DateTime;
@@ -49,7 +44,6 @@ use OP::Int;
 use OP::IPv4Addr;
 use OP::Name;
 use OP::Num;
-use OP::Recur qw| snooze break |;
 use OP::Ref;
 use OP::Rule;
 use OP::Scalar;
@@ -67,15 +61,7 @@ our @EXPORT = (
   #
   # From OP::Array:
   #
-  "yield", "emit",
-  #
-  # From OP::Recur:
-  #
-  "snooze", "break",
-  #
-  # From OP::Persistence::Async:
-  #
-  "finish", "transmit", "convey",
+  "yield", "emit", "break",
   #
   # From Error:
   #
@@ -105,14 +91,6 @@ do {
   *{"UNIVERSAL::DESTROY"} = sub { };
 };
 
-END {
-  #
-  # Flush pending POE Sessions:
-  #
-
-  POE::Kernel->run;
-};  
-
 true;
 __END__
 =pod
@@ -123,7 +101,7 @@ OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
-This documentation is for version B<0.301> of OP.
+This documentation is for version B<0.302> of OP.
 
 =head1 STATUS
 
@@ -242,18 +220,8 @@ may be overridden using __BASE__:
   create "YourApp::Example" => {
     __BASE__ => "OP::Hash",
 
+    # ...
   };
-
-or
-
-  package YourApp::Example;
-
-  use strict;
-  use warnings;
-
-  use base qw| OP::Hash |;
-
-  1;
 
 =head2 ASSERTING AS ATTRIBUTES
 
@@ -352,8 +320,6 @@ Native types are OK for setters:
 
 =item * L<OP::Persistence> - B<Storage and retrieval mix-in>
 
-=item * L<OP::Persistence::Async> - B<Async DB access mix-in>
-
 =item * L<OP::Node> - B<Abstract stored object class>
 
 =item * L<OP::Type> - B<Instance variable typing>
@@ -449,14 +415,6 @@ at some point.
 =item * L<OP::RRNode> - B<Round Robin Database Table>
 
 =item * L<OP::Series> - B<Cooked OP::RRNode Series Data>
-
-=back
-
-=head1 EXPERIMENTAL: SCHEDULING
-
-=over 4
-
-=item * L<OP::Recur> - B<Recurring time specification>
 
 =back
 

@@ -11,7 +11,7 @@
 package OP::Enum::Consol;
 
 use OP::Enum qw|
-  Average Median Min Max Sum First Last Random
+  Average Median Min Max Sum First Last Random StdDev
 |;
 
 =pod

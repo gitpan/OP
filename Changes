@@ -1,3 +1,8 @@
+2009-07-10: .302
+  - Got rid of some half-baked experimental features
+
+...
+
 2009-06-19: .300
   - Removed all usage of source filters
   - Misc fixes to experimental classes

@@ -694,12 +694,15 @@ sub columnNames {
   my $asserts = $class->asserts();
 
   return $asserts->collect( sub {
-    my $type = $asserts->{$_};
+    my $attr = shift;
 
+    my $type = $asserts->{$attr};
+
+    return if $type->objectClass()->isa("OP::ExtID");
     return if $type->objectClass()->isa("OP::Array");
     return if $type->objectClass()->isa("OP::Hash");
 
-    OP::Array::yield($_);
+    OP::Array::yield($attr);
   } );
 };
 
@@ -2065,28 +2068,8 @@ sub __selectRowStatement {
   my $class = shift;
   my $id = shift;
 
-  my $attributes = OP::Array->new();
-
-  my $asserts = $class->asserts();
-
-  for ( $class->attributes() ) {
-    my $type = $asserts->{$_};
-
-    if ( $type && (
-      $type->objectClass->isa("OP::Hash")
-       || $type->objectClass->isa("OP::Array")
-    ) ) {
-      #
-      # Value lives in a link table, not in this class's schema
-      #
-      next;
-    }
-
-    $attributes->push($_);
-  }
-
   return sprintf(q| SELECT %s FROM %s WHERE %s = %s |,
-    $attributes->join(", "),
+    $class->columnNames->join(", "),
     $class->tableName(),
     $class->__primaryKey(),
     $class->quote($id)

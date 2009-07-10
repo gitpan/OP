@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.301
+version:             0.302
 abstract:            Compact Perl 5 class prototyping with object persistence
 license:             ~
 author:              ~
@@ -12,7 +12,6 @@ requires:
     Cache::Memcached::Fast:        0.13
     Carp:                          1
     Clone:                         0.29
-    Coro:                          5.11
     Data::GUID:                    0.043
     Data::Validate::Domain:        0.09
     Data::Validate::Email:         0.04
@@ -36,7 +35,6 @@ requires:
     Math::VecStat:                 0.08
     Net::Syslog:                   0.03
     Parse::RPN:                    2.43
-    POE:                           1.003
     Rcs:                           1.05
     Scalar::Number:                0.002
     Scalar::Util:                  1.19
