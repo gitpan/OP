@@ -417,9 +417,9 @@ A working example - return a new array containing capitalized versions
 of each element in the original. Collection is performed using C<collect>;
 C<each> may be used when there is code to run with no return values.
 
-  my $array = OP::Array->new(
+  my $array = OP::Array->new( qw|
     foo bar baz whiskey tango foxtrot
-  );
+  | );
 
   my $capped = $array->collect( sub {
     my $item = shift;
@@ -568,13 +568,12 @@ sub collect {
   my $sub = shift;
   my $withIndex = shift;
 
-  my $results = OP::Array->new();
-
   my $i = 0;
+
+  local $OP::Array::EmittedItems = OP::Array->new();
 
   for ( @{$self} ) {
     local $Error::THROWN = undef;
-    local $OP::Array::EmittedItems = $results;
     
     if ( $withIndex ) {
       eval { &$sub($_, $i) };
@@ -588,7 +587,7 @@ sub collect {
       my $thrown = $Error::THROWN;
 
       if ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::YieldedItems") ) {
-        $results->push($thrown->items());
+        $OP::Array::EmittedItems->push($thrown->items());
       } elsif ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::Break") ) {
         #
         # "break" was called
@@ -608,7 +607,7 @@ sub collect {
     }
   }
 
-  return $results;
+  return $OP::Array::EmittedItems;
 };
 
 # method collectWithIndex(Code $sub) {
@@ -621,10 +620,7 @@ sub collectWithIndex {
 
 # sub emit(*@results) {
 sub emit {
-  my $self = shift;
-  my @results = @_;
-
-  $OP::Array::EmittedItems->push(@results);
+  $OP::Array::EmittedItems->push(@_);
 };
 
 # sub yield(*@results) {

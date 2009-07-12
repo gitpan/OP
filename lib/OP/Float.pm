@@ -16,7 +16,7 @@ OP::Float - Overloaded object class for floating point numbers
 
 =head1 DESCRIPTION
 
-Extends L<OP::Num> and L<Data::Float>.
+Extends L<OP::Num>.
 
 =head1 SYNOPSIS
 
@@ -39,7 +39,7 @@ use warnings;
 
 use OP::Enum::Bool;
 
-use base qw| OP::Num Data::Float |;
+use base qw| OP::Num |;
 
 use overload fallback => true, %OP::Num::overload;
 

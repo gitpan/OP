@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.302';
+our $VERSION = '0.303';
 
 use strict;
 use diagnostics;
@@ -101,7 +101,7 @@ OP - Compact Perl 5 class prototyping with object persistence
 
 =head1 VERSION
 
-This documentation is for version B<0.302> of OP.
+This documentation is for version B<0.303> of OP.
 
 =head1 STATUS
 

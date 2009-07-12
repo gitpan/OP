@@ -102,7 +102,7 @@ if (
     servers => memcachedHosts
   } );
 
-  $Storable::Deparse = true;
+  # $Storable::Deparse = true;
 }
 
 #
@@ -497,16 +497,6 @@ sub idForName {
   my $class = shift;
   my $name = shift;
 
-  my $cacheTTL = $class->__useMemcached();
-
-  if ( $name && $memd && $cacheTTL ) {
-    my $key = $class->__cacheKey($name);
-
-    my $value = $memd->get("idForName-" . $key);
-
-    return $value if $value;
-  }
-
   my $id = $class->__selectSingle( sprintf( q|
       SELECT %s FROM %s WHERE name = %s
     |,
@@ -533,16 +523,6 @@ Return the corresponding name for the received object id.
 sub nameForId {
   my $class = shift;
   my $id = shift;
-
-  my $cacheTTL = $class->__useMemcached();
-
-  if ( $id && $memd && $cacheTTL ) {
-    my $key = $class->__cacheKey($id);
-
-    my $value = $memd->get("nameForId-" . $key);
-
-    return $value if $value;
-  }
 
   my $name = $class->__selectSingle( sprintf( q|
       SELECT name FROM %s WHERE %s = %s
@@ -698,7 +678,7 @@ sub columnNames {
 
     my $type = $asserts->{$attr};
 
-    return if $type->objectClass()->isa("OP::ExtID");
+    # return if $type->objectClass()->isa("OP::ExtID");
     return if $type->objectClass()->isa("OP::Array");
     return if $type->objectClass()->isa("OP::Hash");
 
@@ -1197,9 +1177,6 @@ sub __loadFromDatabase {
 
       if ( $name && $class->asserts->{name}->unique eq true ) {
         my $nameKey = $class->__cacheKey($name);
-
-        $memd->set("idForName-" . $nameKey,  $self->id);
-        $memd->set("nameForId-" . $cacheKey, $name);
       }
     }
   } else {

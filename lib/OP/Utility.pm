@@ -57,7 +57,7 @@ my $logger = syslogHost ? Net::Syslog->new(
   SyslogHost => syslogHost,
 ) : undef;
 
-our $longmess = 0; # 0 = no, 1 = yes
+our $longmess = 1; # Carp.pm long messages - 0 = no, 1 = yes
 
 #
 # Install WARN/DIE signal handlers:
