@@ -52,7 +52,7 @@ sub assert {
     OP::Type::isFloat, @rules
   );
 
-  $parsed{default} = "0.0" if !defined $parsed{default};
+  $parsed{default} = "0.0" if !exists $parsed{default};
   $parsed{columnType}  ||= 'FLOAT';
 
   return $class->__assertClass()->new(%parsed);

@@ -37,21 +37,17 @@ time, and the necessary rule subclasses are created dynamically.
 
 Many of these rules affect database schema attributes-- meaning if you
 change them after the table already exists, the table will need to be
-administratively altered (or moved aside to a new name, re-created,
+administratively ALTERed (or moved aside to a new name, re-created,
 and migrated). A class's table is created when its package is loaded
 for the first time.
 
-For InnoDB tables, OP can handle schema updates programatically, except
-in cases of foreign key constraints changing, or columns being renamed.
-These exceptions will always require action from a DBA, and it's
-advisable to do all schema changes by hand anyway, using carefully reviewed
-commands. Always back up the current table before executing an ALTER.
+Schema updates should be performed using carefully reviewed commands.
+Always back up the current table before executing an ALTER.
 
 =head2 RULE TYPES
 
 The C<::> preceding these names is more than just a decoration--
-it's valid Perl 5 for dispatching messages to the default package,
-and has been found to help our source filters do the right thing.
+it explicitly dispatches messages to the default package.
 
 Instance variable assertions may be modified by the following functions:
 

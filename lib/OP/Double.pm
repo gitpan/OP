@@ -55,7 +55,7 @@ sub assert {
     OP::Type::isFloat, @rules
   );
 
-  $parsed{default} = "0.0000000000" if !defined $parsed{default};
+  $parsed{default} = "0.0000000000" if !exists $parsed{default};
   $parsed{columnType}  ||= 'DOUBLE(30,10)';
 
   return $class->__assertClass()->new(%parsed);

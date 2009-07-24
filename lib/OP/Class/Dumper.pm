@@ -312,7 +312,9 @@ sub escape {
     $escaped = $self;
   }
 
-  return $escaped;
+  return ref($escaped)
+    ? bless($escaped, $class)
+    : $escaped;
 };
 
 # method toJson() {

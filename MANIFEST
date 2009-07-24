@@ -2,6 +2,8 @@ INSTALL
 MANIFEST
 Makefile.PL
 .oprc
+bin/oped
+bin/opid
 bin/opsh
 lib/OP/Shell.pm
 lib/OP/Class.pm

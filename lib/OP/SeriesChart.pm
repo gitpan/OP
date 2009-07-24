@@ -566,6 +566,8 @@ OP::SeriesChart - Experimental image-based series visualizer
 
   my $chart = OP::SeriesChart->new;
 
+  $chart->setStacked(true|false);
+
   # ... set chart opts (dimensions, limits, etc)
 
   $chart->addSeries( $series );
@@ -581,6 +583,11 @@ OP::SeriesChart - Experimental image-based series visualizer
 
 
 =head1 SEE ALSO
+
+You might want to take a look at L<Chart::Clicker>, which is more
+mature than this class but has a very similar interface. SeriesChart
+will probably go away at some point, replaced with some guidance
+as to how to use Series objects with Chart::Clicker.
 
 This file is part of L<OP>.
 

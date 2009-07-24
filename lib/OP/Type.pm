@@ -44,29 +44,8 @@ in the %OP::Type::RULES package variable.
 
 =head1 SYNOPSIS
 
-=head2 Using "package"
-
-When using C<package>, instance variables are asserted using C<member()>.
-
-  package OP::Example;
-
-  use OP;
-
-  use base qw| OP::Node |;
-
-  #
-  # Instance variable "foo" will contain optional string data:
-  #
-  member foo => OP::Str->assert( ::optional() );
-
-  ...
-
-  true;
-
-=head2 Using "create"
-
-If creating classes using C<create()>, instance variables are asserted
-in the prototype as inline keys.
+Typing rules for instance variables are asserted in class prototypes
+as inline keys:
 
   use OP;
 

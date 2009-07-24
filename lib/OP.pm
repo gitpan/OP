@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.303';
+our $VERSION = '0.304';
 
 use strict;
 use diagnostics;
@@ -97,11 +97,11 @@ __END__
 
 =head1 NAME
 
-OP - Compact Perl 5 class prototyping with object persistence
+OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.303> of OP.
+This documentation is for version B<0.304> of OP.
 
 =head1 STATUS
 
@@ -113,7 +113,7 @@ progress.
 
   use OP;
 
-A cheat sheet, C<cheat.html>, is included with this distribution.
+A cheat sheet, C<ex/cheat.html>, is included with this distribution.
 
 =head1 DESCRIPTION
 
@@ -148,27 +148,9 @@ store for the time. Modifying C<id> manually is not recommended.
 
 =item * C<name> => L<OP::Name>
 
-OP uses "named objects". By default, C<name> is a human-readable
-unique secondary key. It's the name of the object being saved.
-Like all attributes, C<name> must be defined when saved, unless asserted
-as C<::optional> (see "C<undef> Requires Assertion").
+C<name> is a unique, secondary, human-readable key.
 
-The value for C<name> may be changed (as opposed to C<id>, which should
-not be tinkered with), as long as the new name does not conflict with
-any objects in the same class when saved.
-
-C<name> may be may be keyed in combination with multiple attributes via
-the C<::unique> L<OP::Subtype> argument, which adds InnoDB reference
-options to the schema.
-
-  create "YourApp::Class" => {
-    #
-    # Don't require named objects:
-    #
-    name => OP::Name->assert(::optional),
-
-    # ...
-  };
+For more information on named objects, see L<OP::Name>.
 
 =item * C<ctime> => L<OP::DateTime>
 
@@ -203,9 +185,10 @@ OP object types are used when asserting attributes within a class, and are
 also suitable for instantiation or subclassing in a self-standing manner.
 
 The usage of these types is not mandatory outside the context of creating
-a new class-- OP always returns data in object form, but these object
-types are not a replacement for Perl's native data types in general usage,
-unless the developer wishes them to be.
+a new class-- OP always returns attributes from the database in
+object form, but these object types are not a replacement for Perl's
+native data types in general usage, unless the developer wishes
+them to be.
 
 These modes of usage are shown below, and covered in greater detail
 in specific object class docs.
@@ -312,19 +295,19 @@ Native types are OK for setters:
 
 =over 4
 
-=item * L<OP::Class> - B<Abstract "Class" class>
+=item * L<OP::Class> - Abstract "Class" class
 
-=item * L<OP::Class::Dumper> - B<Introspection mix-in>
+=item * L<OP::Class::Dumper> - Introspection mix-in
 
-=item * L<OP::Object> - B<Abstract object class>
+=item * L<OP::Object> - Abstract object class
 
-=item * L<OP::Persistence> - B<Storage and retrieval mix-in>
+=item * L<OP::Persistence> - Storage and retrieval mix-in
 
-=item * L<OP::Node> - B<Abstract stored object class>
+=item * L<OP::Node> - Abstract stored object class
 
-=item * L<OP::Type> - B<Instance variable typing>
+=item * L<OP::Type> - Instance variable typing
 
-=item * L<OP::Subtype> - B<Instance variable subtyping>
+=item * L<OP::Subtype> - Instance variable subtyping
 
 =back
 
@@ -335,49 +318,49 @@ as inline attributes.
 
 =over 4
 
-=item * L<OP::Any> - B<Wrapper for any type of variable>
+=item * L<OP::Any> - Wrapper for any type of variable
 
-=item * L<OP::Array> - B<List>
+=item * L<OP::Array> - List
 
-=item * L<OP::Bool> - B<Overloaded boolean>
+=item * L<OP::Bool> - Overloaded boolean
 
-=item * L<OP::Code> - B<Any CODE reference>
+=item * L<OP::Code> - Any CODE reference
 
-=item * L<OP::DateTime> - B<Overloaded time object>
+=item * L<OP::DateTime> - Overloaded time object
 
-=item * L<OP::Domain> - B<Overloaded domain name>
+=item * L<OP::Domain> - Overloaded domain name
 
-=item * L<OP::Double> - B<Overloaded double-precision number>
+=item * L<OP::Double> - Overloaded double-precision number
 
-=item * L<OP::EmailAddr> - B<Overloaded email address>
+=item * L<OP::EmailAddr> - Overloaded email address
 
-=item * L<OP::ExtID> - B<Overloaded foreign GUID>
+=item * L<OP::ExtID> - Overloaded foreign GUID
 
-=item * L<OP::Float> - B<Overloaded floating point number>
+=item * L<OP::Float> - Overloaded floating point number
 
-=item * L<OP::Hash> - B<Hashtable>
+=item * L<OP::Hash> - Hashtable
 
-=item * L<OP::ID> - B<Overloaded GUID>
+=item * L<OP::ID> - Overloaded GUID
 
-=item * L<OP::Int> - B<Overloaded integer>
+=item * L<OP::Int> - Overloaded integer
 
-=item * L<OP::IPv4Addr> - B<Overloaded IPv4 address>
+=item * L<OP::IPv4Addr> - Overloaded IPv4 address
 
-=item * L<OP::Name> - B<Unique secondary key>
+=item * L<OP::Name> - Unique secondary key
 
-=item * L<OP::Num> - B<Overloaded number>
+=item * L<OP::Num> - Overloaded number
 
-=item * L<OP::Ref> - B<Any reference value>
+=item * L<OP::Ref> - Any reference value
 
-=item * L<OP::Rule> - B<Regex reference (qr/ /)>
+=item * L<OP::Rule> - Regex reference (qr/ /)
 
-=item * L<OP::Scalar> - B<Any Perl 5 scalar>
+=item * L<OP::Scalar> - Any Perl 5 scalar
 
-=item * L<OP::Str> - B<Overloaded unicode string>
+=item * L<OP::Str> - Overloaded unicode string
 
-=item * L<OP::TimeSpan> - B<Overloaded time range object>
+=item * L<OP::TimeSpan> - Overloaded time range object
 
-=item * L<OP::URI> - B<Overloaded URI>
+=item * L<OP::URI> - Overloaded URI
 
 =back
 
@@ -385,9 +368,9 @@ as inline attributes.
 
 =over 4
 
-=item * L<OP::Constants> -  B<"dot rc" values as constants> 
+=item * L<OP::Constants> -  "dot rc" values as constants 
 
-=item * L<OP::Enum> - B<C-style enumerated types as constants>
+=item * L<OP::Enum> - C-style enumerated types as constants
 
 =back
 
@@ -395,58 +378,79 @@ as inline attributes.
 
 =over 4
 
-=item * L<OP::Utility> - B<System functions required globally by OP>
+=item * L<OP::Utility> - System functions required globally by OP
 
-=item * L<OP::Exceptions> - B<Errors thrown by OP>
+=item * L<OP::Exceptions> - Errors thrown by OP
 
 =back
 
-=head1 EXPERIMENTAL*: INFOMATICS
+=head1 TOYS & TOOLS
+
+=over 4
+
+=item * C<bin/oped> - Edit OP objects using VIM and YAML
+
+=item * C<bin/opid> - Dump OP objects to STDOUT in various formats
+
+=item * C<bin/opsh> - Interactive and persistent Perl 5 shell
+
+=back
+
+=head1 EXPERIMENTAL
 
 Experimental classes are subject to radical upheaval, questionable
 documentation, and unexplained disappearances. They represent proof of
 concept in their respective areas, and may move out of experimental status
 at some point.
 
+=head2 INFOMATICS
+
+The infomatics classes are an attempt to replicate certain functionality
+of RRD using SQL and Perl.
+
 =over 4
 
-=item * L<OP::Log> - B<OP::RRNode factory class>
+=item * L<OP::Log> - OP::RRNode class factory
 
-=item * L<OP::RRNode> - B<Round Robin Database Table>
+=item * L<OP::RRNode> - Round Robin Database Table
 
-=item * L<OP::Series> - B<Cooked OP::RRNode Series Data>
+=item * L<OP::Series> - Cooked OP::RRNode Series Data
+
+=item * L<OP::SeriesChart> - Image-based Series Visualizer
 
 =back
 
-=head1 EXPERIMENTAL: FOREIGN DB ACCESS
+=head2 FOREIGN DB ACCESS
+
+Foreign DB access classes are similar in function to Class::DBI,
+in that they are used to derive object classes from existing schemas.
+This is an inversion of how OP normally functions, since OP was
+designed to derive schemas from classes.
 
 =over 4
 
-=item * L<OP::ForeignRow> - B<Non-OP Database Access>
+=item * L<OP::ForeignRow> - Non-OP Database Access
 
-=item * L<OP::ForeignTable> - B<ForeignRow class factory>
+=item * L<OP::ForeignTable> - ForeignRow class factory
 
 =back
 
-=head1 EXPERIMENTAL: INTERACTIVE SHELL
+=head2 BULK TABLE WRITER
+
+The Bulk writer provides an alternate method for saving objects,
+utilizing MySQL's LOAD FILE syntax.
 
 =over 4
 
-=item * L<OP::Shell> - B<Persistent Perl Shell>
-
-=back
-
-=head1 EXPERIMENTAL: BULK TABLE WRITER
-
-=over 4
-
-=item * L<OP::Persistence::Bulk> - B<Deferred fast bulk table writes>
+=item * L<OP::Persistence::Bulk> - Deferred fast bulk table writes
 
 =back
 
 =head1 SEE ALSO
 
-L<OP::Class>, L<OP::Type>
+L<OP::Class>, C<ex/cheat.html>
+
+OP is on GitHub: http://github.com/aayars/op
 
 =head1 AUTHOR
 

@@ -1,16 +1,18 @@
+2009-07-24: .304
+  - Updated docs
+  - make test: Cleanup error handling, added schema manip tests
+  - Cleanup handling of custom rc files
+  - Added "oped" and "opid" cli utils
+
 2009-07-12: .303
   - Bozo fixes
 
 2009-07-10: .302
   - Got rid of some half-baked experimental features
 
-...
-
 2009-06-19: .300
   - Removed all usage of source filters
   - Misc fixes to experimental classes
-
-...
 
 2009-04-21: Developer release 0.20_03
   - 0.21 release candidate
@@ -18,7 +20,5 @@
   - Add rudimentary post-install test script
   - Several doc edits
   - Minor bug fixes and tweaks for CPAN indexer
-
-...
 
 2009-04-17: Initial CPAN release 0.20

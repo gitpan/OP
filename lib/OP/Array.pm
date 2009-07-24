@@ -398,24 +398,27 @@ illustrates its possible usage.
   my $sub = sub {
     my $item = shift;
 
-    ...
+    # ...
+
     return if $something;       # Equivalent to next()
-    break if $somethingElse;    # Equivalent to last()
 
-    ...
-    emit $thing1, [$thing2, ...]; # Upstreams $things,
-                                  # and continues current iteration
-    ...
-    yield $thing1, [$thing2, ...]; # Upstreams $things,
-                                   # and skips to next iteration
+    break() if $somethingElse;  # Equivalent to last()
 
+    emit($thing1, [$thing2, ...]);  # Upstreams $things,
+                                    # and continues current iteration
+
+    # ...
+
+    yield($thing1, [$thing2, ...]); # Upstreams $things,
+                                    # and skips to next iteration
   };
  
   my $results = $array->collect($sub);
 
-A working example - return a new array containing capitalized versions
-of each element in the original. Collection is performed using C<collect>;
-C<each> may be used when there is code to run with no return values.
+A simple working example - return a new array containing capitalized
+versions of each element in the original. Collection is performed
+using C<collect>; C<each> may be used when there is code to run
+with no return values.
 
   my $array = OP::Array->new( qw|
     foo bar baz whiskey tango foxtrot
@@ -477,7 +480,7 @@ anything to the return array-- use it in cases where you just want to
 skip ahead without yielding items (ie C<next>).
 
   #
-  # For example, create a new Array ($quoted) containing quoted elements
+  # Create a new Array ($quoted) containing quoted elements
   # from the original, omitting items which aren't wanted.
   #
   my $quoted = $array->collect( sub {
@@ -487,22 +490,22 @@ skip ahead without yielding items (ie C<next>).
 
     return if $item =~ /donotwant/;
 
-    yield $myClass->quote($item);
+    yield( $myClass->quote($item) );
 
     print "You will never get here.\n";
   } );
 
   #
-  # The above was a more compact way of doing this:
+  # The above was roughly equivalent to:
   #
   my $quoted = OP::Array->new();
 
-  for ( @{ $array } ) {
-    print "Have item: $_\n";
+  for my $item ( @{ $array } ) {
+    print "Have item: $item\n";
 
-    next if $_ =~ /donotwant/;
+    next if $item =~ /donotwant/;
 
-    $quoted->push( $myClass->quote($_) );
+    $quoted->push( $myClass->quote($item) );
 
     next;
 
@@ -530,7 +533,7 @@ the interpreter get to that final C<print> statement.
 
     return if $item =~ /donotwant/;
 
-    emit $myClass->quote($item);
+    emit( $myClass->quote($item) );
 
     print "You will *always* get here!\n";
   } );

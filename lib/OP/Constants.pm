@@ -109,7 +109,10 @@ sub init {
 
   my $path = join('/',$ENV{OP_HOME},$RC);
 
-  my $override = join('/',$ENV{OP_HOME},".oprc-".hostname());
+  my $override = join('/',
+    $ENV{OP_HOME},
+    join("-", $RC, hostname())
+  );
 
   if ( $ENV{OP_HOME} && -f $path ) {
     my $file = IO::File->new($path, 'r')
@@ -122,7 +125,9 @@ sub init {
     $file->close();
 
     eval {
-      $rc = YAML::Syck::Load( join('', @yaml) ) || die $@;
+      $rc = YAML::Syck::Load( join('', @yaml) );
+
+      die $@ if $@;
     };
 
     throw OP::RuntimeError($@) if $@;
@@ -173,11 +178,11 @@ sub init {
     print STDERR "\"$0\" needs some help finding a file.\n";
     print STDERR "\n";
     print STDERR "HERE'S WHAT'S WRONG:\n";
-    print STDERR "  OP can't find a valid constants file, \".oprc\"!\n";
-    print STDERR "  .oprc lives under OP_HOME (currently: \"$current\").\n";
+    print STDERR "  OP can't find a valid constants file, \"$RC\"!\n";
+    print STDERR "  $RC lives under OP_HOME (currently: \"$current\").\n";
     print STDERR "\n";
     print STDERR "HOW TO FIX THIS:\n";
-    print STDERR "  Set OP_HOME to the location of a valid .oprc, in the\n";
+    print STDERR "  Set OP_HOME to the location of a valid $RC, in the\n";
     print STDERR "  shell environment or calling script. For example:\n";
     print STDERR "\n";
     print STDERR "  In bash:\n";

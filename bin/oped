@@ -1,0 +1,173 @@
+#!/bin/env perl
+
+use strict;
+use warnings;
+
+use Error qw| :try |;
+use OP;
+
+use constant VIM => '/usr/bin/vim';
+
+sub usage {
+  my $message = shift;
+  print "$message\n\n";
+
+  print "$0: Create or modify OP objects using YAML and VIM\n";
+  print "\n";
+  print "Usage:\n";
+  print "\n";
+  print "$0 --class <YourApp::Class> \\\n";
+  print "    [--id XXX|--name XXX] \\\n";
+  print "    [--id XXX|--name XXX] \\\n";
+  print "    ...\n";
+  print "\n";
+
+  exit 2;
+}
+
+sub main {
+  my $class;
+  my %names;
+  my %ids;
+
+  while ( my $arg = shift @ARGV ) {
+    if ( $arg =~ /-c/ ) {
+      usage("You may only specify one class.") if $class;
+      
+      $class = shift @ARGV;
+
+      usage("$class doesn't look like a class name.")
+        if $class !~ /^(\w|\:)+$/;
+
+    } elsif ( $arg =~ /-i/ ) {
+      my $id = shift @ARGV;
+
+      $ids{$id}++;
+    } elsif ( $arg =~ /-n/ ) {
+      my $name = shift @ARGV;
+
+      $names{$name}++;
+    } else {
+      usage("Unrecognized argument: $arg");
+    }
+  }
+
+  usage("No class provided.") if !$class;
+
+  eval qq{ use $class };
+
+  my @objs;
+
+  for my $name ( sort keys %names ) {
+    if ( $class->doesNameExist($name) ) {
+      push @objs, $class->loadByName($name);
+    } else {
+      print "Class $class has no object named \"$name\".\n";
+      print "Create this object? [n/Y]\n";
+
+      my $response = <STDIN>;
+      chomp $response;
+      $response ||= 'y';
+
+      next if $response !~ /^y/i;
+
+      my $obj = $class->proto;
+      $class->asserts->each( sub {
+        my $key = shift;
+
+        return if exists $obj->{$key};
+
+        $obj->{$key} ||= undef;
+      } );
+      $obj->setName($name);
+
+      push @objs, $obj;
+    }
+  }
+
+  for my $id ( sort keys %ids ) {
+    push @objs, $class->load($id);
+  }
+
+  my $i = 0;
+  my @filenames;
+
+  for my $obj ( @objs ) {
+    my $filename = "/tmp/inspect-$$-$i";
+    $i++;
+
+    $obj->toYaml;
+
+    open(OOT, ">", $filename) || die "Couldn't open $filename for writing";
+    print OOT $obj->toYaml;
+    close(OOT);
+
+    push @filenames, $filename;
+  }
+
+  system(VIM, @filenames);
+
+  $i = 0;
+
+  for my $obj ( @objs ) {
+    my $filename = "/tmp/inspect-$$-$i";
+    $i++;
+
+    my $newYaml;
+
+    while(1) {
+      undef $newYaml;
+
+      open(IN, "<", $filename) || die "Couldn't open $filename for reading";
+      while(<IN>){ $newYaml .= $_ }
+      close(IN);
+
+      my $newObj = $class->loadYaml($newYaml);
+
+      ###
+      ### mitigate the potential for wise-guys to initiate funny-business
+      ###
+      $newObj->setId( $obj->id );
+      $newObj->setCtime( $obj->ctime );
+      $newObj->setMtime( $obj->mtime );
+
+      my $done;
+
+      try {
+        $newObj->save();
+
+        my $name = $newObj->{name} || "Untitled Object";
+
+        print "# $class $newObj->{id}: $name\n";
+
+        $done++;
+      } catch Error with {
+        my $error = shift;
+
+        my $nameStr = $newObj->name || $newObj->id || "";
+
+        print "-------------------------------------------------------------\n";
+        print "!!! Save FAILED for $class $nameStr\n";
+        print "!!! Would you like to go back and edit this object now? [n/Y]\n";
+        my $bool = <STDIN>;
+        chomp($bool);
+
+        $bool ||= 'y';
+
+        if ( $bool =~ /^y/i ) {
+          system(VIM, $filename);
+        } else {
+          print "!!! Okay, skipping object then.\n";
+
+          $done++;
+        }
+      };
+
+      last if $done;
+    }
+
+    unlink $filename;
+  }
+}
+
+main;

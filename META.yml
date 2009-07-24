@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:                OP
-version:             0.303
-abstract:            Compact Perl 5 class prototyping with object persistence
+version:             0.304
+abstract:            Compact prototyping of InnoDB-backed object classes
 license:             ~
 author:              ~
 generated_by:        ExtUtils::MakeMaker version 6.42

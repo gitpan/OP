@@ -728,9 +728,8 @@ C<main> before consuming OP-derived classes. Do this in a C<do> block.
 
   </%perl>
 
-It is highly recommended that startup.pl be used in production
-environments, so the initial requests to the webserver are not delayed
-by the lengthy source filtering and compilation steps.
+It is highly recommended to use a startup.pl to preload the packages
+used in your web application.
 
   #
   # File: httpd.conf

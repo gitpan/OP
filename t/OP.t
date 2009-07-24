@@ -1,26 +1,38 @@
 use strict;
 use diagnostics;
 
-use Test::More tests => 29;
+use Test::More tests => 31;
 
-my $temprc = "/tmp/.oprc";
+my $tempdir = "/tmp";
+my $temprc = join("/", $tempdir, ".oprc");
 
-#
-# OP will not compile without a valid .oprc.
-#
-# Set up a fake .oprc so testing may proceed.
-#
-# The fake .oprc gets removed when testing is complete.
-#
-# Tests will fail if /tmp is not writable :-/
-#
-open(OPRC, ">", $temprc) || die $@;
+my $reason;
 
-print OPRC q|
+if ( !-d $tempdir ) {
+  $reason = "$tempdir is not a directory (weird)";
+} elsif ( !-w $tempdir ) {
+  $reason = "$tempdir is not writable (can't make a temp .oprc)";
+}
+
+SKIP: {
+  skip($reason, 29) if $reason;
+
+  #
+  # OP will not compile without a valid .oprc.
+  #
+  # Set up a fake .oprc so testing may proceed.
+  #
+  # The fake .oprc gets removed when testing is complete.
+  #
+  # Tests will fail if $tempdir is not writable :-/
+  #
+  open(OPRC, ">", $temprc) || die $!;
+
+  print OPRC q|
 ---
-yamlRoot: /tmp/yaml
-sqliteRoot: /tmp/sqlite
-scratchRoot: /tmp
+yamlRoot: $tempdir/yaml
+sqliteRoot: $tempdir/sqlite
+scratchRoot: $tempdir
 dbName: op
 dbHost: localhost
 dbPass: ~
@@ -31,100 +43,166 @@ rcsDir: RCS
 memcachedHosts: ~
 syslogHost: ~
 |;
-close(OPRC);
+  close(OPRC);
 
-$ENV{OP_HOME} = '/tmp';
+  $ENV{OP_HOME} = $tempdir;
 
-#
-# Very basic OP tests.
-#
-# Does not test database stuff yet - Only very high-level
-# functionality, such as constructors, are covered.
-#
+  ###
+  ### Class prototyping tests
+  ###
+  use_ok("OP");
 
-###
-### Class prototyping tests
-###
+  my $testClass = "OP::TestHash";
 
-use_ok("OP");
+  is( createTestHashClass($testClass), $testClass );
 
-my $testClass = "OP::TestClass";
+  isa_ok( createTestHash($testClass), $testClass );
 
-is( createTestClass($testClass), $testClass );
+  is( testSetter($testClass), 1 );
 
-isa_ok( createTestObject($testClass), $testClass );
+  is( testGetter($testClass), "Bar" );
 
-is( testSetter($testClass), 1 );
+  is( testDeleter($testClass), undef );
 
-is( testGetter($testClass), "Bar" );
+  ###
+  ### Object Constructor tests
+  ###
 
-is( testDeleter($testClass), undef );
+  #
+  # SCALARS
+  #
+  isa_ok( OP::Any->new("Anything"), "OP::Any" );
 
-###
-### Object Constructor tests
-###
+  isa_ok( OP::Bool->new(1), "OP::Bool" );
+  isa_ok( OP::Bool->new(0), "OP::Bool" );
 
-#
-# SCALARS
-#
-isa_ok( OP::Any->new("Anything"), "OP::Any" );
+  isa_ok( OP::Code->new( sub { } ), "OP::Code" );
 
-isa_ok( OP::Bool->new(1), "OP::Bool" );
-isa_ok( OP::Bool->new(0), "OP::Bool" );
+  isa_ok( OP::Domain->new( "example.com" ), "OP::Domain" );
 
-isa_ok( OP::Code->new( sub { } ), "OP::Code" );
+  isa_ok( OP::Double->new( 22/7 ), "OP::Double" );
 
-isa_ok( OP::Domain->new( "example.com" ), "OP::Domain" );
+  my $id = OP::ID->new;
+  isa_ok( $id, "OP::ID");
+  isa_ok( OP::ExtID->new($id), "OP::ExtID");
 
-isa_ok( OP::Double->new( 22/7 ), "OP::Double" );
+  isa_ok( OP::Float->new( 22/7 ), "OP::Float" );
 
-my $id = OP::ID->new;
-isa_ok( $id, "OP::ID");
-isa_ok( OP::ExtID->new($id), "OP::ExtID");
+  isa_ok( OP::Int->new(10), "OP::Int");
 
-isa_ok( OP::Float->new( 22/7 ), "OP::Float" );
+  isa_ok( OP::IPv4Addr->new("127.0.0.1"), "OP::IPv4Addr" );
 
-isa_ok( OP::Int->new(10), "OP::Int");
+  isa_ok( OP::Name->new("Nom"), "OP::Name" );
 
-isa_ok( OP::IPv4Addr->new("127.0.0.1"), "OP::IPv4Addr" );
+  isa_ok( OP::Num->new(42), "OP::Num");
 
-isa_ok( OP::Name->new("Nom"), "OP::Name" );
+  my $foo = "Hello";
+  isa_ok( OP::Ref->new(\$foo), "OP::Ref");
 
-isa_ok( OP::Num->new(42), "OP::Num");
+  isa_ok( OP::Rule->new(qr/example/), "OP::Rule");
 
-my $foo = "Hello";
-isa_ok( OP::Ref->new(\$foo), "OP::Ref");
+  isa_ok( OP::Scalar->new(42), "OP::Scalar");
 
-isa_ok( OP::Rule->new(qr/example/), "OP::Rule");
+  isa_ok( OP::Str->new("String Theory"), "OP::Str");
 
-isa_ok( OP::Scalar->new(42), "OP::Scalar");
+  isa_ok( OP::TimeSpan->new(42), "OP::TimeSpan");
 
-isa_ok( OP::Str->new("String Theory"), "OP::Str");
+  isa_ok( OP::URI->new("http://www.example.com/"), "OP::URI");
 
-isa_ok( OP::TimeSpan->new(42), "OP::TimeSpan");
+  #
+  # ARRAYS
+  #
+  isa_ok( OP::Array->new("123", "456", "abc", "def"), "OP::Array");
 
-isa_ok( OP::URI->new("http://www.example.com/"), "OP::URI");
+  isa_ok( OP::DateTime->new(time), "OP::DateTime" );
 
-#
-# ARRAYS
-#
-isa_ok( OP::Array->new("123", "456", "abc", "def"), "OP::Array");
+  isa_ok( OP::EmailAddr->new('root@example.com'), "OP::EmailAddr");
 
-isa_ok( OP::DateTime->new(time), "OP::DateTime" );
+  #
+  # HASHES
+  #
+  isa_ok( OP::Hash->new, "OP::Hash");
+};
 
-isa_ok( OP::EmailAddr->new('root@example.com'), "OP::EmailAddr");
+my $hasDBDMysql;
+my $hasOPDB;
 
-#
-# HASHES
-#
-isa_ok( OP::Hash->new, "OP::Hash");
+if ( !$reason ) {
+  eval {
+    require DBD::mysql;
+
+    $hasDBDMysql++;
+
+    my $dbname = 'op';
+
+    my $dsn = sprintf('DBI:mysql:database=%s;host=%s;port=%s',
+      $dbname, 'localhost', 3306
+    );
+
+    my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
+      || die DBI->errstr;
+
+    my $sth = $dbh->prepare("show tables") || die $dbh->errstr;
+
+    $sth->execute || die $sth->errstr;
+
+    my $worked = $sth->fetchall_arrayref() || die $sth->errstr;
+
+    $hasOPDB++;
+  };
+}
+
+if ( !$reason && !$hasDBDMysql ) {
+  $reason = "DBD::mysql is not installed";
+} elsif ( !$reason && !$hasOPDB ) {
+  $reason = "MySQL DB 'op' is not accessible";
+}
+
+SKIP: {
+  if ( $reason ) {
+    print "----------------------------------------------------------\n";
+    print "Skipping DB tests because $reason\n";
+    print "\n";
+    print "If you would like to enable DB tests for OP, please remedy\n";
+    print "the environmental issue shown in the diagnostic output below,\n";
+    print "create a local MySQL DB named 'op', and grant access to\n";
+    print "op\@localhost, ie:\n";
+    print "\n";
+    print "> mysql -u root -p\n";
+    print "> create database op;\n";
+    print "> grant all on op.* to op\@localhost;\n";
+
+    if ( $@ ) {
+      my $error = $@;
+      chomp $error;
+
+      print "\n";
+      print "Diagnostic message:\n";
+      print $error;
+      print "\n";
+    }
+
+    print "----------------------------------------------------------\n";
+
+    skip($reason, 2);
+  } else {
+    print "Testing creation and destruction of DB schema and objects...\n";
+  }
+
+  my $testClass = "OP::TestNode";
+
+  is( createTestNodeClass($testClass), $testClass );
+
+  isa_ok( createTestNode($testClass), $testClass );
+};
+
 
 #
 # Remove the tempfile
 #
 unlink $temprc;
 
-sub createTestClass {
+sub createTestHashClass {
   my $class = shift;
 
   return create( $class => {
@@ -132,10 +210,48 @@ sub createTestClass {
   } );
 };
 
-sub createTestObject {
+sub createTestNodeClass {
+  my $class = shift;
+
+  return create( $class => { } );
+};
+
+sub createTestHash {
   my $class = shift;
 
   return $class->new;
+};
+
+sub createTestNode {
+  my $class = shift;
+
+  my $name = "Testing123";
+
+  do {
+    my $object = $class->new(
+      name => $name
+    );
+
+    $object->save;
+
+    return if !$object->exists;
+  };
+
+  my $object;
+
+  do {
+    $object = $class->loadByName($name);
+
+    return if !$object->exists;
+
+    $object->remove;
+
+    return if $object->exists;
+  };
+
+  $class->__dropTable;
+
+  return $object;
 };
 
 sub testSetter {

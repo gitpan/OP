@@ -1,0 +1,91 @@
+#!/bin/env perl
+
+use strict;
+use warnings;
+
+use Error qw| :try |;
+use OP;
+
+sub usage {
+  my $message = shift;
+  print "$message\n\n";
+
+  print "$0: Dump any OP::Object info to STDOUT\n";
+  print "\n";
+  print "Usage:\n";
+  print "\n";
+  print "$0 --class <YourApp::Class> \\\n";
+  print "    [--id XXX|--name XXX] \\       # Look up by name or id\n";
+  print "    [--id XXX|--name XXX] \\       # Multiple ids/names are OK\n";
+  print "    [--output <tuple|json|yaml>]  # Specify output format\n";
+  print "\n";
+
+  exit 2;
+}
+
+sub main {
+  my $class;
+  my $output;
+  my %names;
+  my %ids;
+
+  while ( my $arg = shift @ARGV ) {
+    if ( $arg =~ /-c/ ) {
+      usage("You may only specify one class.") if $class;
+      
+      $class = shift @ARGV;
+
+      usage("$class doesn't look like a class name.")
+        if $class !~ /^(\w|\:)+$/;
+
+    } elsif ( $arg =~ /-i/ ) {
+      my $id = shift @ARGV;
+
+      $ids{$id}++;
+    } elsif ( $arg =~ /-n/ ) {
+      my $name = shift @ARGV;
+
+      $names{$name}++;
+    } elsif ( $arg =~ /-o/ ) {
+      $output = shift @ARGV;
+    } else {
+      usage("Unrecognized argument: $arg");
+    }
+  }
+
+  usage("No class provided.") if !$class;
+
+  $output ||= 'tuple';
+
+  if ( $output !~ /^(tuple|json|yaml)$/ ) {
+    usage("Unknown output format: $output");
+  }
+
+  eval qq{ use $class };
+
+  my @objs;
+
+  for my $name ( sort keys %names ) {
+    if ( $class->doesNameExist($name) ) {
+      push @objs, $class->loadByName($name);
+    }
+  }
+
+  for my $id ( sort keys %ids ) {
+    push @objs, $class->load($id);
+  }
+
+  for my $obj ( @objs ) {
+    if ( $output eq 'json' ) {
+      print $obj->toJson;
+      print "\n";
+    } elsif ( $output eq 'yaml' ) {
+      print $obj->toYaml;
+    } else {
+      # "tuple"
+      print "# $class $obj->{id}: $obj->{name}\n";
+    }
+  }
+}
+
+main;

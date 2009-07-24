@@ -192,13 +192,6 @@ sub query {
 
 =pod
 
-=item * $class->coquery($query, [$sub], [$sub])
-
-Runs the received query in a background process, with optional
-callbacks. See L<OP::Persistence::Async> for a synopsis of this method.
-
-=pod
-
 =item * $class->write()
 
 Runs the received query against the reporting database, using the
@@ -1213,6 +1206,8 @@ sub __marshal {
   my $class = shift;
   my $self = shift;
 
+  bless $self, $class;
+
   #
   # Catch fire and explode on unexpected input.
   #
@@ -2101,7 +2096,9 @@ sub __write {
   };
 
   if ( $@ ) {
-    throw OP::DBQueryFailed($class->__dbh()->errstr() || $@)
+    my $err = $class->__dbh()->errstr() || $@;
+
+    OP::DBQueryFailed->throw( join(': ', $class, $err) );
   }
 
   return $rows;
