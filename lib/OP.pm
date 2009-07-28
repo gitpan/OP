@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.304';
+our $VERSION = '0.305';
 
 use strict;
 use diagnostics;
@@ -20,7 +20,7 @@ use diagnostics;
 # Abstract classes
 #
 use OP::Class qw| create true false |;
-use OP::Type;
+use OP::Type qw| subtype |;
 use OP::Subtype;
 use OP::Object;
 use OP::Node;
@@ -28,10 +28,8 @@ use OP::Node;
 #
 # Core object classes
 #
-use OP::Any;
 use OP::Array qw| yield emit break |;
 use OP::Bool;
-use OP::Code;
 use OP::DateTime;
 use OP::Domain;
 use OP::Double;
@@ -44,7 +42,6 @@ use OP::Int;
 use OP::IPv4Addr;
 use OP::Name;
 use OP::Num;
-use OP::Ref;
 use OP::Rule;
 use OP::Scalar;
 use OP::Str;
@@ -59,17 +56,16 @@ our @EXPORT = (
   #
   "create", "true", "false",
   #
+  # From OP::Type:
+  #
+  "subtype",
+);
+
+our @EXPORT_OK = (
+  #
   # From OP::Array:
   #
-  "yield", "emit", "break",
-  #
-  # From Error:
-  #
-  # "try", "catch", "with", "finally",
-  #
-  # Subtyping functions:
-  #
-  keys %OP::Type::RULES
+  "yield", "emit", "break"
 );
 
 #
@@ -101,7 +97,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.304> of OP.
+This documentation is for version B<0.305> of OP.
 
 =head1 STATUS
 
@@ -111,7 +107,14 @@ progress.
 
 =head1 SYNOPSIS
 
+  use strict;
+  use warnings;
+
   use OP;
+
+  create "YourApp::YourClass" => { };
+
+See PROTOTYPE COMPONENTS in L<OP::Class> for detailed examples.
 
 A cheat sheet, C<ex/cheat.html>, is included with this distribution.
 
@@ -127,10 +130,39 @@ When using OP, as with any framework, a number of things "just happen"
 by design. Trying to go against the flow of any of these base assumptions
 is not recommended.
 
+=head2 Environment & RC File
+
+OP needs to be able to find a valid .oprc file in order to bootstrap
+itself. This lives under $ENV{OP_HOME}, which defaults to the current
+user's home directory.
+
+To generate a first-time config for the local machine, copy the
+.oprc (included with this distribution) to the proper location, or
+run C<bin/opconf> (also included with this distribution) as the
+user who will be running OP. This is a post-install step which is
+not currently handled by C<make install>.
+
+See L<OP::Constants> for information regarding customizing and
+extending the local rc file.
+
+=head2 Classes Make Tables
+
+The core function of OP is to derive database tables from the
+assertions contained in object classes. OP creates the tables that
+it needs.
+
+If, rather, you need to derive object classes from a database schema,
+you may want to take a look at L<Class::DBI> and other similar
+packages on the CPAN, which specialize in doing just that.
+
+L<OP::ForeignTable> may be used to work with to external datasources
+as if they were OP classes, but this functionality is quite limited.
+
 =head2 Default Base Attributes
 
-Unless overridden in C<__baseAsserts>, OP classes always have
-the following baseline attributes:
+OP objects B<always> have "id", "name", "ctime", and "mtime". The
+subtyping rules of the baseline attributes may be changed, but the
+assertions themselves should not be removed.
 
 =over 4
 
@@ -166,18 +198,57 @@ modified time. OP updates this each time an object is saved.
 
 =head2 C<undef> Requires Assertion
 
-Instance variables may not be C<undef>, unless asserted as
-C<::optional>.
+Undefined values in objects translate to NULL in the database, and
+OP does not permit this to happen by default.
 
-Object instances in OP may not normally be C<undef>. Generally, if
-a value is not defined, OP currently returns C<undef> rather than an
-undefined object instance. This may change at some point.
+Instance variables may not be undef, (and the corresponding table
+column may not be NULL), unless the instance variable was explicitly
+asserted as B<optional> in the class prototype. To do so, provide
+"optional" as an assertion argument, as in the following example:
+
+  create "YourApp::Example" => {
+    ### Do not permit NULL:
+    someMandatoryDate => OP::DateTime->assert,
+
+    ### Permit NULL:
+    someOptionalDate => OP::DateTime->assert(
+      subtype(
+        optional => true,
+      )
+    ),
+
+    # ...
+  };
 
 =head2 Namespace Matters
 
 OP's core packages live under the OP:: namespace. Your classes should
 live in their own top-level namespace, e.g. "YourApp::". This will translate
-to the name of the app's database, unless overridden.
+(in lower case) to the name of the app's database. The database name may be
+overridden by implementing class method C<databaseName>.
+
+Namespace elements beyond the top-level translate to lower case table
+names. In cases of nested namespaces, Perl's "::" delineator is
+swapped out for an underscore (_). The table name may be overriden
+by implementing class method C<tableName>.
+
+  create "YourApp::Example::Foo" => {
+    # overrides default value of "yourapp"
+    databaseName => sub {
+      my $class = shift;
+
+      return "some_legacy_db";
+    },
+
+    # overrides default value of "example_foo"
+    tableName => sub {
+      my $class = shift;
+
+      return "some_legacy_table";
+    },
+
+    # ...
+  };
 
 =head1 OBJECT TYPES
 
@@ -307,6 +378,8 @@ Native types are OK for setters:
 
 =item * L<OP::Type> - Instance variable typing
 
+=item * L<OP::Scalar> - Base class for scalar values
+
 =item * L<OP::Subtype> - Instance variable subtyping
 
 =back
@@ -318,13 +391,9 @@ as inline attributes.
 
 =over 4
 
-=item * L<OP::Any> - Wrapper for any type of variable
-
 =item * L<OP::Array> - List
 
 =item * L<OP::Bool> - Overloaded boolean
-
-=item * L<OP::Code> - Any CODE reference
 
 =item * L<OP::DateTime> - Overloaded time object
 
@@ -350,11 +419,7 @@ as inline attributes.
 
 =item * L<OP::Num> - Overloaded number
 
-=item * L<OP::Ref> - Any reference value
-
 =item * L<OP::Rule> - Regex reference (qr/ /)
-
-=item * L<OP::Scalar> - Any Perl 5 scalar
 
 =item * L<OP::Str> - Overloaded unicode string
 
@@ -387,6 +452,8 @@ as inline attributes.
 =head1 TOYS & TOOLS
 
 =over 4
+
+=item * C<bin/opconf> - Generate an .oprc on the local machine
 
 =item * C<bin/oped> - Edit OP objects using VIM and YAML
 

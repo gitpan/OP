@@ -147,27 +147,35 @@ create "OP::Log" => {
     my $asserts = OP::Node->__baseAsserts();
 
     $asserts->{numRows} = OP::Int->assert(
-      ::default($class->__numRows())
+      subtype(
+        default => $class->__numRows()
+      )
     );
 
     $asserts->{name} = OP::Name->assert(
-      ::columnType("VARCHAR(20)"),
-      ::regex(qr/^\w{1,20}$/),
-      ::optional()
+      subtype(
+        columnType => "VARCHAR(20)",
+        regex      => qr/^\w{1,20}$/,
+        optional   => true,
+      )
     );
 
     #
     # See _newId and messageClass methods, below
     #
     $asserts->{id} = OP::Str->assert(
-      ::columnType("CHAR(6)"),
-      ::regex(qr/^\w{6}$/),
-      ::optional()
+      subtype(
+        columnType => "CHAR(6)",
+        regex      => qr/^\w{6}$/,
+        optional   => true,
+      )
     );
 
     $asserts->{baseMessageClass} = OP::Str->assert(
       "OP::RRNode",
-      ::default("OP::RRNode")
+      subtype(
+        default => "OP::RRNode"
+      )
     );
 
     $asserts->{interpolation} = OP::Int->assert(
@@ -176,7 +184,9 @@ create "OP::Log" => {
       OP::Enum::Inter::Constant,
       OP::Enum::Inter::Undefined,
       OP::Enum::Inter::None,
-      ::default(OP::Enum::Inter::Linear)
+      subtype(
+        default => OP::Enum::Inter::Linear
+      )
     );
 
     $asserts->{tickSize} = OP::TimeSpan->assert();
@@ -225,7 +235,11 @@ create "OP::Log" => {
     create $messageClassName => {
       __BASE__  => $base,
       __numRows => $self->numRows(),
-      name      => OP::Name->assert(::optional()),
+      name      => OP::Name->assert(
+        subtype(
+          optional => true
+        )
+      ),
     };
 
     return $messageClassName;
@@ -317,9 +331,5 @@ create "OP::Log" => {
 =head1 SEE ALSO
 
 This file is part of L<OP>.
-
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Log.pm#7 $
 
 =cut

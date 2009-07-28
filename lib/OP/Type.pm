@@ -53,7 +53,7 @@ as inline keys:
     #
     # Instance variable "foo" will contain optional string data:
     #
-    foo => OP::Str->assert( ::optional() ),
+    foo => OP::Str->assert(...),
 
     ...
   };
@@ -76,7 +76,7 @@ validation failure, and return C<true> on success.
 
 =over 4
 
-=item * insist(Any $value, Code $test);
+=item * insist($value, Code $test);
 
 Runs the received value against a test sub.
 
@@ -154,9 +154,9 @@ use OP::Persistence::MySQL; # For RefOpts constants
 
 use base qw| Exporter OP::Class::Dumper OP::Class |;
 
-our @EXPORT;
+our @EXPORT_OK = qw| subtype |;
 
-# sub insist(Any $value, Code $code) { &$code($value) }
+# sub insist($value, Code $code) { &$code($value) }
 sub insist{
   my $value = shift;
   my $code = shift;
@@ -555,7 +555,7 @@ and into the assertion code tests. Will make things cleaner and faster.
 
 =cut
 
-# method test(Str $key, Any $value) {
+# method test(Str $key, $value) {
 sub test {
   my $self = shift;
   my $key = shift;
@@ -892,7 +892,7 @@ our %RULES = (
     insist( $value, isStr ) && return $value;
   },
 
-  # unique => sub(Any ?$value) {
+  # unique => sub(?$value) {
   unique => sub {
     my $value = shift;
 
@@ -972,8 +972,6 @@ for ( keys %RULES ) {
   |;
 }
 
-@EXPORT = ( qw| true false member insist |, keys %RULES );
-
 #
 # Helper function so Str, Int, and Float don't have
 # to repeat this bit of code:
@@ -1025,6 +1023,23 @@ sub __parseTypeArgs {
   $parsed{code} = $testSub;
 
   return %parsed;
+}
+
+sub subtype {
+  my $rules = OP::Hash->new(@_);
+
+  return $rules->collect( sub {
+    my $key   = shift;
+    my $value = $rules->{$key};
+
+    my $ruleClass = join("::", "OP::Subtype", $key);
+
+    if ( UNIVERSAL::isa($ruleClass, "OP::Subtype") ) {
+      OP::Array::yield($ruleClass->new($value));
+    } else {
+      OP::RuntimeError->throw("Unknown subtype class $ruleClass");
+    }
+  } )->value();
 }
 
 =pod

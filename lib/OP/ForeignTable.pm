@@ -16,13 +16,41 @@ use OP;
 create "OP::ForeignTable" => {
   __BASE__ => "OP::Hash",
 
-  db      => OP::Str->assert(::optional),
-  host    => OP::Str->assert(::optional),
-  port    => OP::Str->assert(::optional),
-  user    => OP::Str->assert(::optional),
-  table   => OP::Str->assert(::optional),
-  pass    => OP::Str->assert(::optional),
-  dsnStr  => OP::Str->assert(::optional),
+  db      => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
+  host    => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
+  port    => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
+  user    => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
+  table   => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
+  pass    => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
+  dsnStr  => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  ),
 
   objectClass => sub {
     my $self = shift;

@@ -20,79 +20,110 @@ use Time::HiRes;
 
 create "OP::SeriesChart" => {
   name => OP::Name->assert(
-    ::optional(),
+    subtype(
+      optional => true,
+    )
   ),
 
   yMin => OP::Int->assert(
-    ::optional(),
+    subtype(
+      optional => true,
+    )
   ),
 
   yMax => OP::Int->assert(
-    ::optional(),
+    subtype(
+      optional => true,
+    )
   ),
 
   width => OP::Int->assert(
-    ::default(320),
+    subtype(
+      default => 320,
+    )
   ),
 
   height => OP::Int->assert(
-    ::default(240),
+    subtype(
+      default => 240,
+    )
   ),
 
   colors => OP::Array->assert(
     OP::Array->assert(
       OP::Int->assert(
-        ::min(0),
-        ::max(255),
+        subtype(
+          min => 0,
+          max => 255,
+        )
       ),
-      ::size(3),
+      subtype(
+        size => 3,
+      )
     ),
-    ::default(
-      # Neat site
-      # http://www.personal.psu.edu/cab38/ColorBrewer/ColorBrewer.html
-
-      # green
-      [ 35, 200, 69 ],
-      # orange
-      [ 250, 92, 1 ],
-      # red
-      [ 250, 24, 29 ],
-      # gray
-      [ 150, 150, 150 ],
-      # pink
-      [ 250, 64, 126 ],
-      # lavender i guess
-      [ 106, 81, 163 ],
-      # blue
-      [ 33, 113, 181 ],
-    ),
+    subtype(
+      default => [
+        [ 35, 200, 69 ], # green
+        [ 250, 92, 1 ], # orange
+        [ 250, 24, 29 ], # red
+        [ 150, 150, 150 ], # gray
+        [ 250, 64, 126 ], # pink
+        [ 106, 81, 163 ], # lavender i guess
+        [ 33, 113, 181 ], # blue
+      ],
+    )
   ),
 
   font => OP::Str->assert(
-    default('/usr/share/X11/fonts/TTF/luxisb.ttf'),
+    subtype(
+      default => '/usr/share/X11/fonts/TTF/luxisb.ttf',
+    )
   ),
 
   bgColor => OP::Array->assert(
-    OP::Float->assert(min(0), max(255)),
-    default([ 255, 255, 255, 1 ]),
-    size(4)
+    OP::Float->assert(
+      subtype(
+        min => 0,
+        max => 255,
+      )
+    ),
+    subtype(
+      default => [ 255, 255, 255, 1 ],
+      size    => 4,
+    )
   ),
 
   gridColor => OP::Array->assert(
-    OP::Float->assert(min(0), max(255)),
-    default([ 200, 200, 200, .5 ]),
-    size(4)
+    OP::Float->assert(
+      subtype(
+        min => 0,
+        max => 255,
+      )
+    ),
+    subtype(
+      default => [ 200, 200, 200, .5 ],
+      size    => 4,
+    )
   ),
 
   unitColor => OP::Array->assert(
-    OP::Float->assert(min(0), max(255)),
-    default([ 0,0,0,1 ]),
-    size(4)
+    OP::Float->assert(
+      subtype(
+        min => 0,
+        max => 255,
+      )
+    ),
+    subtype(
+      default => [ 0,0,0,1 ],
+      size    => 4,
+    )
   ),
 
   stacked => OP::Int->assert(
     true, false,
-    ::default(true),
+    subtype(
+      default => true,
+    )
   ),
 
   addSeries => sub($$) {

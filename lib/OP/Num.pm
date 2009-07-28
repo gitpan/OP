@@ -16,7 +16,7 @@ OP::Num - Overloaded object class for numbers
 
 =head1 DESCRIPTION
 
-Extends L<OP::Scalar> and L<Scalar::Number>.
+Extends L<OP::Scalar>.
 
 =head1 SYNOPSIS
 
@@ -35,11 +35,9 @@ package OP::Num;
 use strict;
 use warnings;
 
-use Scalar::Number;
 use OP::Enum::Bool;
 
-use base qw| Scalar::Number OP::Scalar |;
-
+use base qw| OP::Scalar |;
 
 # + - * / % ** << >> x
 # <=> cmp

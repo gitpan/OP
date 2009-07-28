@@ -83,10 +83,6 @@ __END__
 
 OP::EmailAddr - Overloaded RFC 2822 email address object
 
-=head1 VERSION
-
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/EmailAddr.pm#4 $
-
 =head1 SYNOPSIS
 
   use OP::EmailAddr;
@@ -127,7 +123,11 @@ Returns a new OP::Type::EmailAddr instance which encapsulates the received
 L<OP::Subtype> rules.
 
   create "OP::Example" => {
-    someAddr  => OP::EmailAddr->assert(optional()),
+    someAddr  => OP::EmailAddr->assert(
+      subtype(
+        optional => true
+      )
+    ),
 
     # ...
   };

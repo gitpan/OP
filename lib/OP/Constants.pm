@@ -10,76 +10,13 @@
 #
 package OP::Constants;
 
-=pod
-
-=head1 NAME
-
-OP::Constants - Loads .oprc values as Perl constants
-
-=head1 DESCRIPTION
-
-Loads C<.oprc> values as Perl constants, with optional export.
-
-C<.oprc> is a YAML file containing constant values used by OP. It should
-be located under C<$ENV{OP_HOME}>, which defaults to C</opt/op>.
-
-An example C<.oprc> is included in the top level directory of this
-distribution, and also given later in this document.
-
-=head1 SECURITY
-
-The <.oprc> file represents the keys to the kingdom.
-
-Treat your <.oprc> file with the same degree of lockdown as you would
-with system-level executables and their associated configuration
-files. It should not be kept in a location where untrusted parties
-can write to it, or where any unaudited changes can occur.
-
-=head1 SYNOPSIS
-
-To import constants directly, just specify them when using OP::Constants:
-
- use OP::Constants qw| dbUser dbPass |;
-
- my $dbUser = dbUser;
- my $dbPass = dbPass;
-
-To access the constants without importing them into the caller's
-namespace, just fully qualify them:
-
- use OP::Constants;
-
- my $dbUser = OP::Constants::dbUser;
- my $dbPass = OP::Constants::dbPass;
-
-=head1 EXAMPLE
-
-The following is an example of an .oprc file. The file contents must be
-valid YAML:
-
-  ---
-  ldapHost: ldap
-  yamlRoot: /opt/op/yaml
-  sqliteRoot: /opt/op/sqlite
-  scratchRoot: /tmp
-  dbName: op
-  dbHost: localhost
-  dbPass: ~
-  dbPort: 3306
-  dbUser: op
-  memcachedHosts:
-    - 127.0.0.1:31337
-  rcsBindir: /usr/bin
-  rcsDir: RCS
-  syslogHost: ~
-
-=cut
-
 use strict;
+use warnings;
 
+use File::HomeDir;
 use IO::File;
-use YAML::Syck;
 use Sys::Hostname;
+use YAML::Syck;
 
 use Error qw| :try |;
 
@@ -91,19 +28,18 @@ use base qw( Exporter );
 
 our @EXPORT_OK;
 
-#
-# Default RC file location if OP_HOME is not set
-#
-use constant DefaultPath => '/opt/op';
-
 sub init {
   my $RC = shift;
   my $caller = caller;
 
-  $ENV{OP_HOME} ||= DefaultPath;
+  $ENV{OP_HOME} ||= File::HomeDir->my_home;
+
+  OP::RuntimeError->throw(
+    "Could not determine home directory for current user"
+  ) if !$ENV{OP_HOME};
 
   #
-  # Private package variables
+  #
   #
   my $rc;
 
@@ -229,6 +165,92 @@ init '.oprc';
 
 =pod
 
+=head1 NAME
+
+OP::Constants - Loads .oprc values as Perl constants
+
+=head1 DESCRIPTION
+
+Loads C<.oprc> values as Perl constants, with optional export.
+Easily extended to support other named rc files.
+
+C<.oprc> is a YAML file containing constant values used by OP. It should
+be located under C<$ENV{OP_HOME}>, which defaults to the current
+user's home directory ($ENV{HOME} on Unix platforms)
+
+An example C<.oprc> is included in the top level directory of this
+distribution, and also given later in this document. Copy this file
+to the proper location, or just run C<bin/opconf> (also included with
+this distribution) to generate this for your local system and current
+user.
+
+=head1 SECURITY
+
+The C<.oprc> file represents the keys to the kingdom.
+
+Treat your C<.oprc> file with the same degree of lockdown as you would
+with system-level executables and their associated configuration
+files. It should not be kept in a location where untrusted parties
+can write to it, or where any unaudited changes can occur.
+
+=head1 SYNOPSIS
+
+To import constants directly, just specify them when using OP::Constants:
+
+ use OP::Constants qw| dbUser dbPass |;
+
+ my $dbUser = dbUser;
+ my $dbPass = dbPass;
+
+To access the constants without importing them into the caller's
+namespace, just fully qualify them:
+
+ use OP::Constants;
+
+ my $dbUser = OP::Constants::dbUser;
+ my $dbPass = OP::Constants::dbPass;
+
+=head1 EXAMPLE
+
+The following is an example of an .oprc file. The file contents must be
+valid YAML:
+
+  ---
+  ldapHost: ldap
+  yamlRoot: /opt/op/yaml
+  sqliteRoot: /opt/op/sqlite
+  scratchRoot: /tmp
+  dbHost: localhost
+  dbPass: ~
+  dbPort: 3306
+  dbUser: op
+  memcachedHosts:
+    - 127.0.0.1:31337
+  rcsBindir: /usr/bin
+  rcsDir: RCS
+  syslogHost: ~
+
+
+=head1 HOST-SPECIFIC OVERLAYS
+
+After loading .oprc, OP::Constants checks for the presence of a
+file named C<.oprc-HOSTNAME>, where HOSTNAME is the name of localhost
+as per Sys::Hostname. If the file is found, its values are added
+as constants, stomping any values of the same key which were loaded
+from the "global" rc.
+
+For example, the host-specific configuration below would force
+hypothetical host foo.example.com to connect to a different database
+than the one specified in .oprc.
+
+  > hostname
+  foo.example.com
+
+  > cat $OP_HOME/.oprc-foo.example.com
+  ---
+  dbHost: stgdb.example.com
+
+
 =head1 CUSTOM RC FILES
 
 Developers may create self-standing rc files for application-specific
@@ -238,7 +260,7 @@ named rc file.
 Just as C<.oprc>, the custom rc file must contain valid YAML, and it lives
 under C<$ENV{OP_HOME}>.
 
-For example, in a hypothetical C<.myapprc>:
+For example, in a hypothetical <.myapprc>:
 
   ---
   hello: howdy
@@ -264,6 +286,19 @@ Callers may consume the constants package, requesting symbols for export:
   # Prints "howdy"
   #
 
+Host-specific overlays work with custom RC files as well.
+
+  > hostname
+  foo.example.com
+
+  > cat $OP_HOME/.myapprc-foo.example.com
+  ---
+  dbHost: stgdb.example.com
+
+  > perl -e 'use MyApp::Constants qw| dbHost |; say dbHost'
+  stgdb.example.com
+
+
 =head1 DIAGNOSTICS
 
 =over 4
@@ -271,7 +306,7 @@ Callers may consume the constants package, requesting symbols for export:
 =item * No .oprc found
 
 C<.oprc> needs to exist in order for OP to compile and run.  In the
-event that an <.oprc> was not found, OP will exit with an instructive
+event that an C<.oprc> was not found, OP will exit with an instructive
 message. Read and follow the provided steps when this occurs.
 
 =item * Some symbol not exported
@@ -295,15 +330,29 @@ occurring, check for broken syntax within the file. Missing ":"
 seperators between key and value pairs, or improper levels of
 indenting are likely culprits.
 
+=item * Host-specific overlay not working
+
+Verify that the name of the host-specific overlay matches the local
+host's "hostname" value, including fully-qualified-ness.
+
+  > hostname
+  foo
+
+In the case of non-FQ hostnames, as above, the overlay rc is named
+C<.oprc-foo>, whereas:
+
+  > hostname
+  foo.example.com
+
+In the fully qualified example above, the overlay rc would be named
+C<.oprc-foo.example.com>.
+
+
 =back
-
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Constants.pm#8 $
 
 =head1 SEE ALSO
 
-L<YAML::Syck>, L<constant>
+L<File::HomeDir>, L<Sys::Hostname>, L<YAML::Syck>, L<constant>
 
 This file is part of L<OP>.
 

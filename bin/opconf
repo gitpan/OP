@@ -1,0 +1,65 @@
+#!/bin/env perl
+
+#
+# Create a new .oprc and allow the user to edit it
+#
+
+use strict;
+use warnings;
+
+use File::HomeDir;
+use YAML::Syck;
+
+use constant VIM => '/usr/bin/vim';
+
+sub main {
+  eval {
+    $SIG{ALRM} = sub {
+      print "Guess not.\n";
+
+      exit;
+    };
+    alarm(5);
+
+    print "Do you want to edit your .oprc? [Y/n]\n";
+    print "(Defaults to NO in 5 seconds...)'\n";
+
+    my $bool = <STDIN>;
+    chomp($bool);
+    $bool ||= 'y';
+    exit if $bool !~ /^y/i;
+
+    alarm(0);
+  };
+
+  $ENV{OP_HOME} ||= File::HomeDir->my_home;
+
+  my $path = join("/", $ENV{OP_HOME}, ".oprc");
+
+  if ( !-e $path ) {
+    my $conf = {
+      ldapHost    => 'ldap',
+      yamlRoot    => join('/', $ENV{OP_HOME}, 'yaml'),
+      sqliteRoot  => join('/', $ENV{OP_HOME}, 'sqlite'),
+      scratchRoot => '/tmp',
+      dbHost      => 'localhost',
+      dbPass      => undef,
+      dbPort      => 3306,
+      dbUser      => 'op',
+      memcachedHosts => [
+        '127.0.0.1:31337',
+      ],
+      rcsBindir   => '/usr/bin',
+      rcsDir      => 'RCS',
+      syslogHost  => undef,
+    };
+
+    open(CONF, ">", $path) || die $!;
+    print CONF YAML::Syck::Dump($conf);
+    close(CONF);
+  }
+
+  system(VIM, $path);
+}
+
+main;

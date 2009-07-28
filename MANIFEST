@@ -2,6 +2,7 @@ INSTALL
 MANIFEST
 Makefile.PL
 .oprc
+bin/opconf
 bin/oped
 bin/opid
 bin/opsh
@@ -10,14 +11,11 @@ lib/OP/Class.pm
 lib/OP/SeriesChart.pm
 lib/OP/Name.pm
 lib/OP/Type.pm
-lib/OP/Ref.pm
 lib/OP/Double.pm
 lib/OP/Redefines.pm
 lib/OP/Num.pm
 lib/OP/Constants.pm
-lib/OP/Any.pm
 lib/OP/Series.pm
-lib/OP/Code.pm
 lib/OP/Exceptions.pm
 lib/OP/Subtype.pm
 lib/OP/Object.pm

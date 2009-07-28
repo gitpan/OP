@@ -55,7 +55,11 @@ OP::Name - A unique secondary key
   # Permit NULL values for "name":
   #
   create "YourApp::Example" => {
-    name => OP::Name->assert( ::optional ),
+    name => OP::Name->assert(
+      subtype(
+        optional => true
+      )
+    ),
 
     # ...
   };
@@ -100,7 +104,9 @@ not exceed 255 bytes (when using UTF8 encoding, as OP does).
   #
   create "YourApp::Example" => {
     name => OP::Name->assert(
-      ::unique("parentId"),
+      subtype(
+        unique => "parentId"
+      )
     ),
 
     parentId => OP::ExtID->assert("YourApp::Example"),
@@ -119,7 +125,9 @@ be included by the developer when implementing the class, for example:
   #
   create "YourApp::Example" => {
     name => OP::Domain->assert(
-      ::unique(true),
+      subtype(
+        unique => true
+      ),
     ),
 
     # ...

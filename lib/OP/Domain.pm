@@ -63,10 +63,6 @@ __END__
 
 OP::Domain - Fully qualified domain name object
 
-=head1 VERSION
-
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/Domain.pm#3 $
-
 =head1 SYNOPSIS
 
   use OP::Domain;
@@ -92,7 +88,11 @@ Returns a new OP::Type::Domain instance which encapsulates the received
 L<OP::Subtype> rules.
 
   create "OP::Example" => {
-    someAddr  => OP::Domain->assert(optional()),
+    someAddr  => OP::Domain->assert(
+      subtype(
+        optional => true
+      )
+    ),
 
     # ...
   };

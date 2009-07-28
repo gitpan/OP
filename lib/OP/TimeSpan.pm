@@ -65,10 +65,6 @@ __END__
 
 OP::TimeSpan - Time range object class
 
-=head1 VERSION
-
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/TimeSpan.pm#8 $
-
 =head1 SYNOPSIS
 
   use OP::TimeSpan;
@@ -91,7 +87,7 @@ Returns a new OP::Type::TimeSpan instance which encapsulates the received
 L<OP::Subtype> rules.
 
   create "OP::Example" => {
-    someTime  => OP::TimeSpan->assert(optional()),
+    someTime  => OP::TimeSpan->assert(...),
 
     # ...
   };

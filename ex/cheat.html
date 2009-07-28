@@ -120,18 +120,22 @@ create "<i>YourApp::Example</i>" => { };
 <pre>
 create "<i>YourApp::Example</i>" => {
   favoriteNumber => OP::Int->assert(
-    ::optional
+    subtype(
+      optional => true
+    )
   ),
 
   favoriteColor  => OP::Str->assert(
     qw| red green blue |,
-    ::optional
+    subtype(
+      optional => true
+    )
   ),
 };
 </pre>
 
 <p>
-By default, instances will already have: <b>id</b>, <b>name</b>,
+By default, instances have attributes: <b>id</b>, <b>name</b>,
 <b>ctime</b>, and <b>mtime</b>.
 </p>
 </div>
@@ -313,6 +317,29 @@ create "YourApp::Example" => {
 </pre>
 </div>
 
+<div class="item">
+<h3><i>collect</i> array elements</h3>
+
+<pre>
+my $collected = $array->collect( sub {
+  my $item = shift;
+
+  print "Working with element $item\n"
+
+  return if $item == $foo; # Yield nothing
+
+  break if $item == $bar;  # Stop collecting
+
+  # Upstream $things, continue curr iteration:
+  emit $thing1, [$thing2, ...];
+
+  # Upstream $things, skip to next iteration:
+  yield $thing1, [$thing2, ...];
+} );
+ 
+</pre>
+</div>
+
     </td>
     <td valign="top" width="20%">
 
@@ -324,10 +351,6 @@ create "YourApp::Example" => {
     <td>Framework loader</td>
   </tr>
 
-  <tr>
-    <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Any.pm">OP::Any</a></b></td>
-    <td>Wrapper for any type of variable</td>
-  </tr>
   <tr>
     <td><b><a href="http://search.cpan.org/~aayars/OP/lib/OP/Array.pm">OP::Array</a></b></td>
     <td>List</td>
@@ -406,30 +429,6 @@ create "YourApp::Example" => {
 as inline attributes (<i>$class->assert(...)</i>).</p>
 
 </div>
-
-<div class="item">
-<h3><i>collect</i> array elements</h3>
-
-<pre>
-my $collected = $array->collect( sub {
-  my $item = shift;
-
-  print "Working with element $item\n"
-
-  return if $item == $foo; # Yield nothing
-
-  break if $item == $bar;  # Stop collecting
-
-  # Upstream $things, continue curr iteration:
-  emit $thing1, [$thing2, ...];
-
-  # Upstream $things, skip to next iteration:
-  yield $thing1, [$thing2, ...];
-} );
- 
-</pre>
-</div>
-
     </td>
   </tr>
 </table>

@@ -24,11 +24,15 @@ constructors.
 
 When you see something like:
 
-  foo => OP::Str->assert( ::optional() );
+  foo => OP::Str->assert(
+    subtype(
+      optional => true
+    )
+  )
 
-"OP::Str->assert()" was the Type constructor, and "::optional()" was
-an Subtype constructor. "foo" was name of the instance variable and
-database table column which was asserted.
+"OP::Str->assert()" was the Type constructor, and "optional" was
+part of the Subtype specification. "foo" was name of the instance
+variable and database table column which was asserted.
 
 The class variable %OP::Type::RULES is walked at package load
 time, and the necessary rule subclasses are created dynamically.
@@ -56,13 +60,7 @@ Instance variable assertions may be modified by the following functions:
 Override a database column type. Returns a new
 OP::Subtype::columnType instance.
 
-  create "OP::Example" => {
-    foo => OP::Str->assert(..., ::columnType("VARCHAR(24)")),
-
-    # ...
-  };
-
-=head3 ::default(Any $value)
+=head3 ::default($value)
 
 Set the default value for a given instance variable and database table
 column. Returns a new OP::Subtype::default instance.
@@ -70,70 +68,30 @@ column. Returns a new OP::Subtype::default instance.
 Unless C<optional()> is given, the default value must also be included
 as an allowed value.
 
-  create "OP::Example" => {
-    foo => OP::Str->assert("bar", ..., ::default("bar")),
-
-    # ...
-  };
-
 =head3 ::min(Int $min)
 
 Specifies the minimum allowed numeric value for a given instance variable.
 Returns a new OP::Subtype::min instance.
-
-  create "OP::Example" => {
-    foo => OP::Float->assert(..., ::min(0)),
-
-    # ...
-  };
 
 =head3 ::minSize(Int $min)
 
 Specifies the minimum length or scalar size for a given instance variable.
 Returns a new OP::Subtype::minSize instance.
 
-  create "OP::Example" => {
-    foo => OP::Array->assert(..., ::minSize(1)),
-
-    bar => OP::Str->assert(..., ::minSize(24)),
-
-    # ...
-  };
-
 =head3 ::max(Int $max)
 
 Specifies the maximum allowed numeric value for a given instance variable.
 Returns a new OP::Subtype::max instance.
-
-  create "OP::Example" => {
-    foo => OP::Float->assert(..., ::max(255)),
-
-    # ...
-  };
 
 =head3 ::maxSize(Int $max)
 
 Specifies the maximum length or scalar size for a given instance variable.
 Returns a new OP::Subtype::maxSize instance.
 
-  create "OP::Example" => {
-    foo => OP::Array->assert(..., ::maxSize(5)),
-
-    bar => OP::Str->assert(..., ::maxSize(128)),
-
-    # ...
-  };
-
 =head3 ::optional()
 
 Permit a NULL (undef) value for a given instance variable. Returns a
 new OP::Subtype::optional instance.
-
-  create "OP::Example" => {
-    foo => OP::Str->assert(..., ::optional()),
-
-    # ...
-  };
 
 =head3 ::regex(Rule $regex)
 
@@ -141,22 +99,10 @@ Specifies an optional regular expression which the value of the given
 instance variable must match.  Returns a new OP::Subtype::regex
 instance.
 
-  create "OP::Example" => {
-    foo => OP::Str->assert(..., ::regex(qr/^bario$/)),
-
-    # ...
-  };
-
 =head3 ::serial()
 
 Specify an AUTO_INCREMENT column. This should only be used when asserting
 a primary key. Returns a new OP::Subtype::serial instance.
-
-  create "OP::Example" => {
-    foo => OP::Str->assert(..., ::serial()),
-
-    # ...
-  };
 
 =head3 ::size(Int $size)
 
@@ -166,14 +112,6 @@ Specify that values must always be of a fixed size. The "size" is the
 value obtained through the built-in function C<length()> (string length)
 for Scalars, C<scalar(...)> (element count) for Arrays, and C<scalar keys()>
 (key count) for Hashes.
-
-  create "OP::Example" => {
-    foo => OP::Str->assert(..., ::size(16)),
-
-    bar => OP::Array->assert(..., ::size(5)),
-
-    # ...
-  };
 
 =head3 ::sqlValue(Str $statement), ::sqlInsertValue(Str), ::sqlUpdateValue(Str)
 
@@ -187,7 +125,9 @@ for ::sqlValue, but only on INSERT and UPDATE statements, respectively.
 
   create "OP::Example" => {
     foo => OP::Int->assert(...,
-      ::sqlValue("(coalesce(max(foo),-1)+1)")
+      subtype(
+        sqlValue => "(coalesce(max(foo),-1)+1)",
+      )
     ),
 
     # ...
@@ -202,15 +142,26 @@ OP::Subtype::unique instance.
     #
     # Your must either specify true or false...
     #
-    foo => OP::Str->assert(..., ::unique(true)),
+    foo => OP::Str->assert(...,
+      subtype(
+        unique => true
+      )
+    ),
 
     #
     # ... or specify a name for "joined" combinatory keys,
     # as used in statement UNIQUE KEY ("foo","bar")
     #
+    # To join with more than one key, provide an array reference
+    # of key names.
+    #
     # For example, to make sure bar+foo is always unique:
     #
-    bar => OP::Str->assert(..., ::unique("foo")),
+    bar => OP::Str->assert(...,
+      subtype(
+        unique => "foo"
+      )
+    ),
 
     # ...
   };
@@ -219,14 +170,6 @@ OP::Subtype::unique instance.
 
 Specify an attribute's unit of measurement label. Returns a new
 OP::Subtype::uom instance.
-
-  create "OP::Example" => {
-    foo => OP::Int->assert(..., ::uom("bytes")),
-
-    bar => OP::Double->assert(..., ::uom("km")),
-
-    # ...
-  };
 
 =head1 PUBLIC INSTANCE METHODS
 

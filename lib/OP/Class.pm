@@ -313,11 +313,6 @@ __END__
 OP::Class - Root-level "Class" class
 
 
-=head1 VERSION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Class.pm#9 $
-
-
 =head1 SYNOPSIS
 
 =head2 Class Allocation
@@ -326,7 +321,7 @@ $Id: //depotit/tools/source/snitchd-0.20/lib/OP/Class.pm#9 $
   # File: OP/Example.pm
   #
 
-  use OP qw| create true false |;
+  use OP;
 
   create "OP::Example" => {
     #
@@ -456,7 +451,7 @@ Checks the "safeness" of a class variable name before eval'ing it.
 The B<name> of the class being created is the first argument sent to
 C<create()>.
 
-  use OP qw| create |;
+  use OP;
 
   #
   # The class name will be "OP::Example":
@@ -482,13 +477,23 @@ to C<create()>.
 Instance variables are declared with the C<assert> class method:
 
   create "YourApp::Example" => {
-    favoriteNumber => OP::Int->assert(
-      ::optional
-    ),
+    favoriteNumber => OP::Int->assert()
 
+  };
+
+The allowed values for a given instance variable may be specified
+as arguments to the C<assert> method.
+
+Instance variables may be augmented with subtyping rules using the
+C<subtype> function, which is also sent as an argument to C<assert>.
+See OP::Subtype for a list of allowed subtype arguments.
+
+  create "YourApp::Example" => {
     favoriteColor  => OP::Str->assert(
       qw| red green blue |,
-      ::optional
+      subtype(
+        optional => true
+      )
     ),
   };
 
@@ -545,7 +550,7 @@ Class variables are declared as keys in the class prototype. They should
 be prepended with double underscores (__). The value in the prototype is
 the literal value to be used for the class variable.
 
-  use OP qw| create true false |;
+  use OP;
 
   create "OP::Example" => {
     #
@@ -613,8 +618,6 @@ class name.
 
 Constants provided by L<OP::Enum::Bool>
 
-  use OP qw| true false |;
-
 =back
 
 =head2 Functions
@@ -622,8 +625,6 @@ Constants provided by L<OP::Enum::Bool>
 =over 4
 
 =item * C<create(Str $class: Hash $prototype)>
-
-  use OP qw| create |;
 
 Allocate a new OP-derived class.
 
@@ -635,7 +636,7 @@ L<OP::Type> module for more about assertions.
 OP classes are regular old Perl packages. C<create()> is just a wrapper
 to the C<package> keyword, with some shortcuts thrown in.
 
-  use OP qw| create true false |;
+  use OP;
 
   create "OP::Example" => {
     __someClassVar => true,
@@ -706,30 +707,8 @@ BEGIN block.
 
 =head2 OP under HTML::Mason
 
-OP classes should be preloaded by C<startup.pl>, as in the above example.
-
-B<If (and only if) you are not using a startup.pl>: Mason loads packages
-outside the context of package C<main>, but OP must currently be
-bootstrapped from package C<main>, so one must explicitly drop back into
-C<main> before consuming OP-derived classes. Do this in a C<do> block.
-
-  <%init>
-
-    do {
-      package main;
-
-      use MyApp::Component;
-    }
-
-  </%init>
-  <%perl>
-
-    $m->print( MyApp::Component->sayHello() );
-
-  </%perl>
-
-It is highly recommended to use a startup.pl to preload the packages
-used in your web application.
+It is highly recommended to use a startup script to preload OP and
+the packages used in your web application.
 
   #
   # File: httpd.conf
@@ -745,9 +724,8 @@ used in your web application.
 
 =head1 DEPENDENCIES
 
-OP's dependencies are numerous, and subject to change while the API is
-ironed out. See the Makefile.PL which accompanied this distribution for
-a current list of prerequisites.
+See the META.yml which accompanied this distribution for a current
+list of prerequisites.
 
 =head1 INCOMPATIBILITIES
 

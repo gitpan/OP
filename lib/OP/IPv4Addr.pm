@@ -62,10 +62,6 @@ __END__
 
 OP::IPv4Addr - Overloaded IPv4 address object class
 
-=head1 VERSION
-
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/IPv4Addr.pm#3 $
-
 =head1 SYNOPSIS
 
   use OP::IPv4Addr;
@@ -86,7 +82,7 @@ Returns a new OP::Type::IPv4Addr instance which encapsulates the received
 L<OP::Subtype> rules.
 
   create "OP::Example" => {
-    someAddr  => OP::IPv4Addr->assert(optional()),
+    someAddr  => OP::IPv4Addr->assert( subtype(...) ),
 
     # ...
   };

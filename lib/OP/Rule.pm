@@ -16,7 +16,7 @@ OP::Rule - Object class for regular expressions
 
 =head1 DESCRIPTION
 
-Extends L<OP::Ref>
+Extends L<OP::Str>
 
 =head1 SYNOPSIS
 

@@ -61,10 +61,6 @@ __END__
 
 OP::URI - Overloaded URI object class
 
-=head1 VERSION
-
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/URI.pm#2 $
-
 =head1 SYNOPSIS
 
   use OP::URI;
@@ -85,7 +81,7 @@ Returns a new OP::Type::URI instance which encapsulates the received
 L<OP::Subtype> rules.
 
   create "OP::Example" => {
-    someAddr  => OP::URI->assert(optional()),
+    someAddr  => OP::URI->assert(...),
 
     # ...
   };

@@ -881,10 +881,6 @@ sub _init {
 
 This file is part of L<OP>.
 
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Object.pm#13 $
-
 =cut
 
 true;

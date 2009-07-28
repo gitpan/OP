@@ -67,7 +67,6 @@ sub assert {
   return $class->__assertClass()->new(%parsed);
 };
 
-# method new(OP::Class $class: Any $time) {
 sub new {
   my $class = shift;
   my $time = shift;
@@ -160,10 +159,6 @@ __END__
 
 OP::DateTime - Overloaded Time object class
 
-=head1 VERSION
-
-  $Id: //depotit/tools/source/snitchd-0.20/lib/OP/DateTime.pm#15 $
-
 =head1 SYNOPSIS
 
   use OP::DateTime;
@@ -193,7 +188,11 @@ Returns a new OP::Type::DateTime instance which encapsulates the received
 L<OP::Subtype> rules.
 
   create "OP::Example" => {
-    someTimestamp  => OP::DateTime->assert(optional()),
+    someTimestamp  => OP::DateTime->assert(
+      subtype(
+        optional => true
+      )
+    ),
 
     # ...
   };

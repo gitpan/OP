@@ -43,10 +43,6 @@ For 0-Index versions (where January = 0), prepend an underscore.
 
 This file is part of L<OP>.
 
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Enum/MonthsOfYear.pm#1 $
-
 =cut
 
 1;

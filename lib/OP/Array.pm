@@ -208,10 +208,17 @@ assertion has independent rules:
     #
     matrix => OP::Array->assert(
       OP::Array->assert(
-        OP::Int->assert( ::min(0), ::max(255) ),
-        ::size(3)
+        OP::Int->assert( subtype(
+          min => 0,
+          max => 255
+        ) ),
+        subtype(
+          size => 3,
+        ),
       ),
-      ::size(3)
+      subtype(
+        size => 3
+      )
     ),
 
     # ...
@@ -281,7 +288,6 @@ Get the received array index. Functionally the same as $ref->[$index].
 
 =cut
 
-# method get(Any $index) {
 sub get {
   my $self = shift;
   my $index = shift;
@@ -307,7 +313,6 @@ same as $ref->[$index] = $value.
 
 =cut
 
-# method set(Any $index, *@value) {
 sub set {
   my $self = shift;
   my $index = shift;
@@ -889,7 +894,6 @@ Returns a true value if self includes the received value, otherwise false.
 
 =cut
 
-# method includes(Any $item) {
 sub includes {
   my $self = shift;
   my $item = shift;
@@ -1381,10 +1385,6 @@ sub shift {
 L<perlfunc>, L<Math::VecStat>
 
 This file is part of L<OP>.
-
-=head1 VERSION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Array.pm#16 $
 
 =cut
 

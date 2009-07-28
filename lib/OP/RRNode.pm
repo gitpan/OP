@@ -49,10 +49,6 @@ L<OP::Class> > L<OP::Object> > L<OP::Hash> > L<OP::Node> > OP::RRNode
 
 This file is part of L<OP>.
 
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/RRNode.pm#6 $
-
 =cut
 use strict;
 use warnings;
@@ -100,33 +96,45 @@ create "OP::RRNode" => {
     # We want subclasses to inherit these:
     #
     $asserts->{id} = OP::Int->assert(
-      ::columnType("BIGINT(20)"),
-      ::sqlValue("(coalesce(max(id),-1) + 1)"),
-      ::optional()
+      subtype(
+        columnType => "BIGINT(20)",
+        sqlValue   => "(coalesce(max(id),-1) + 1)",
+        optional   => true,
+      )
     );
 
     $asserts->{modulo} = OP::Int->assert(
-      ::default(0),
-      ::sqlValue("(coalesce(max(id),-1) + 1) mod $r"),
-      ::unique(true),
-      ::optional(),
+      subtype(
+        default => 0,
+        sqlValue => "(coalesce(max(id),-1) + 1) mod $r",
+        unique   => true,
+        optional => true,
+      )
     );
 
     $asserts->{value}   = OP::Double->assert(
-      ::optional(),
+      subtype(
+        optional => true,
+      )
     );
 
     $asserts->{message} = OP::Str->assert(
-      ::optional(),
+      subtype(
+        optional => true,
+      )
     );
 
     $asserts->{state}   = OP::Int->assert(
       OK, Warn, Crit,
-      ::optional()
+      subtype(
+        optional => true,
+      )
     ); # OP::Enum::State
 
     $asserts->{timestamp} = OP::DateTime->assert(
-      ::optional()
+      subtype(
+        optional => true,
+      )
     ),
 
     return $asserts;
@@ -207,7 +215,7 @@ create "OP::RRNode" => {
       $self->_quotedValues()->join(", "),
       $table,
       $attributes->collect( sub {
-        yield "$_ = values($_)";
+        OP::Array::yield( "$_ = values($_)" );
       } )->join(",\n            ")
     );
   },

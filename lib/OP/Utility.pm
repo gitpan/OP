@@ -33,15 +33,11 @@ to C<1>.
 
 use strict;
 
-use Alarm::Concurrent qw| alarm sethandler |;
 use Carp;
 use Data::GUID;
 use Error qw| :try |;
-use Fcntl qw| :DEFAULT :flock |;
-use File::Find;
 use File::Path;
 use IO::File;
-use IO::String;
 use LWP::UserAgent;
 use Net::Syslog;
 use POSIX qw| strftime |;
@@ -101,84 +97,6 @@ use constant Month => Day * 30;
 use constant Year => Day * 365.25;
 use constant Decade => Year * 10;
 
-
-=pod
-
-=over 4
-
-=item * grabLock($lockName, [$timeout], [$lockType]);
-
-Acquire a lock, keyed using the received name. Optionally accepts a
-timeout value as a second argument, and a lock type (as string) as third
-argument (e.g.  "LOCK_SH", "LOCK_EX"). If no lock type is specified,
-an exclusive lock is used. Returns an IO::File object, or throws a warn
-and returns undef if a lock could not be acquired.
-
-=cut
-
-# sub grabLock(Str $lockName, Int ?$timeout, Str ?$lockType) {
-sub grabLock {
-  my $lockName = shift;
-  my $timeout = shift;
-  my $lockType = shift;
-
-  $timeout ||= 90;
-
-  $lockType = ( $lockType && $lockType eq 'LOCK_SH' ) ?
-    LOCK_SH : LOCK_EX;
-
-  my $lockFile = join('/', mutexRoot, $lockName);
-
-  my $base = $lockFile;
-  $base =~ s/[^\/]+$//;
-
-  mkpath $base unless -d $base;
-
-  my $fileHandle;
-
-  my $timeoutMessage = "$timeout sec timeout acquiring exclusive ".
-    "lock for $lockFile";
-
-  $fileHandle = IO::File->new("> $lockFile")
-    || throw OP::FileAccessError(
-      "couldn't open $lockFile for writing: $!"
-    );
-
-  #
-  # Install Alarm::Concurrent handler:
-  #
-  sethandler( sub {
-    throw OP::LockTimeoutExceeded($timeoutMessage);
-  } );
-
-  alarm($timeout);
-
-  flock($fileHandle, $lockType)
-    || throw OP::LockFailure(
-      "couldn't acquire lock for $lockFile: $!"
-    );
-
-  alarm(0);
-
-  return $fileHandle;
-}
-
-=pod
-
-=item * releaseLock($lock);
-
-Release the received resource back to the system.
-
-=cut
-
-# sub releaseLock(IO $lock) {
-sub releaseLock {
-  my $lock = shift;
-
-  close($lock);
-
-  return 1;
-}
 
 =pod
 
@@ -424,35 +342,6 @@ sub decodeExitStatus {
 
 =pod
 
-=item * cleanupMutexes()
-
-Perform a housekeeping sweep of mutex files.
-
-=cut
-
-sub cleanupMutexes {
-  my $now = CORE::time();
-
-  my @paths;
-
-  find(
-    sub { push @paths, $File::Find::name }, mutexRoot
-  );
-
-  for my $path ( @paths ) {
-    my @stat = stat($path);
-
-    my $cutoff = $now - mutexCleanupTime; # Last accessed > 10 mins ago
-
-    next if ( -d $path ) || $stat[8] > $cutoff;
-
-    unlink $path;
-  }
-}
-
-
-=pod
-
 =item * newId();
 
 Return a new alpha-numeric ID (GUID).
@@ -635,10 +524,6 @@ sub formatErrorString($) {
 =head1 SEE ALSO
 
 This file is part of L<OP>.
-
-=head1 REVISON
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Utility.pm#7 $
 
 =cut
 

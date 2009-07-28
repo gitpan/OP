@@ -1,39 +1,90 @@
 use strict;
 use diagnostics;
 
-use Test::More tests => 31;
+my $basetests;
+my $dbitests;
+my $total;
 
-my $tempdir = "/tmp";
-my $temprc = join("/", $tempdir, ".oprc");
+BEGIN {
+  $basetests = 26;
+  $dbitests  = 2;
 
-my $reason;
-
-if ( !-d $tempdir ) {
-  $reason = "$tempdir is not a directory (weird)";
-} elsif ( !-w $tempdir ) {
-  $reason = "$tempdir is not writable (can't make a temp .oprc)";
+  $total = ( $basetests + $dbitests );
 }
 
+use Test::More tests => $total;
+
+my $reason;
+my $tempdir;
+my $dirname;
+my $temprc;
+
 SKIP: {
-  skip($reason, 29) if $reason;
+  my $hasFileTempdir;
 
-  #
-  # OP will not compile without a valid .oprc.
-  #
-  # Set up a fake .oprc so testing may proceed.
-  #
-  # The fake .oprc gets removed when testing is complete.
-  #
-  # Tests will fail if $tempdir is not writable :-/
-  #
-  open(OPRC, ">", $temprc) || die $!;
+  eval {
+    require File::Tempdir;
 
-  print OPRC q|
+    $hasFileTempdir++;
+  };
+
+  if ( $hasFileTempdir ) {
+    eval qq{
+      use File::Tempdir;
+    };
+  } else {
+    $reason = "File::Tempdir not installed";
+
+    skip($reason, $basetests) if $reason;
+  }
+
+  if ( !$reason ) {
+    eval {
+      $tempdir = File::Tempdir->new;
+
+      $dirname = $tempdir->name;
+    };
+  } else {
+    $reason  = "Unusable filesystem (can't make tempdir)";
+  }
+
+  if ( !$reason && !$dirname ) {
+    $reason = "Unable to get name for temp directory";
+  }
+
+  if ( !$reason ) {
+    $temprc = join("/", $dirname, ".oprc");
+
+    if ( !-d $dirname ) {
+      $reason = "$dirname is not a directory (weird)";
+    } elsif ( !-w $dirname ) {
+      $reason = "$dirname is not writable (can't make a temp .oprc)";
+    }
+
+    skip($reason, $basetests) if $reason;
+  }
+
+  if ( !$reason ) {
+    #
+    # OP will not compile without a valid .oprc.
+    #
+    # Set up a fake .oprc so testing may proceed.
+    #
+    # The fake .oprc gets removed when testing is complete.
+    #
+    # Tests will fail if $dirname is not writable :-/
+    #
+    if ( !open(OPRC, ">", $temprc) ) {
+      $reason = $! || "Unusable filesystem ($temprc unwritable)";
+
+      skip($reason, $basetests);
+    }
+
+    print OPRC q|
 ---
-yamlRoot: $tempdir/yaml
-sqliteRoot: $tempdir/sqlite
-scratchRoot: $tempdir
-dbName: op
+yamlRoot: $dirname/yaml
+sqliteRoot: $dirname/sqlite
+scratchRoot: $dirname/scratch
 dbHost: localhost
 dbPass: ~
 dbPort: 3306
@@ -43,9 +94,10 @@ rcsDir: RCS
 memcachedHosts: ~
 syslogHost: ~
 |;
-  close(OPRC);
+    close(OPRC);
 
-  $ENV{OP_HOME} = $tempdir;
+    $ENV{OP_HOME} = $dirname;
+  }
 
   ###
   ### Class prototyping tests
@@ -71,12 +123,8 @@ syslogHost: ~
   #
   # SCALARS
   #
-  isa_ok( OP::Any->new("Anything"), "OP::Any" );
-
   isa_ok( OP::Bool->new(1), "OP::Bool" );
   isa_ok( OP::Bool->new(0), "OP::Bool" );
-
-  isa_ok( OP::Code->new( sub { } ), "OP::Code" );
 
   isa_ok( OP::Domain->new( "example.com" ), "OP::Domain" );
 
@@ -95,9 +143,6 @@ syslogHost: ~
   isa_ok( OP::Name->new("Nom"), "OP::Name" );
 
   isa_ok( OP::Num->new(42), "OP::Num");
-
-  my $foo = "Hello";
-  isa_ok( OP::Ref->new(\$foo), "OP::Ref");
 
   isa_ok( OP::Rule->new(qr/example/), "OP::Rule");
 
@@ -122,7 +167,7 @@ syslogHost: ~
   # HASHES
   #
   isa_ok( OP::Hash->new, "OP::Hash");
-};
+}
 
 my $hasDBDMysql;
 my $hasOPDB;
@@ -184,7 +229,7 @@ SKIP: {
 
     print "----------------------------------------------------------\n";
 
-    skip($reason, 2);
+    skip($reason, $dbitests);
   } else {
     print "Testing creation and destruction of DB schema and objects...\n";
   }
@@ -193,14 +238,16 @@ SKIP: {
 
   is( createTestNodeClass($testClass), $testClass );
 
-  isa_ok( createTestNode($testClass), $testClass );
-};
+  isa_ok( createAndDestroyTestNode($testClass), $testClass );
+}
 
 
 #
 # Remove the tempfile
 #
-unlink $temprc;
+if ( $temprc ) {
+  unlink $temprc;
+}
 
 sub createTestHashClass {
   my $class = shift;
@@ -208,21 +255,21 @@ sub createTestHashClass {
   return create( $class => {
     __BASE__ => "OP::Hash"
   } );
-};
+}
 
 sub createTestNodeClass {
   my $class = shift;
 
   return create( $class => { } );
-};
+}
 
 sub createTestHash {
   my $class = shift;
 
   return $class->new;
-};
+}
 
-sub createTestNode {
+sub createAndDestroyTestNode {
   my $class = shift;
 
   my $name = "Testing123";
@@ -252,7 +299,7 @@ sub createTestNode {
   $class->__dropTable;
 
   return $object;
-};
+}
 
 sub testSetter {
   my $class = shift;
@@ -260,7 +307,7 @@ sub testSetter {
   my $self = $class->new;
 
   return $self->setFoo("Bar");
-};
+}
 
 sub testGetter {
   my $class = shift;
@@ -270,7 +317,7 @@ sub testGetter {
   $self->setFoo("Bar");
 
   return $self->foo;
-};
+}
 
 sub testDeleter {
   my $class = shift;
@@ -282,4 +329,4 @@ sub testDeleter {
   $self->deleteFoo("Bar");
 
   return $self->foo;
-};
+}

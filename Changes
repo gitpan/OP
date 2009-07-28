@@ -1,3 +1,14 @@
+2009-07-28: .305
+  - OP_HOME now defaults to the current user's home directory
+  - Added "opconf" .oprc generation script
+  - OP::Subtype constructors are no longer used outside of OP
+    internals-- the "subtype" assert argument has been added, which
+    replaces them in public usage and should feel cleaner (see examples)
+  - OP no longer has to be bootstrapped from package 'main', and no
+    longer exports OP::Subtype constructors
+  - OP.t now skips tests if it can't find a usable temp filesystem
+  - More doc updates and bug fixes
+
 2009-07-24: .304
   - Updated docs
   - make test: Cleanup error handling, added schema manip tests

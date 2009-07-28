@@ -60,10 +60,6 @@ L<OP::Persistence>
 
 This file is part of L<OP>.
 
-=head1 REVISON
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Persistence/SQLite.pm#2 $
-
 =cut
 
 1;

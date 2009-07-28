@@ -52,10 +52,6 @@ L<OP::Enum>, L<OP::Persistence>
 
 This file is part of L<OP>.
 
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Enum/DBIType.pm#2 $
-
 =cut
 
 1;

@@ -249,10 +249,6 @@ sub import {
 
 =pod
 
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Enum.pm#4 $
-
 =head1 SEE ALSO
 
 L<Exporter>, L<constant>, L<enum>

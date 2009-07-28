@@ -29,18 +29,24 @@ create "OP::Series" => {
   __useDbi => false,
 
   name => OP::Str->assert(
-    ::optional(),
+    subtype(
+      optional => true
+    )
   ),
 
   #
   # x axis options
   #
   xKey      => OP::Str->assert(
-    ::default("timestamp"),
+    subtype(
+      default => "timestamp",
+    )
   ), # key to use for x axis
 
   xTickSize => OP::Double->assert(
-    ::default(60),
+    subtype(
+      default => 60,
+    )
   ), # num seconds typically
 
   xMajorTickSize => OP::Double->assert(), # num seconds typically
@@ -55,7 +61,9 @@ create "OP::Series" => {
     OP::Enum::Consol::Last,
     OP::Enum::Consol::Random,
     OP::Enum::Consol::StdDev,
-    ::default( OP::Enum::Consol::Average )
+    subtype(
+      default => OP::Enum::Consol::Average,
+    )
   ),
 
   xMin      => OP::Double->assert(), # ie start time
@@ -66,18 +74,24 @@ create "OP::Series" => {
   # y axis options
   #
   yKey      => OP::Str->assert(
-    ::default("value"),
+    subtype(
+      default => "value",
+    )
   ),  # key to use for y axis
 
   yRpn      => OP::Str->assert(
-    ::optional(),
+    subtype(
+      optional => true,
+    )
   ),  # optional rpn expression
 
   yType     => OP::Int->assert(
     OP::Enum::StatType::Gauge,
     OP::Enum::StatType::Counter,
     OP::Enum::StatType::Derivative,
-    ::default( OP::Enum::StatType::Gauge )
+    subtype(
+      default => OP::Enum::StatType::Gauge,
+    )
   ),
 
   yInterpolate => OP::Int->assert(
@@ -86,7 +100,9 @@ create "OP::Series" => {
     OP::Enum::Inter::Constant,
     OP::Enum::Inter::Undefined,
     OP::Enum::Inter::None,
-    ::default(OP::Enum::Inter::Linear)
+    subtype(
+      default => OP::Enum::Inter::Linear
+    )
   ),
 
   #
@@ -618,17 +634,9 @@ expanding base ticks. (Optional/Experimental)
 
 =item * setXConsolidator($const)
 
-Specify a function to use for consolidation of overlapping values. Valid
-arguments are:
+Specify a function to use for consolidation of overlapping values.
 
-  OP::Enum::Consol::Average # Average value
-  OP::Enum::Consol::Median  # Median value
-  OP::Enum::Consol::Min     # Minimum value
-  OP::Enum::Consol::Max     # Maximum value
-  OP::Enum::Consol::Sum     # Sum of values
-  OP::Enum::Consol::First   # First value seen
-  OP::Enum::Consol::Last    # Last value seen
-  OP::Enum::Consol::Random  # Random value
+See L<OP::Enum::Consol>.
 
 This is an optional argument, and defaults to Average.
 
@@ -644,13 +652,9 @@ This is an optional argument, and defaults to Average.
 
 =item * setYInterpolate($const)
 
-Optional, set interpolation type. Valid args are:
+Optional, set interpolation type.
 
-  OP::Enum::Inter::Linear     # Straight Line
-  OP::Enum::Inter::Spline     # Cubic Spline
-  OP::Enum::Inter::Constant   # Last Known
-  OP::Enum::Inter::Undefined  # Unknowns are undef
-  OP::Enum::Inter::None       # No Interpolation
+See L<OP::Enum::Inter>.
 
 Defaults to Linear.
 
@@ -666,14 +670,7 @@ Optional, supply an RPN expression
 
 Optional, supply statistic type.
 
-Derivative is like Counter but permits
-negative values (rate of change data)
-
-Valid arguments are:
-
-  OP::Enum::StatType::Gauge
-  OP::Enum::StatType::Counter
-  OP::Enum::StatType::Derivative
+See L<OP::Enum::StatType>.
 
 Defaults to Gauge.
 
@@ -756,12 +753,10 @@ L<Parse::RPN>, L<Math::Spline>, L<Math::VecStat>
 
 L<OP::Class>, L<OP::Array>, L<OP::Hash>
 
+L<OP::Enum::Consol>, L<OP::Enum::Inter>, L<OP::Enum::StatType>
+
 Inspired by L<Tie::Hash::Interpolate>
 
 This file is part of L<OP>.
-
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Series.pm#2 $
 
 =cut

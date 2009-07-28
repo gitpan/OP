@@ -39,12 +39,10 @@ use warnings;
 #
 # Third-party packages
 #
-use Array::Diff;
 use Cache::Memcached::Fast;
 use Clone qw| clone |;
 use Digest::SHA1 qw| sha1_hex |;
 use Error qw| :try |;
-use Fcntl qw| :DEFAULT :flock |;
 use File::Copy;
 use File::Path;
 use File::Find;
@@ -61,7 +59,7 @@ use YAML::Syck;
 use OP::Class qw| create true false |;
 use OP::Constants qw|
   yamlRoot scratchRoot sqliteRoot
-  dbName dbHost dbPass dbPort dbUser
+  dbHost dbPass dbPort dbUser
   memcachedHosts
   rcsBindir rcsDir
 |;
@@ -716,12 +714,7 @@ sub loadYaml {
 
   throw OP::DataConversionFailed($@) if $@;
 
-  $class->__marshal($hash);
-
-  return $hash;
-
-  # return bless $hash, $class;
-  # return $class->new($hash);
+  return $class->new($hash);
 };
 
 
@@ -748,7 +741,7 @@ sub loadJson {
 
   throw OP::DataConversionFailed($@) if $@;
 
-  return $class->__marshal($hash);
+  return $class->new($hash);
 };
 
 
@@ -995,16 +988,24 @@ sub __baseAsserts {
   if ( !defined $asserts ) {
     $asserts = OP::Hash->new(
       id    => OP::ID->assert(
-        OP::Type::descript("The primary GUID key of this object"),
+        OP::Type::subtype(
+          descript => "The primary GUID key of this object"
+        )
       ),
       name  => OP::Name->assert(
-        OP::Type::descript("A human-readable secondary key for this object"),
+        OP::Type::subtype(
+          descript => "A human-readable secondary key for this object",
+        )
       ), 
       mtime => OP::DateTime->assert(
-        OP::Type::descript("The last modified timestamp of this object")
+        OP::Type::subtype(
+          descript => "The last modified timestamp of this object"
+        )
       ),
       ctime => OP::DateTime->assert(
-        OP::Type::descript("The creation timestamp of this object")
+        OP::Type::subtype(
+          descript => "The creation timestamp of this object"
+        )
       ),
     );
 
@@ -1382,7 +1383,11 @@ sub elementClass {
       $elementClass = join("::", $class, $key);
 
       create $elementClass => {
-        name          => OP::Name->assert(::optional()),
+        name          => OP::Name->assert(
+          OP::Type::subtype(
+            optional => true
+          )
+        ),
         parentId      => OP::ExtID->assert( $class ),
         elementIndex  => OP::Int->assert(),
         elementValue  => $type->memberType()
@@ -1394,10 +1399,14 @@ sub elementClass {
       my $memberClass = $class->memberClass($key);
 
       create $elementClass => {
-        name          => OP::Name->assert(::optional()),
+        name          => OP::Name->assert(
+          OP::Type::subtype(
+            optional => true
+          )
+        ),
         parentId      => OP::ExtID->assert( $class ),
         elementKey    => OP::Str->assert(),
-        elementValue  => OP::Any->assert(),
+        elementValue  => OP::Str->assert(),
       };
     }
   }
@@ -3287,19 +3296,13 @@ sub setIdsFromNames {
     $currIds = OP::Array->new($currIds);
   }
 
-  my $diff = Array::Diff->diff($currIds, $newIds);
-
-  my $changed = $diff->count;
-
-  # return if !$changed;
-
   if ( $type->isa("OP::Type::ExtID") ) {
     $self->set($attr, $newIds->shift);
   } else {
     $self->set($attr, $newIds);
   }
 
-  return $changed;
+  return true;
 };
 
 =pod
@@ -4006,71 +4009,35 @@ sub _saveToPath {
   }
 
   my $id = $self->key();
-
   if ( UNIVERSAL::isa($id, "Data::GUID") ) {
     $id = $id->as_string();
   }
 
-  my $lockfile = join('::', $class, $id );
-  my $lock = OP::Utility::grabLock($lockfile);
+  my $tempPath = sprintf '%s/%s-%s',
+    scratchRoot, $id, OP::Utility::randstr();
 
-  my $error;
+  my $tempBase = $tempPath;
+  $tempBase =~ s/[^\/]+$//;
 
-  if ( !$lock && $@ ) {
-    $error = $@;
-  }
-
-  if ( !$lock ) {
-    $error ||= "Couldn't grab exclusive lock.";
-
-    my $errorMsg = OP::Array->new();
-
-    $errorMsg->push($error);
-    $errorMsg->push("A previous process is taking too long with the same lock");
-
-    throw OP::LockTimeoutExceeded(
-      $errorMsg->join("\n\n")
-    );
-  }
-
-  my $yaml = $self->toYaml();
-
-  my $tempPath = sprintf('%s/%s', scratchRoot, $id);
-  $base = $tempPath;
-  $base =~ s/[^\/]+$//;
-
-  if ( !-d $base ) {
-    eval { mkpath($base) };
+  if ( !-d $tempBase ) {
+    eval { mkpath($tempBase) };
     if ($@) {
       throw OP::FileAccessError($@);
     }
   }
+
+  my $yaml = $self->toYaml();
+
   open(TEMP, "> $tempPath");
-
-  flock(TEMP, LOCK_EX)
-    || throw OP::FileAccessError(
-      "Couldn't grab lock for temp path $tempPath"
-    );
-
   print TEMP $yaml;
   close(TEMP);
 
   chmod '0644', $path;
 
-  open(FH, "> $path");
-
-  flock(FH, LOCK_EX)
-    || throw OP::FileAccessError(
-      "Couldn't grab lock for path $path"
-    );
-
   move( $tempPath, $path );
-  close(FH);
-
-  OP::Utility::releaseLock( $lock );
 
   return true;
-};
+}
 
 
 =pod
@@ -4184,10 +4151,6 @@ sub _newId {
 L<Cache::Memcached::Fast>, L<Rcs>, L<YAML::Syck>, L<GlobalDBI>, L<DBI>
 
 This file is part of L<OP>.
-
-=head1 REVISON
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Persistence.pm#62 $
 
 =cut
 

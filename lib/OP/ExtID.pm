@@ -64,7 +64,9 @@ Create a folder class for documents and other folders:
     #
     parentId => OP::ExtID->assert(
       "OP::ExampleFolder",
-      ::optional()
+      subtype(
+        optional => 1
+      )
     ),
 
     ...
@@ -88,7 +90,11 @@ A document class. Documents refer to their parent folder:
     #
     # Textual content of the document
     #
-    content  => OP::Str->assert( columnType("TEXT") ),
+    content  => OP::Str->assert(
+      subtype(
+        columnType => "TEXT"
+      )
+    ),
 
     # ...
   };

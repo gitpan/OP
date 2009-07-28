@@ -19,7 +19,6 @@ use OP::Class qw| true false |;
 use base qw| OP::Class::Dumper OP::Object |;
 
 use Error qw| :try |;
-use Hash::Util;
 
 =pod
 
@@ -325,10 +324,6 @@ sub isEmpty {
 =head1 SEE ALSO
 
 This file is part of L<OP>.
-
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Hash.pm#13 $
 
 =cut
 

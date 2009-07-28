@@ -44,7 +44,11 @@ create "OP::ForeignRow" => {
       # Type: float
 
       while ( my $row = $sth->fetchrow_hashref() ) {
-        $asserts->{$row->{Field}} = OP::Scalar->assert(::optional());
+        $asserts->{$row->{Field}} = OP::Scalar->assert(
+          subtype(
+            optional => true
+          )
+        ),
       }
 
       $class->set('DBIASSERTS', $asserts);

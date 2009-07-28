@@ -62,10 +62,6 @@ OP::Enum::DaysOfWeek - Named days of week (English)
 
 This file is part of L<OP>.
 
-=head1 REVISION
-
-$Id: //depotit/tools/source/snitchd-0.20/lib/OP/Enum/DaysOfWeek.pm#1 $
-
 =cut
 
 1;
