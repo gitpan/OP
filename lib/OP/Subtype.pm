@@ -50,17 +50,14 @@ Always back up the current table before executing an ALTER.
 
 =head2 RULE TYPES
 
-The C<::> preceding these names is more than just a decoration--
-it explicitly dispatches messages to the default package.
+Instance variable assertions may be modified by providing the following arguments to subtype():
 
-Instance variable assertions may be modified by the following functions:
+=head3 columnType => $colType
 
-=head3 ::columnType(Str $type)
-
-Override a database column type. Returns a new
+Override a database column type, eg "VARCHAR(128)". Returns a new
 OP::Subtype::columnType instance.
 
-=head3 ::default($value)
+=head3 default => $value
 
 Set the default value for a given instance variable and database table
 column. Returns a new OP::Subtype::default instance.
@@ -68,43 +65,43 @@ column. Returns a new OP::Subtype::default instance.
 Unless C<optional()> is given, the default value must also be included
 as an allowed value.
 
-=head3 ::min(Int $min)
+=head3 min => $num
 
 Specifies the minimum allowed numeric value for a given instance variable.
 Returns a new OP::Subtype::min instance.
 
-=head3 ::minSize(Int $min)
+=head3 minSize => $num
 
 Specifies the minimum length or scalar size for a given instance variable.
 Returns a new OP::Subtype::minSize instance.
 
-=head3 ::max(Int $max)
+=head3 max => $num
 
 Specifies the maximum allowed numeric value for a given instance variable.
 Returns a new OP::Subtype::max instance.
 
-=head3 ::maxSize(Int $max)
+=head3 maxSize => $num
 
 Specifies the maximum length or scalar size for a given instance variable.
 Returns a new OP::Subtype::maxSize instance.
 
-=head3 ::optional()
+=head3 optional => true
 
 Permit a NULL (undef) value for a given instance variable. Returns a
 new OP::Subtype::optional instance.
 
-=head3 ::regex(Rule $regex)
+=head3 regex => qr/.../
 
 Specifies an optional regular expression which the value of the given
 instance variable must match.  Returns a new OP::Subtype::regex
 instance.
 
-=head3 ::serial()
+=head3 serial => true
 
 Specify an AUTO_INCREMENT column. This should only be used when asserting
 a primary key. Returns a new OP::Subtype::serial instance.
 
-=head3 ::size(Int $size)
+=head3 size => $num
 
 Returns a new OP::Subtype::serial instance.
 
@@ -113,7 +110,7 @@ value obtained through the built-in function C<length()> (string length)
 for Scalars, C<scalar(...)> (element count) for Arrays, and C<scalar keys()>
 (key count) for Hashes.
 
-=head3 ::sqlValue(Str $statement), ::sqlInsertValue(Str), ::sqlUpdateValue(Str)
+=head3 sqlValue => $str, sqlInsertValue => $str, sqlUpdateValue => $str
 
 Override an asserted attribute's "insert" value when writing to a SQL
 database. This is useful if deriving a new value from existing table
@@ -133,7 +130,7 @@ for ::sqlValue, but only on INSERT and UPDATE statements, respectively.
     # ...
   };
 
-=head3 ::unique()
+=head3 unique => true
 
 Specify UNIQUE database table columns. Returns a new
 OP::Subtype::unique instance.
@@ -166,7 +163,7 @@ OP::Subtype::unique instance.
     # ...
   };
 
-=head3 ::uom(Str $uom)
+=head3 uom => $str
 
 Specify an attribute's unit of measurement label. Returns a new
 OP::Subtype::uom instance.
