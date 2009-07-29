@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.306';
+our $VERSION = '0.307';
 
 use strict;
 use diagnostics;
@@ -68,25 +68,6 @@ our @EXPORT_OK = (
   "yield", "emit", "break"
 );
 
-#
-#
-#
-
-do {
-  #
-  # Workaround for AutoLoader: AutoLoader emits undef warnings in the
-  # context of a "require" statement, when objects without an explicit
-  # DESTROY method are culled.
-  #
-  # To work around this, OP adds an abstract DESTROY method to the the
-  # UNIVERSAL package, which all objects in Perl inherit from. The DESTROY
-  # method may be overridden as usual on a per-class basis.
-  #
-  no strict "refs";
-
-  *{"UNIVERSAL::DESTROY"} = sub { };
-};
-
 true;
 __END__
 =pod
@@ -97,7 +78,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.306> of OP.
+This documentation is for version B<0.307> of OP.
 
 =head1 STATUS
 

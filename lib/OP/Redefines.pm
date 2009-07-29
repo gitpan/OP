@@ -24,9 +24,9 @@ do {
     local $_ = shift;
 
     return 0 if !defined($_);
-    return 0 if ref($_) && !UNIVERSAL::isa($_, "Scalar::Number");
-    return 1 if (/^[+-]?\d+$/); # is a +/- integer
-    return 1 if (/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/); # a C float
+
+    return 1 if "$_" =~ (/^[+-]?\d+$/); # is a +/- integer
+    return 1 if "$_" =~ (/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/); # a C float
     return 1 if ($] >= 5.008 and /^(Inf(inity)?|NaN)$/i) or ($] >= 5.006001 and /^Inf$/i);
 
     0;

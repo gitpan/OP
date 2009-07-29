@@ -211,12 +211,7 @@ use constant isFloat => sub {
 use constant isInt => sub {
   my $value = shift;
 
-  if ( !defined($value)
-    || (
-      !UNIVERSAL::isa($value, "Data::Integer")
-      && "$value" !~ /^\d+$/
-    )
-  ) {
+  if ( !defined($value) || ( "$value" !~ /^\d+$/ ) ) {
     throw OP::AssertFailed("Received value is not an integer");
   }
 
