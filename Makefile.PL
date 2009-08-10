@@ -20,7 +20,6 @@ my $prereqs = {
                  IO::File => 1.14,
                JSON::Syck => 0.29,
      Lexical::Persistence => 0.98,
-           LWP::UserAgent => 5.821,
             Math::VecStat => 0.08,
               Net::Syslog => 0.03,
                Parse::RPN => 2.43,

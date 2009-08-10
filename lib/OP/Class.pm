@@ -670,72 +670,7 @@ to the C<package> keyword, with some shortcuts thrown in.
     },
   };
 
-
 =back
-
-
-=head1 DIAGNOSTICS
-
-XXX TODO Figure out what to put in this section.
-
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-OP looks for the C<.oprc> configuration file under the location specified
-by C<$OP_HOME>. See L<OP::Constants> for details.
-
-=head2 OP under mod_perl/mod_perl2
-
-OP classes should be precompiled under mod_perl by referencing them in
-the Apache instance's C<startup.pl> script. OP_HOME must be set in a
-BEGIN block.
-
-  #
-  # File: startup.pl
-  #
-  BEGIN {
-    $ENV{OP_HOME} = '/home/user/op'; # Directory with the .oprc
-  }
-
-  #
-  # Load any OP-derived packages at startup:
-  #
-  use MyApp::Component;
-  use MyApp::OtherComponent;
-
-  1;
-
-=head2 OP under HTML::Mason
-
-It is highly recommended to use a startup script to preload OP and
-the packages used in your web application.
-
-  #
-  # File: httpd.conf
-  #
-  PerlModule HTML::Mason::ApacheHandler
-  PerlRequire /opt/op/bin/startup.pl
-
-  <LocationMatch "/.*\.html$">
-    SetHandler perl-script
-
-    PerlHandler HTML::Mason::ApacheHandler
-  </LocationMatch>
-
-=head1 DEPENDENCIES
-
-See the META.yml which accompanied this distribution for a current
-list of prerequisites.
-
-=head1 INCOMPATIBILITIES
-
-Probably.
-
-=head1 BUGS AND LIMITATIONS
-
-Likely.
-
-Test suite is currently incomplete.
 
 =head1 SEE ALSO
 

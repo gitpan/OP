@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.307
+version:             0.308
 abstract:            Compact prototyping of InnoDB-backed object classes
 license:             open_source
 author:              
@@ -27,7 +27,6 @@ requires:
     IO::File:                      1.14
     JSON::Syck:                    0.29
     Lexical::Persistence:          0.98
-    LWP::UserAgent:                5.821
     Math::VecStat:                 0.08
     Net::Syslog:                   0.03
     Parse::RPN:                    2.43

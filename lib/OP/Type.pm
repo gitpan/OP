@@ -202,8 +202,10 @@ use constant isFloat => sub {
   throw OP::AssertFailed("undef is not a number")
     if !defined $value;
 
-  throw OP::AssertFailed("Received value is not a float")
-    if ( $value !~ /^\d+$/ ) && ( $value !~ /^\d+\.\d+$/ );
+  my $tempValue = sprintf('%.10f', $value);
+
+  throw OP::AssertFailed("Received value is not a number")
+    if !Scalar::Util::looks_like_number($value);
 
   return true;
 };
@@ -761,7 +763,7 @@ our %RULES = (
   columnType => sub {
     my $value = shift;
 
-    insist( $value, isStr ) && return $value;
+    insist( $value, isStr ) && return uc( $value );
   },
 
   # default => sub(*@value) {

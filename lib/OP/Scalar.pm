@@ -54,7 +54,7 @@ L<OP::Class> > L<OP::Object> > OP::Scalar
   use OP::Scalar;
 
   {
-    my $scalar = OP::Scalar->new("Hello World\n");
+    my $scalar = OP::Scalar->new("Hello World");
     print "$scalar\n";
 
     # Hello World

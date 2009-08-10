@@ -14,15 +14,18 @@ use constant VIM => '/usr/bin/vim';
 
 sub main {
   eval {
-    $SIG{ALRM} = sub {
+    my $bail = sub {
       print "Guess not.\n";
 
       exit;
     };
+    $SIG{INT}  = $bail;
+    $SIG{ALRM} = $bail;
+
     alarm(5);
 
     print "Do you want to edit your .oprc? [Y/n]\n";
-    print "(Defaults to NO in 5 seconds...)'\n";
+    print "(Defaults to NO in 5 seconds...)\n";
 
     my $bool = <STDIN>;
     chomp($bool);

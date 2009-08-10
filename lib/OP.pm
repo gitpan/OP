@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.307';
+our $VERSION = '0.308';
 
 use strict;
 use diagnostics;
@@ -78,7 +78,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.307> of OP.
+This documentation is for version B<0.308> of OP.
 
 =head1 STATUS
 
@@ -111,20 +111,9 @@ When using OP, as with any framework, a number of things "just happen"
 by design. Trying to go against the flow of any of these base assumptions
 is not recommended.
 
-=head2 Environment & RC File
+=head2 Configuration
 
-OP needs to be able to find a valid .oprc file in order to bootstrap
-itself. This lives under $ENV{OP_HOME}, which defaults to the current
-user's home directory.
-
-To generate a first-time config for the local machine, copy the
-.oprc (included with this distribution) to the proper location, or
-run C<bin/opconf> (also included with this distribution) as the
-user who will be running OP. This is a post-install step which is
-not currently handled by C<make install>.
-
-See L<OP::Constants> for information regarding customizing and
-extending the local rc file.
+See CONFIGURATION AND ENVIRONMENT in this document.
 
 =head2 Classes Make Tables
 
@@ -136,14 +125,13 @@ If, rather, you need to derive object classes from a database schema,
 you may want to take a look at L<Class::DBI> and other similar
 packages on the CPAN, which specialize in doing just that.
 
-L<OP::ForeignTable> may be used to work with to external datasources
+L<OP::ForeignTable> may be used to work with external datasources
 as if they were OP classes, but this functionality is quite limited.
 
 =head2 Default Base Attributes
 
-OP objects B<always> have "id", "name", "ctime", and "mtime". The
-subtyping rules of the baseline attributes may be changed, but the
-assertions themselves should not be removed.
+Database-backed OP objects B<always> have "id", "name", "ctime",
+and "mtime".
 
 =over 4
 
@@ -151,17 +139,18 @@ assertions themselves should not be removed.
 
 C<id> is the primary key at the database table level.
 
-Objects will use a GUID (globally unique identifier) for their id,
-unless this behavior is overridden in the instance method C<_newId()>,
-and C<__baseAsserts()> overridden to use a non-GUID data type such
-as L<OP::Int>.
-
-C<id> is automatically set when saving an object to its backing
-store for the time. Modifying C<id> manually is not recommended.
+OP uses GUIDs (Globally Unique Identifiers) for its objects, and
+assigns these values automatically. Changing this assertion in any
+way, or manually modifying the ID value for any object, is not
+recommended.
 
 =item * C<name> => L<OP::Name>
 
-C<name> is a unique, secondary, human-readable key.
+C<name> is a secondary human-readable key.
+
+The assertions for the name attribute may be changed to suit a
+class's requirements, and the name value for any object may be
+freely changed.
 
 For more information on named objects, see L<OP::Name>.
 
@@ -493,6 +482,46 @@ utilizing MySQL's LOAD FILE syntax.
 =item * L<OP::Persistence::Bulk> - Deferred fast bulk table writes
 
 =back
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+=head2 OP_HOME + .oprc
+
+OP needs to be able to find a valid .oprc file in order to bootstrap
+itself. This lives under $ENV{OP_HOME}, which defaults to the current
+user's home directory.
+
+To generate a first-time config for the local machine, copy the
+.oprc (included with this distribution) to the proper location, or
+run C<bin/opconf> (also included with this distribution) as the
+user who will be running OP. This is a post-install step which is
+not currently handled by C<make install>.
+
+See L<OP::Constants> for information regarding customizing and
+extending the local rc file.
+
+=head2 OP + mod_perl
+
+OP-based classes used in a mod_perl app should be preloaded by a
+startup script. OP_HOME must be set in the script's BEGIN block.
+
+For example, in a file C<startup.pl>:
+
+  use strict;
+  use warnings;
+
+  BEGIN {
+    $ENV{OP_HOME} = '/home/user/op'; # Directory with the .oprc
+  }
+
+  use MyApp::Component;
+  use MyApp::OtherComponent;
+
+  1;
+
+And in your C<httpd.conf>:
+
+  PerlRequire /path/to/your/startup.pl
 
 =head1 SEE ALSO
 

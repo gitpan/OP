@@ -187,10 +187,19 @@ stringifies as unix epoch seconds unless overridden.
 Returns a new OP::Type::DateTime instance which encapsulates the received
 L<OP::Subtype> rules.
 
+By default, a column type of DOUBLE(15,4) is used, because MySQL's
+DATETIME type does not support sub-second resolution. This may be
+overridden as needed.
+
+To use DATETIME as the column type, specify it as the value to the
+C<columnType> subtype arg. When using a DATETIME column, OP will
+automatically ask MySQL to handle any necessary conversion.
+
   create "OP::Example" => {
     someTimestamp  => OP::DateTime->assert(
       subtype(
-        optional => true
+        optional   => true,
+        columnType => "DATETIME",
       )
     ),
 

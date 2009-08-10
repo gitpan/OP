@@ -20,6 +20,7 @@ lib/OP/Exceptions.pm
 lib/OP/Subtype.pm
 lib/OP/Object.pm
 lib/OP/Int.pm
+lib/OP/Persistence/Bulk.pm
 lib/OP/Persistence/SQLite.pm
 lib/OP/Persistence/MySQL.pm
 lib/OP/Bool.pm

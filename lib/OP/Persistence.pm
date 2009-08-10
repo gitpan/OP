@@ -141,7 +141,7 @@ sub load {
   my $id = shift;
 
   return $class->__localLoad($id);
-};
+}
 
 
 =pod
@@ -162,7 +162,10 @@ Reconnects to database, if necessary.
   sub($) {
     my $class = shift;
 
-    my $query = sprintf('select * from %s', $class->tableName());
+    my $query = sprintf(
+      q| SELECT * FROM %s |,
+      $class->tableName()
+    );
 
     my $sth = $class->query($query);
 
@@ -185,7 +188,7 @@ sub query {
   return $class->__wrapWithReconnect(
     sub { return $class->__query($query) }
   );
-};
+}
 
 
 =pod
@@ -218,7 +221,7 @@ sub write {
   return $class->__wrapWithReconnect(
     sub { return $class->__write($query) }
   );
-};
+}
 
 
 =pod
@@ -268,7 +271,7 @@ sub allIds {
   $sth->finish();
 
   return $ids;
-};
+}
 
 
 =pod
@@ -322,7 +325,7 @@ sub memberClass {
   # }
 
   return $type->memberClass();
-};
+}
 
 
 =pod
@@ -338,14 +341,15 @@ sub doesIdExist {
   my $class = shift;
   my $id = shift;
 
-  my $count = $class->__selectSingle( sprintf
-    'select count(*) from %s where id = %s',
+  my $count = $class->__selectSingle( sprintf q|
+      SELECT count(*) FROM %s WHERE id = %s
+    |,
     $class->tableName,
     $class->quote($id),
   )->shift;
 
   return $count;
-};
+}
 
 
 =pod
@@ -367,14 +371,15 @@ sub doesNameExist {
   my $class = shift;
   my $name = shift;
 
-  my $count = $class->__selectSingle( sprintf
-    'select count(*) from %s where name = %s',
+  my $count = $class->__selectSingle( sprintf q|
+      SELECT count(*) FROM %s WHERE name = %s
+    |,
     $class->tableName,
     $class->quote($name),
   )->shift;
 
   return $count;
-};
+}
 
 
 #
@@ -395,7 +400,7 @@ sub pretty {
   $pretty =~ s/^Mtime$/Modified Time/gxsmi;
 
   return ucfirst $pretty;
-};
+}
 
 =pod
 
@@ -436,7 +441,7 @@ sub loadByName {
       "Object name \"$name\" does not exist in table $db.$table"
     );
   }
-};
+}
 
 
 =pod
@@ -470,7 +475,7 @@ sub spawn {
 
     return $self;
   }
-};
+}
 
 
 =pod
@@ -497,7 +502,7 @@ sub idForName {
   ) );
 
   return $id->shift();
-};
+}
 
 
 =pod
@@ -524,7 +529,7 @@ sub nameForId {
   ) );
 
   return $name->shift();
-};
+}
 
 
 =pod
@@ -564,7 +569,7 @@ sub allNames {
   $sth->finish();
 
   return $names;
-};
+}
 
 
 =pod
@@ -583,7 +588,7 @@ sub quote {
   my $value = shift;
 
   return $class->__dbh()->quote($value);
-};
+}
 
 
 =pod
@@ -607,7 +612,7 @@ sub databaseName {
   $dbName =~ s/:.*//;
 
   return $dbName;
-};
+}
 
 
 =pod
@@ -643,7 +648,7 @@ sub tableName {
   }
 
   return $tableName;
-};
+}
 
 
 =pod
@@ -670,12 +675,22 @@ sub columnNames {
     my $type = $asserts->{$attr};
 
     # return if $type->objectClass()->isa("OP::ExtID");
-    return if $type->objectClass()->isa("OP::Array");
-    return if $type->objectClass()->isa("OP::Hash");
 
-    OP::Array::yield($attr);
+    my $objectClass = $type->objectClass;
+
+    return if $objectClass->isa("OP::Array");
+    return if $objectClass->isa("OP::Hash");
+
+    if (
+      $objectClass->isa("OP::DateTime")
+        && ( $type->columnType eq 'DATETIME' )
+    ) {
+      OP::Array::yield("UNIX_TIMESTAMP($attr) AS $attr");
+    } else {
+      OP::Array::yield($attr);
+    }
   } );
-};
+}
 
 
 =pod
@@ -715,7 +730,7 @@ sub loadYaml {
   throw OP::DataConversionFailed($@) if $@;
 
   return $class->new($hash);
-};
+}
 
 
 =pod
@@ -742,7 +757,7 @@ sub loadJson {
   throw OP::DataConversionFailed($@) if $@;
 
   return $class->new($hash);
-};
+}
 
 
 =pod
@@ -787,7 +802,7 @@ sub __useYaml {
   }
 
   return $class->get("__useYaml");
-};
+}
 
 
 =pod
@@ -814,7 +829,7 @@ sub __useRcs {
   }
 
   return $class->get("__useRcs");
-};
+}
 
 
 =pod
@@ -849,7 +864,7 @@ sub __useDbi {
   }
 
   return $useDbi;
-};
+}
 
 
 =pod
@@ -894,7 +909,7 @@ sub __useMemcached {
   }
 
   return $class->get("__useMemcached");
-};
+}
 
 
 =pod
@@ -929,7 +944,7 @@ sub __dbiType {
   }
 
   return $class->get("__dbiType");
-};
+}
 
 # 
 # =pod
@@ -957,7 +972,7 @@ sub __autoAlter {
   }
 
   return $class->get("__autoAlter");
-};
+}
 
 
 =pod
@@ -999,12 +1014,14 @@ sub __baseAsserts {
       ), 
       mtime => OP::DateTime->assert(
         OP::Type::subtype(
-          descript => "The last modified timestamp of this object"
+          descript   => "The last modified timestamp of this object",
+          columnType => "DATETIME"
         )
       ),
       ctime => OP::DateTime->assert(
         OP::Type::subtype(
-          descript => "The creation timestamp of this object"
+          descript   => "The creation timestamp of this object",
+          columnType => "DATETIME"
         )
       ),
     );
@@ -1013,7 +1030,7 @@ sub __baseAsserts {
   }
 
   return( clone $asserts );
-};
+}
 
 =pod
 
@@ -1046,7 +1063,7 @@ sub __basePath {
   my $class = shift;
 
   return join( '/', yamlRoot, $class );
-};
+}
 
 
 =pod
@@ -1064,7 +1081,7 @@ sub __baseRcsPath {
   my $class = shift;
 
   return join('/', $class->__basePath(), rcsDir);
-};
+}
 
 
 =pod
@@ -1095,7 +1112,7 @@ sub __primaryKey {
   }
 
   return $key;
-};
+}
 
 
 =pod
@@ -1122,7 +1139,7 @@ sub __localLoad {
       "Backing store not implemented for $class"
     );
   }
-};
+}
 
 
 =pod
@@ -1183,7 +1200,7 @@ sub __loadFromDatabase {
   }
 
   return $self;
-};
+}
 
 
 =pod
@@ -1270,9 +1287,11 @@ sub __marshal {
         $array->clear();
 
         my $sth = $elementClass->query( sprintf q|
-            select * from %s where parentId = %s
-              order by elementIndex + 0
+            SELECT %s FROM %s
+              WHERE parentId = %s
+              ORDER BY elementIndex + 0
           |,
+          $elementClass->columnNames()->join(", "),
           $elementClass->tableName(),
           $elementClass->quote($self->{ $class->__primaryKey() })
         );
@@ -1301,8 +1320,9 @@ sub __marshal {
         my $hash = $type->objectClass()->new();
 
         my $sth = $elementClass->query( sprintf q|
-            select * from %s where parentId = %s
+            SELECT %s FROM %s WHERE parentId = %s
           |,
+          $elementClass->columnNames()->join(", "),
           $elementClass->tableName(),
           $elementClass->quote($self->{ $class->__primaryKey() })
         );
@@ -1350,7 +1370,7 @@ sub __marshal {
   ) if $newRefType ne $class;
 
   return $self;
-};
+}
 
 # method elementClass(OP::Class $class: Str $key) {
 sub elementClass {
@@ -1414,7 +1434,7 @@ sub elementClass {
   $elementClasses->{$key} = $elementClass;
 
   return $elementClass;
-};
+}
 
 
 =pod
@@ -1446,7 +1466,7 @@ sub __allIdsSth {
   return $class->query(
     $class->__allIdsStatement()
   );
-};
+}
 
 
 =pod
@@ -1478,7 +1498,7 @@ sub __allNamesSth {
   return $class->query(
     $class->__allNamesStatement()
   );
-};
+}
 
 
 =pod
@@ -1502,7 +1522,7 @@ sub __beginTransaction {
   $transactionLevel++;
 
   return $@ ? false : true;
-};
+}
 
 
 =pod
@@ -1522,7 +1542,7 @@ sub __rollbackTransaction {
   );
 
   return $@ ? false : true;
-};
+}
 
 
 =pod
@@ -1550,7 +1570,7 @@ sub __commitTransaction {
   $transactionLevel--;
 
   return $@ ? false : true;
-};
+}
 
 
 =pod
@@ -1566,7 +1586,7 @@ sub __beginTransactionStatement {
   my $class = shift;
 
   return "START TRANSACTION;\n";
-};
+}
 
 
 =pod
@@ -1582,7 +1602,7 @@ sub __commitTransactionStatement {
   my $class = shift;
 
   return "COMMIT;\n";
-};
+}
 
 
 =pod
@@ -1598,7 +1618,7 @@ sub __rollbackTransactionStatement {
   my $class = shift;
 
   return "ROLLBACK;\n";
-};
+}
 
 
 =pod
@@ -1764,7 +1784,7 @@ sub __schema {
   # print $schema->join("\n");
 
   return $schema->join("\n");
-};
+}
 
 
 =pod
@@ -1822,8 +1842,9 @@ sub __concatNameStatement {
       my $subSel = $extClass->__concatNameStatement()
         || sprintf('%s.name', $tableName);
 
-      $concatAttrs->push( sprintf
-        '(select %s from %s where %s.id = %s)',
+      $concatAttrs->push( sprintf q|
+          ( SELECT %s FROM %s WHERE %s.id = %s )
+        |,
         $subSel, $tableName, $tableName, $extAttr
       );
 
@@ -1950,7 +1971,7 @@ sub __statementForColumn {
 
     return $attr->join(" ");
   }
-};
+}
 
 
 =pod
@@ -1987,7 +2008,7 @@ sub __cacheKey {
   chomp($key);
 
   return $key;
-};
+}
 
 
 =pod
@@ -2011,7 +2032,7 @@ sub __dropTable {
   my $query = "DROP TABLE $table;\n";
 
   return $class->write($query);
-};
+}
 
 
 =pod
@@ -2033,7 +2054,7 @@ sub __createTable {
   my $query = $class->__schema();
 
   return $class->write($query);
-};
+}
 
 
 =pod
@@ -2055,7 +2076,7 @@ sub __selectRowStatement {
     $class->__primaryKey(),
     $class->quote($id)
   );
-};
+}
 
 
 =pod
@@ -2070,8 +2091,8 @@ Returns the SQL used to generate a list of all record names
 sub __allNamesStatement {
   my $class = shift;
 
-  return sprintf('select name from %s', $class->tableName());
-};
+  return sprintf(q| SELECT name FROM %s |, $class->tableName());
+}
 
 
 =pod
@@ -2086,12 +2107,13 @@ Returns the SQL used to generate a list of all record ids
 sub __allIdsStatement {
   my $class = shift;
 
-  return sprintf(
-    'select %s from %s order by name',
+  return sprintf( q|
+      SELECT %s FROM %s ORDER BY name
+    |,
     $class->__primaryKey(),
     $class->tableName(),
   );
-};
+}
 
 # method __write(OP::Class $class: Str $query) {
 sub __write {
@@ -2111,7 +2133,7 @@ sub __write {
   }
 
   return $rows;
-};
+}
 
 # method __wrapWithReconnect(OP::Class $class: Code $sub) {
 sub __wrapWithReconnect {
@@ -2155,7 +2177,7 @@ sub __wrapWithReconnect {
   };
 
   return $return;
-};
+}
 
 # method __query(OP::Class $class: Str $query) {
 sub __query {
@@ -2184,7 +2206,7 @@ sub __query {
   }
 
   return $sth;
-};
+}
 
 
 =pod
@@ -2201,7 +2223,7 @@ sub __selectBool {
   my $query = shift;
 
   return $class->__selectSingle($query)->shift ? true : false;
-};
+}
 
 
 =pod
@@ -2215,7 +2237,9 @@ one-dimensional OP::Array.
     my $class = shift;
     my $name = shift;
 
-    my $query = sprintf('select mtime, ctime from %s where name = %s',
+    my $query = sprintf( q|
+        SELECT mtime, ctime FROM %s WHERE name = %s
+      |,
       $class->tableName(), $class->quote($name)
     );
 
@@ -2246,7 +2270,7 @@ sub __selectSingle {
   $sth->finish();
 
   return $out;
-};
+}
 
 
 =pod
@@ -2256,7 +2280,7 @@ sub __selectSingle {
 Returns each row of results from the received query, as a one-dimensional
 OP::Array.
 
-  my $query = "select userId from session";
+  my $query = "SELECT userId FROM session";
 
   #
   # Flat array of User IDs, ie:
@@ -2273,7 +2297,7 @@ OP::Array.
 Returns a two-dimensional OP::Array of OP::Arrays, if * or multiple
 columns are specified in the query.
 
-  my $query = "select userId, mtime from session";
+  my $query = "SELECT userId, mtime FROM session";
 
   #
   # Array of arrays, ie:
@@ -2304,7 +2328,7 @@ sub __selectMulti {
   $sth->finish();
 
   return $results;
-};
+}
 
 =pod
 
@@ -2348,7 +2372,7 @@ sub __loadFromQuery {
   return ( $self && ref($self) )
     ? $class->__marshal($self)
     : undef;
-};
+}
 
 
 =pod
@@ -2418,7 +2442,7 @@ sub __dbh {
   }
 
   return $dbi->{$dbName}->{$$}->get_dbh();
-};
+}
 
 
 =pod
@@ -2448,7 +2472,7 @@ sub __dbi {
   }
 
   return $dbi->{$dbName}->{$$};
-};
+}
 
 
 =pod
@@ -2487,7 +2511,7 @@ sub __loadYamlFromId {
   # $self->set( $class->__primaryKey(), $id );
 
   return $self;
-};
+}
 
 
 =pod
@@ -2512,7 +2536,7 @@ sub __loadYamlFromPath {
   } else {
     throw OP::FileAccessError( "Path $path does not exist on disk" );
   }
-};
+}
 
 
 =pod
@@ -2540,7 +2564,7 @@ sub __getSourceByPath {
   while (<$file>) { $lines->push($_) }
 
   return $lines->join("");
-};
+}
 
 
 =pod
@@ -2585,7 +2609,7 @@ sub __fsIds {
   }, $basePath );
 
   return $ids;
-};
+}
 
 
 =pod
@@ -2594,6 +2618,8 @@ sub __fsIds {
 
 Override OP::Class->__init() to automatically create any missing
 tables in the database.
+
+Callers should invoke this at some point, if overriding in superclass.
 
 =cut
 
@@ -2623,325 +2649,26 @@ sub __init {
 
     if ( !$tables{$class->tableName()} ) {
       $class->__createTable();
-    } else {
-       # $class->__findChangedColumns($class->__autoAlter());
     }
   }
+
+  #
+  # Initialize classes for inline elements
+  #
+  my $asserts = $class->asserts;
+
+  $asserts->each( sub {
+    my $key = shift;
+    my $assert = $asserts->{$key};
+
+    return if !$assert->isa("OP::Type::Array")
+      && !$assert->isa("OP::Type::Hash");
+
+    $class->elementClass($key);
+  } );
 
   return true;
-};
-
-
-#
-# Detect and offer option to ALTER changed columns.
-#
-# This is working so far, except for FOREIGN KEY support,
-# which is not yet implemented.
-#
-# method __findChangedColumns(OP::Class $class: Bool $performAlter) {
-sub __findChangedColumns {
-  my $class = shift;
-  my $performAlter = shift;
-
-  my @attrs   = $class->attributes();
-  my $asserts = $class->asserts();
-
-  my $foreign = OP::Array->new();
-  my $unique  = OP::Array->new();
-
-  my $tableName = $class->tableName();
-
-  #
-  # These are extra statements like DROP/ADD PRIMARY KEY etc
-  #
-  my $keyDrops   = OP::Array->new();
-  my $indexDrops = OP::Array->new();
-  my $keyAdds    = OP::Array->new();
-  my $indexAdds  = OP::Array->new();
-  my $columnDrops = OP::Array->new();
-  my $columnMods = OP::Hash->new();
-
-  my $willDropIndex;
-
-  my %existingKeys;
-
-  my $sth = $class->query( sprintf
-    'DESCRIBE %s', $tableName
-  );
-
-  while ( my $column = $sth->fetchrow_hashref() ) {
-    if ( grep { $_ eq $column->{Field} } @attrs ) {
-      $existingKeys{$column->{Field}} = $column;
-    } else {
-      $columnDrops->push( sprintf
-        'ALTER TABLE %s DROP COLUMN %s',
-        $tableName, $column->{Field}
-      );
-
-      if ( !$performAlter ) {
-        warn "$class\:\:$column->{Field} column is not used";
-      }
-    }
-  }
-
-  $sth->finish();
-
-  for my $attr ( @attrs ) {
-    my $keyword;
-
-    my $column = $existingKeys{$attr};
-    my $type = $asserts->{$attr} || next;
-    my $allowNull = $asserts->{$attr}->optional() ? 'YES' : 'NO';
-
-    if ( $class->__primaryKey() eq $attr ) {
-      $allowNull = 'NO';
-
-      if (
-        defined($column->{Default}) && $column->{Default} eq "NULL"
-      ) {
-        undef $column->{Default};
-      }
-    }
-
-    if ( $column ) {
-      #
-      # Test the attribute
-      #
-      # Type         | Null | Key | Default | Extra |
-      if (
-        #
-        # Column type matches
-        #
-        lc($column->{Type}) ne lc($type->columnType())
-      ) {
-        $keyword = 'MODIFY';
-
-        if ( !$performAlter ) {
-          my $have = lc($column->{Type});
-          my $want = lc($type->columnType());
-
-          warn "$class\:\:$attr column type mismatch; have $have want $want";
-        }
-      }
-
-      if (
-        #
-        # NULL/optional() assertion matches
-        #
-        ( $column->{Null} ne $allowNull )
-      ) {
-        $keyword = 'MODIFY';
-
-        if ( !$performAlter ) {
-          my $have = $column->{Null};
-          my $want = $allowNull;
-
-          warn "$class\:\:$attr NULL column mismatch; have $have want $want";
-        }
-      }
-
-      if (
-        #
-        # UNIQUE mismatch, needs added
-        #
-        ( $column->{Key} ne 'UNI' )
-          && $type->unique()
-          && !ref $type->unique()
-      ) {
-        $indexAdds->push( sprintf
-          'CREATE UNIQUE INDEX %s on %s(%s)',
-          $attr, $tableName, $attr
-        );
-
-        if ( !$performAlter ) {
-          warn "$class\:\:$attr needs to have UNIQUE column attrib";
-        }
-      }
-
-      if (
-        #
-        # UNIQUE mismatch, needs dropped
-        #
-        ( ( $column->{Key} eq 'UNI' ) && !$type->unique() )
-      ) {
-        $indexDrops->push( sprintf
-          'ALTER TABLE %s DROP INDEX %s',
-          $tableName, $attr
-        );
-
-        if ( !$performAlter ) {
-          warn "$class\:\:$attr should not have UNIQUE column attrib";
-        }
-      }
-
-      if (
-        #
-        # Primary key mismatch, needs added
-        #
-        ( $column->{Key} ne 'PRI' )
-        && ( $class->__primaryKey() eq $attr )
-      ) {
-        if ( !$performAlter ) {
-          warn "$class PRIMARY KEY($attr) needs ADDED"
-        }
-
-        ####
-        if ( !$willDropIndex ) {
-          $willDropIndex = true;
-
-          $keyDrops->push( sprintf
-            'ALTER TABLE %s DROP PRIMARY KEY', $tableName
-          )
-        }
-
-        $keyAdds->push( sprintf
-          'ALTER TABLE %s ADD PRIMARY KEY(%s)', $tableName, $attr
-        )
-      }
-
-      if (
-        #
-        # Primary key mismatch, needs dropped
-        #
-        ( $column->{Key} eq 'PRI' )
-        && ( $class->__primaryKey() ne $attr )
-      ) {
-        if ( !$performAlter ) {
-          warn "$class PRIMARY KEY($attr) needs DROPPED"
-        }
-
-        ####
-        if ( !$willDropIndex ) {
-          # Avoids duplicate DROP statements
-          $willDropIndex = true;
-
-          $keyDrops->push( sprintf
-            'ALTER TABLE %s DROP PRIMARY KEY', $tableName
-          )
-        }
-      }
-
-      if (
-        #
-        # Default value comparison
-        #
-        ( !defined($column->{Default}) && defined($type->default()) )
-        || ( defined($column->{Default}) && !defined($type->default()) )
-        || (
-          defined($column->{Default})
-          && defined($type->default())
-          && $column->{Default} ne $type->default()
-          && $column->{Type} !~ /Blob/i
-          && $column->{Type} !~ /Text/i
-        )
-      ) {
-        if (
-          !$performAlter
-          && ( $column->{Type} !~ /^text/i ) # DEFAULT disallowed
-          && ( $column->{Type} !~ /^blob/i ) # DEFAULT disallowed
-        ) {
-          unless ( $class->optional() && !defined( $type->default() ) ) {
-            $keyword = 'MODIFY';
-
-            my $have = defined($column->{Default})
-              ? "\"$column->{Default}\"" : 'undef';
-
-            my $want = defined($type->default())
-              ? "\"". $type->default() ."\"" : 'undef';
-
-            warn "$class\:\:$attr DEFAULT value mismatch, "
-              . "have $have want $want";
-          }
-        }
-      }
-
-    } elsif (
-      ( !UNIVERSAL::isa($type, 'ARRAY') )
-        && ( !UNIVERSAL::isa($type, 'HASH') )
-    ) {
-      $keyword = 'ADD';
-
-      if ( !$performAlter ) {
-        warn "$class\:\:$attr column is missing from table"
-      }
-    }
-
-    if ( $keyword ) {
-      $columnMods->{$attr} = $keyword;
-    }
-  }
-
-  # die "column drops not empty: @{$columnDrops}" if !$columnDrops->isEmpty() ;
-  # die "column mods not empty" if !$columnMods->isEmpty() ;
-  # die "key drops not empty" if !$keyDrops->isEmpty() ;
-  # die "key adds not empty" if !$keyAdds->isEmpty() ;
-  # die "index drops not empty" if !$indexDrops->isEmpty() ;
-  # die "index adds not empty" if !$indexAdds->isEmpty() ;
-
-  return if $columnDrops->isEmpty() && $columnMods->isEmpty()
-    && $keyDrops->isEmpty() && $keyAdds->isEmpty()
-    && $indexDrops->isEmpty() && $indexAdds->isEmpty();
-
-  if ( $performAlter ) {
-    $keyDrops->each( sub {
-      $class->write($_);
-
-      warn "PRIMARY KEY DROPPED: $_";
-    } );
-
-    $indexDrops->each( sub {
-      $class->write($_);
-
-      warn "UNIQUE INDEX DROPPED: $_";
-    } );
-
-    $columnDrops->each( sub {
-      $class->write($_);
-
-      warn "COLUMN DROPPED: $_";
-    } );
-
-    $columnMods->each( sub {
-      my $attr = $_;
-      my $keyword = $columnMods->{$_};
-
-      my $type = $asserts->{$attr};
-
-      my $statement = sprintf 'ALTER TABLE %s %s COLUMN %s;',
-        $tableName,
-        $keyword,
-        $class->__statementForColumn(
-          $attr, $type, $foreign, $unique
-        );
-
-      $class->write($statement);
-
-      warn "$keyword succeeded for $class\:\:$attr:\n"
-        . "  $statement";
-    } );
-
-    $keyAdds->each( sub {
-      $class->write($_);
-
-      warn "PRIMARY KEY ADDED: $_";
-    } );
-
-    $indexAdds->each( sub {
-      $class->write($_);
-
-      warn "UNIQUE INDEX ADDED: $_";
-    } );
-
-  } else {
-    #
-    # ALTERing is serious business, best left to trained professionals
-    #
-    throw OP::DBSchemaMismatch(
-      "The DB schema doesn't match what OP wants. See previous warnings.\n"
-       # . "  If expected, update run $class->__findChangedColumns(true)"
-    );
-  }
-};
+}
 
 
 =pod
@@ -2979,7 +2706,7 @@ sub save {
   $self->presave();
 
   return $self->_localSave($comment);
-};
+}
 
 
 =pod
@@ -3001,7 +2728,7 @@ sub presave {
   # Abstract method
   #
   return true;
-};
+}
 
 
 =pod
@@ -3084,7 +2811,7 @@ sub remove {
   $self->clear();
 
   return true;
-};
+}
 
 
 =pod
@@ -3142,7 +2869,7 @@ sub exists {
   return false if !$self->{id};
 
   return $self->class->doesIdExist($self->id);
-};
+}
 
 =pod
 
@@ -3168,7 +2895,7 @@ sub key {
   my $class = $self->class();
 
   return $self->get( $class->__primaryKey() );
-};
+}
 
 
 =pod
@@ -3214,7 +2941,7 @@ sub memberInstances {
   }
 
   return $instances;
-};
+}
 
 
 =pod
@@ -3303,7 +3030,7 @@ sub setIdsFromNames {
   }
 
   return true;
-};
+}
 
 =pod
 
@@ -3328,7 +3055,7 @@ sub revisions {
   my $self = shift;
 
   return $self->_rcs()->revisions();
-};
+}
 
 
 =pod
@@ -3368,7 +3095,7 @@ sub revisionInfo {
   }
 
   return $revisionInfo;
-};
+}
 
 
 =pod
@@ -3384,7 +3111,7 @@ sub head {
   my $self = shift;
 
   return $self->_rcs()->head();
-};
+}
 
 
 =pod
@@ -3396,6 +3123,27 @@ sub head {
 =head2 General
 
 =over 4
+
+=item * $self->_newId()
+
+Generates a new ID for the current object. Default is GUID-style.
+
+  _newId => sub {
+    my $self = shift;
+
+    return OP::Utility::newId();
+  }
+
+=cut
+
+# method _newId() {
+sub _newId {
+  my $self = shift;
+
+  return OP::ID->new();
+}
+
+=pod
 
 =item * $self->_localSave($comment)
 
@@ -3499,7 +3247,7 @@ sub _localSave {
   };
 
   return $saved;
-};
+}
 
 =pod
 
@@ -3654,7 +3402,7 @@ sub _localSaveInsideTransaction {
   }
 
   return $self->{$idKey};
-};
+}
 
 
 =pod
@@ -3686,7 +3434,7 @@ sub _updateRowStatement {
   );
 
   return $statement;
-};
+}
 
 
 =pod
@@ -3729,7 +3477,7 @@ sub _insertRowStatement {
     $attributes->join(', '),
     $self->_quotedValues(false)->join(', '),
   );
-};
+}
 
 
 =pod
@@ -3758,7 +3506,7 @@ sub _deleteRowStatement {
     $idKey,
     $class->quote($self->{$idKey})
   );
-};
+}
 
 
 =pod
@@ -3795,7 +3543,7 @@ sub _updateRecord {
   }
 
   return $return;
-};
+}
 
 
 =pod
@@ -3860,13 +3608,21 @@ sub _quotedValues {
       $quotedValue = "''";
 
     } elsif ( !ref($value) || ( ref($value) && overload::Overloaded($value) ) ) {
-
-      if ( UNIVERSAL::isa($value, "OP::Object") ) {
-        $quotedValue = $class->quote( $value->escape );
-      } else {
-        $quotedValue = $class->quote( $value );
+      if ( !UNIVERSAL::isa($value, $type->objectClass) ) {
+        #
+        # Sorry, but you're an object now.
+        #
+        $value = $type->objectClass->new( Clone::clone($value) );
       }
 
+      if (
+        $type->objectClass->isa("OP::DateTime")
+          && $type->columnType eq 'DATETIME'
+      ) {
+        $quotedValue = sprintf('FROM_UNIXTIME(%i)', $value->escape);
+      } else {
+        $quotedValue = $class->quote($value);
+      }
     } elsif ( ref($value) ) {
       my $dumpedValue =
         UNIVERSAL::can($value, "toYaml")
@@ -3886,7 +3642,7 @@ sub _quotedValues {
   }
 
   return $values;
-};
+}
 
 
 =pod
@@ -3911,7 +3667,7 @@ sub _fsDelete {
   unlink $self->_path();
 
   return true;
-};
+}
 
 
 =pod
@@ -3930,7 +3686,7 @@ sub _fsSave {
   $self->{ $self->class()->__primaryKey() } ||= $self->_newId();
 
   return $self->_saveToPath( $self->_path() );
-};
+}
 
 
 =pod
@@ -3954,7 +3710,7 @@ sub _path {
   }
 
   return join('/', $self->class()->__basePath(), $key);
-};
+}
 
 
 =pod
@@ -3980,7 +3736,7 @@ sub _rcsPath {
   return sprintf('%s%s',
     join($joinStr, $class->__baseRcsPath(), $key), ',v'
   );
-};
+}
 
 
 =pod
@@ -4062,7 +3818,7 @@ sub _checkout {
   my $path = shift;
 
   return $rcs->co('-l') if -e $path;
-};
+}
 
 
 =pod
@@ -4090,7 +3846,7 @@ sub _checkin {
     '-u',
     "-mEdited by user $user with comment: $comment"
   );
-};
+}
 
 
 =pod
@@ -4117,29 +3873,7 @@ sub _rcs {
   $rcs->workdir($directory);
 
   return $rcs;
-};
-
-
-=pod
-
-=item * $self->_newId()
-
-Generates a new ID for the current object. Default is GUID-style.
-
-  _newId => sub {
-    my $self = shift;
-
-    return OP::Utility::newId();
-  }
-
-=cut
-
-# method _newId() {
-sub _newId {
-  my $self = shift;
-
-  return OP::ID->new();
-};
+}
 
 
 =pod

@@ -38,7 +38,6 @@ use Data::GUID;
 use Error qw| :try |;
 use File::Path;
 use IO::File;
-use LWP::UserAgent;
 use Net::Syslog;
 use POSIX qw| strftime |;
 use Scalar::Util qw| blessed |;
@@ -70,12 +69,6 @@ if ( !$ENV{OP_QUIET} ) {
 
 
 #
-#
-#
-use constant mutexRoot => join('/', scratchRoot, 'mutex');
-use constant mutexCleanupTime => 600;
-
-#
 # Human-readable sizes
 #
 use constant Kilo => 1024;
@@ -99,6 +92,8 @@ use constant Decade => Year * 10;
 
 
 =pod
+
+=over 4
 
 =item * humanSize($seconds, [$optionalSuffix]);
 
@@ -351,53 +346,6 @@ Return a new alpha-numeric ID (GUID).
 sub newId {
   return Data::GUID->new();
   # return Data::GUID->new()->as_string();
-}
-
-
-=pod
-
-=item * geturl($url, [$timeout]);
-
-Returns the content from the received URL; accepts an optional timeout as
-a second value. Warns and returns undef on failure.
-
-=cut
-
-sub geturl {
-  my $url = shift;
-  my $timeout = shift || 8;
-
-  my $content;
-
-  my $ua = LWP::UserAgent->new( );
-  $ua->timeout($timeout);
-
-  my $request = HTTP::Request->new("GET", $url);
-  my $response = $ua->request($request);
-
-  if ( !$response->is_success() ) {
-    print STDERR "- Non-OK response received from $url:\n";
-    print STDERR $response->status_line();
-    print STDERR "\n";
-    print STDERR $response->title();
-    print STDERR "\n\n";
-
-    if ( $response->content() ) {
-      if ( $response->content() =~ /<pre>(.*?)<\/pre>/s ) {
-        print STDERR $1;
-      } else {
-        print STDERR $response->content();
-      }
-    } else {
-      print STDERR "Document contains no data.";
-    }
-
-    print STDERR "\n\n";
-
-    return undef;
-  }
-
-  return $response->content();
 }
 
 
