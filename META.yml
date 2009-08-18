@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.308
+version:             0.310_001
 abstract:            Compact prototyping of InnoDB-backed object classes
 license:             open_source
 author:              
@@ -23,7 +23,7 @@ requires:
     File::HomeDir::Unix:           0.86
     File::Path:                    2.04
     File::Tempdir:                 0.02
-    GlobalDBI:                     0.2
+    GlobalDBI:                     0.21
     IO::File:                      1.14
     JSON::Syck:                    0.29
     Lexical::Persistence:          0.98

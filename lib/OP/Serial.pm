@@ -1,5 +1,5 @@
 #
-# File: OP/Float.pm
+# File: OP/Serial.pm
 #
 # Copyright (c) 2009 TiVo Inc.
 #
@@ -12,46 +12,56 @@
 
 =head1 NAME
 
-OP::Float - Overloaded object class for floating point numbers
+OP::Serial - Auto incrementing integer primary key
 
 =head1 DESCRIPTION
 
-Extends L<OP::Num>.
+Extends L<OP::Int>.
 
 =head1 SYNOPSIS
 
-  use OP::Float;
+  use OP;
 
-  my $float = OP::Float->new(22/7);
+  create "YourApp::Example" => {
+    id => OP::Serial->assert,
+
+  };
 
 =head1 SEE ALSO
+
+L<OP::ID>
 
 This file is part of L<OP>.
 
 =cut
 
-package OP::Float;
+package OP::Serial;
 
 use strict;
 use warnings;
 
 use OP::Enum::Bool;
 
-use base qw| OP::Num |;
+use base qw| OP::Int |;
 
-use overload fallback => true, %OP::Num::overload;
+sub new {
+  my $class = shift;
+  my $value = shift || "";
 
-# method assert(OP::Class $class: *@rules) {
+  return bless \$value, $class;
+}
+
 sub assert {
   my $class = shift;
   my @rules = @_;
 
   my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isFloat, @rules
+    OP::Type::isInt, @rules
   );
 
-  $parsed{default} = "0.0" if !exists $parsed{default};
-  $parsed{columnType}  ||= 'FLOAT';
+  $parsed{serial} = true;
+  $parsed{optional} = true;
+  $parsed{columnType} ||= 'INTEGER';
 
   return $class->__assertClass()->new(%parsed);
 }

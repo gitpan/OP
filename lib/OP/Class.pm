@@ -438,7 +438,7 @@ Override in subclass with additional logic, if necessary.
 
 =item * C<__checkVarName(OP::Class $class: Str $varName)>
 
-Checks the "safeness" of a class variable name before eval'ing it.
+Checks the "safeness" of a class variable name.
 
 
 =back

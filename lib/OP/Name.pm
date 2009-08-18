@@ -69,7 +69,7 @@ OP::Name - A unique secondary key
 OP uses "named objects". By default, C<name> is a human-readable
 unique secondary key. It's the name of the object being saved.
 Like all attributes, C<name> must be defined when saved, unless asserted
-as C<::optional> (see "C<undef> Requires Assertion" in L<OP>.).
+as C<optional> (see "C<undef> Requires Assertion" in L<OP>.).
 
 The value for C<name> may be changed (as opposed to C<id>, which should
 not be tinkered with), as long as the new name does not conflict with
@@ -90,10 +90,10 @@ Objects may be loaded by name using the C<loadByName> class method.
 
 
 C<name>, or any attribute type in OP, may be may be keyed in
-combination with multiple attributes via the C<::unique> L<OP::Subtype>
+combination with multiple attributes via the C<unique> subtype
 argument, which adds InnoDB reference options to the schema. Provide
 the names of the attributes which you are uniquely keying with as
-arguments to the ::unique subtype constructor.
+values to the C<unique> subtype arg.
 
 At the time of this writing, total column length for keys in InnoDB
 (regardless of if you're using singular or combinatorial keys) may

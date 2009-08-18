@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.308';
+our $VERSION = '0.310_001';
 
 use strict;
 use diagnostics;
@@ -44,6 +44,7 @@ use OP::Name;
 use OP::Num;
 use OP::Rule;
 use OP::Scalar;
+use OP::Serial;
 use OP::Str;
 use OP::TimeSpan;
 use OP::URI;
@@ -78,7 +79,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.308> of OP.
+This documentation is for version B<0.310_001> of OP.
 
 =head1 STATUS
 
@@ -137,12 +138,13 @@ and "mtime".
 
 =item * C<id> => L<OP::ID>
 
-C<id> is the primary key at the database table level.
+C<id> is the primary key at the database table level. The gets used
+in database table indexes, and should generally not be altered once
+assigned.
 
-OP uses GUIDs (Globally Unique Identifiers) for its objects, and
-assigns these values automatically. Changing this assertion in any
-way, or manually modifying the ID value for any object, is not
-recommended.
+Base64-encoded Globally Unique IDs are used by default, though it
+is possible to assert any scalar OP object class for the C<id>
+column. See L<OP::ID>, L<OP::Serial>.
 
 =item * C<name> => L<OP::Name>
 
@@ -158,6 +160,8 @@ For more information on named objects, see L<OP::Name>.
 
 C<ctime> is the Unix timestamp representing the object's creation
 time. OP sets this when saving an object for the first time.
+
+For more information on timestamps, see L<OP::DateTime>.
 
 =item * C<mtime> => L<OP::DateTime>
 
@@ -344,6 +348,12 @@ Native types are OK for setters:
 
 =item * L<OP::Persistence> - Storage and retrieval mix-in
 
+=item * L<OP::Persistence::Generic> - Base for vendor-specific DBI modules
+
+=item * L<OP::Persistence::MySQL> - MySQL/InnoDB-specific runtime overrides
+
+=item * L<OP::Persistence::SQLite> - SQLite-specific runtime overrides
+
 =item * L<OP::Node> - Abstract stored object class
 
 =item * L<OP::Type> - Instance variable typing
@@ -373,13 +383,13 @@ as inline attributes.
 
 =item * L<OP::EmailAddr> - Overloaded email address
 
-=item * L<OP::ExtID> - Overloaded foreign GUID
+=item * L<OP::ExtID> - Overloaded foreign key
 
 =item * L<OP::Float> - Overloaded floating point number
 
 =item * L<OP::Hash> - Hashtable
 
-=item * L<OP::ID> - Overloaded GUID
+=item * L<OP::ID> - Overloaded GUID primary key
 
 =item * L<OP::Int> - Overloaded integer
 
@@ -390,6 +400,8 @@ as inline attributes.
 =item * L<OP::Num> - Overloaded number
 
 =item * L<OP::Rule> - Regex reference (qr/ /)
+
+=item * L<OP::Serial> - Auto-incrementing primary key
 
 =item * L<OP::Str> - Overloaded unicode string
 

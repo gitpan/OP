@@ -21,8 +21,6 @@ OP::Object - Abstract object class
 Base abstract object class for the OP framework. Extends L<OP::Class> with
 a constructor, getters, and setters.
 
-See L<OP::Array>, L<OP::Hash>, L<OP::Example> for concrete implementations.
-
 =head1 INHERITANCE
 
 This class inherits additional class and object methods from the
@@ -65,7 +63,7 @@ for use as a prototype object.
   #
   use OP::Class;
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     __BASE__ => "OP::Object"
   };
 
@@ -78,12 +76,12 @@ Meanwhile, in caller:
   #
   # New empty object:
   #
-  my $obj = OP::Example->new();
+  my $obj = YourApp::Example->new();
 
   #
   # New object from an even list:
   #
-  my $objFromList = OP::Example->new(
+  my $objFromList = YourApp::Example->new(
     foo => "whiskey",
     bar => "tango"
   );
@@ -91,7 +89,7 @@ Meanwhile, in caller:
   #
   # New object from HASH ref:
   #
-  my $objFromRef = OP::Example->new( {
+  my $objFromRef = YourApp::Example->new( {
     foo => "whiskey",
     bar => "tango"
   } );
@@ -298,7 +296,7 @@ the current class, otherwise warns to STDERR and returns false.
   #
   # Create a new class with two attrs, "foo" and "bar"
   #
-  my $class = "OP::Example";
+  my $class = "YourApp::Example";
 
   create $class => {
     foo => OP::Str->assert(),
@@ -326,7 +324,7 @@ Meanwhile, in caller...
   #
   # Expected output is warning text to the effect of:
   #
-  # BUG IN CALLER: "rebar" is not a member of class "OP::Example"
+  # BUG IN CALLER: "rebar" is not a member of class "YourApp::Example"
   #
 
 =cut
@@ -383,7 +381,7 @@ Returns a pre-made OP::Type object with subtypes for the named
 datatype. See "Concrete Classes" in L<OP> for a list of types which may
 be asserted.
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     someStr     => OP::Str->assert(
       ::optional(),
       ::default("Foo Bar!")
@@ -399,7 +397,7 @@ be asserted.
 
 To enforce a range of allowed values, use the desired values as arguments:
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     foo => OP::Str->assert(qw| alpha bravo cthulhu |);
 
     ...
@@ -414,16 +412,15 @@ the application process, based on whatever the function returns (as
 opposed to using a static list, which is loaded at "use" time and doesn't
 adapt to changing data.)
 
-The function provided should return an unreferenced array of allowed
-values.
+The function provided should return an array ref of allowed values.
 
  ...
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     #
     # Always check against a live datasource:
     #
-    someId => OP::Str->assert( sub { OP::Example->allIds() } ),
+    someId => OP::Str->assert( sub { YourApp::Example->allIds() } ),
 
     ...
   };
@@ -536,7 +533,7 @@ C<__baseAsserts()> may be overridden as a C<sub{}> or as a class variable.
 Using a C<sub{}> lets you extend the parent class's base asserts, or use
 any other Perl operation to derive the appropriate values:
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     #
     # Inherit parent class's base asserts, tack on "foo"
     #
@@ -556,7 +553,7 @@ any other Perl operation to derive the appropriate values:
 One may alternately use a class variable to redefine base asserts,
 overriding the parent:
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     #
     # Statically assert two base attributes, "id" and "name"
     #
@@ -696,7 +693,7 @@ sub set {
 
 Removes all items, leaving self with zero elements.
 
-  my $object = OP::Example->new(
+  my $object = YourApp::Example->new(
     foo => "uno",
     bar => "dos"
   );

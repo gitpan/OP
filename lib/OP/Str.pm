@@ -24,6 +24,15 @@ Extends L<OP::Scalar>, L<Mime::Base64>, and L<Unicode::String>.
 
   my $string = OP::Str->new("Lorem Ipsum");
 
+  #
+  # Overloaded to work like a native string
+  #
+  print "$string\n";
+
+  if ( $string =~ /Ipsum/ ) {
+    print "Word\n";
+  }
+
 =head1 PUBLIC INSTANCE METHODS
 
 =over 4

@@ -216,7 +216,6 @@ The following is an example of an .oprc file. The file contents must be
 valid YAML:
 
   ---
-  ldapHost: ldap
   yamlRoot: /opt/op/yaml
   sqliteRoot: /opt/op/sqlite
   scratchRoot: /tmp

@@ -49,6 +49,8 @@ See L<Data::GUID> and L<Data::UUID> for more details.
 
 =head1 SEE ALSO
 
+L<OP::Serial>
+
 This file is part of L<OP>.
 
 =cut

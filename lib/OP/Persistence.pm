@@ -336,19 +336,13 @@ Returns true if the received ID exists in the receiving class's table.
 
 =cut
 
-# method doesIdExist(OP::Class $class: Str $id) {
 sub doesIdExist {
   my $class = shift;
   my $id = shift;
 
-  my $count = $class->__selectSingle( sprintf q|
-      SELECT count(*) FROM %s WHERE id = %s
-    |,
-    $class->tableName,
-    $class->quote($id),
-  )->shift;
-
-  return $count;
+  return $class->__selectBool(
+    $class->__doesIdExistStatement($id)
+  );
 }
 
 
@@ -366,19 +360,13 @@ Returns true if the received ID exists in the receiving class's table.
 
 =cut
 
-# method doesNameExist(OP::Class $class: Str $name) {
 sub doesNameExist {
   my $class = shift;
   my $name = shift;
 
-  my $count = $class->__selectSingle( sprintf q|
-      SELECT count(*) FROM %s WHERE name = %s
-    |,
-    $class->tableName,
-    $class->quote($name),
-  )->shift;
-
-  return $count;
+  return $class->__selectBool(
+    $class->__doesNameExistStatement($name)
+  );
 }
 
 
@@ -488,20 +476,13 @@ Return the corresponding row id for the received object name.
 
 =cut
 
-# method idForName(OP::Class $class: Str $name) {
 sub idForName {
   my $class = shift;
   my $name = shift;
 
-  my $id = $class->__selectSingle( sprintf( q|
-      SELECT %s FROM %s WHERE name = %s
-    |,
-    $class->__primaryKey(),
-    $class->tableName(),
-    $class->quote($name)
-  ) );
-
-  return $id->shift();
+  return $class->__selectSingle(
+    $class->__idForNameStatement($name)
+  )->shift;
 }
 
 
@@ -515,22 +496,14 @@ Return the corresponding name for the received object id.
 
 =cut
 
-# method nameForId(OP::Class $class: Str $id) {
 sub nameForId {
   my $class = shift;
   my $id = shift;
 
-  my $name = $class->__selectSingle( sprintf( q|
-      SELECT name FROM %s WHERE %s = %s
-    |,
-    $class->tableName(),
-    $class->__primaryKey(),
-    $class->quote($id),
-  ) );
-
-  return $name->shift();
+  return $class->__selectSingle(
+    $class->__nameForIdStatement($id)
+  )->shift;
 }
-
 
 =pod
 
@@ -667,29 +640,7 @@ a seperate linked table.
 sub columnNames {
   my $class = shift;
 
-  my $asserts = $class->asserts();
-
-  return $asserts->collect( sub {
-    my $attr = shift;
-
-    my $type = $asserts->{$attr};
-
-    # return if $type->objectClass()->isa("OP::ExtID");
-
-    my $objectClass = $type->objectClass;
-
-    return if $objectClass->isa("OP::Array");
-    return if $objectClass->isa("OP::Hash");
-
-    if (
-      $objectClass->isa("OP::DateTime")
-        && ( $type->columnType eq 'DATETIME' )
-    ) {
-      OP::Array::yield("UNIX_TIMESTAMP($attr) AS $attr");
-    } else {
-      OP::Array::yield($attr);
-    }
-  } );
+  return $class->__dispatch('columnNames');
 }
 
 
@@ -946,34 +897,6 @@ sub __dbiType {
   return $class->get("__dbiType");
 }
 
-# 
-# =pod
-# 
-# =item * $class->__autoAlter()
-# 
-# Don't use this method if you care about your data, it's experimental.
-# 
-# If this method is overridden to return true, ALTER statements will be
-# run automatically for this class's table. Default is false, which
-# will throw an exception if schema changes are detected.
-# 
-#   create "OP::Example" => {
-#     __autoAlter => true
-#   };
-# 
-# =cut
-
-# method __autoAlter(OP::Class $class:) {
-sub __autoAlter {
-  my $class = shift;
-
-  if ( !defined $class->get("__autoAlter") ) {
-    $class->set("__autoAlter", false);
-  }
-
-  return $class->get("__autoAlter");
-}
-
 
 =pod
 
@@ -1141,6 +1064,31 @@ sub __localLoad {
   }
 }
 
+=pod
+
+=item * $class->__loadFromMemcached($id)
+
+Retrieves an object from memcached by ID. Returns nothing if the
+object wasn't there.
+
+=cut
+
+sub __loadFromMemcached {
+  my $class = shift;
+  my $id = shift;
+
+  my $cacheTTL = $class->__useMemcached();
+
+  if ( $memd && $cacheTTL ) {
+    my $cachedObj = $memd->get( $class->__cacheKey($id) );
+
+    if ( $cachedObj ) {
+      return $class->new($cachedObj);
+    }
+  }
+
+  return;
+}
 
 =pod
 
@@ -1164,33 +1112,15 @@ sub __loadFromDatabase {
   my $class = shift;
   my $id = shift;
 
-  my $cacheKey = $class->__cacheKey($id);
+  my $cachedObj = $class->__loadFromMemcached($id);
 
-  my $cacheTTL = $class->__useMemcached();
-
-  if ( $memd && $cacheTTL ) {
-    my $cachedObj = $memd->get($cacheKey);
-
-    if ( $cachedObj ) {
-      return $class->new($cachedObj);
-    }
-  }
+  return $cachedObj if $cachedObj;
 
   my $query = $class->__selectRowStatement($id);
 
   my $self = $class->__loadFromQuery($query);
 
-  if ( $self && $self->exists() ) {
-    if ( $memd && $cacheTTL ) {
-      $memd->set($cacheKey, $self, $cacheTTL);
-
-      my $name = $self->name;
-
-      if ( $name && $class->asserts->{name}->unique eq true ) {
-        my $nameKey = $class->__cacheKey($name);
-      }
-    }
-  } else {
+  if ( !$self || !$self->exists() ) {
     my $table = $class->tableName();
     my $db = $class->databaseName();
 
@@ -1513,15 +1443,7 @@ Begins a new SQL transation.
 sub __beginTransaction {
   my $class = shift;
 
-  if ( !$transactionLevel ) {
-    $class->write(
-      $class->__beginTransactionStatement()
-    );
-  }
-
-  $transactionLevel++;
-
-  return $@ ? false : true;
+  return $class->__dispatch('__beginTransaction');
 }
 
 
@@ -1537,11 +1459,7 @@ Rolls back the current SQL transaction.
 sub __rollbackTransaction {
   my $class = shift;
 
-  $class->write(
-    $class->__rollbackTransactionStatement()
-  );
-
-  return $@ ? false : true;
+  return $class->__dispatch('__rollbackTransaction');
 }
 
 
@@ -1557,19 +1475,7 @@ Commits the current SQL transaction.
 sub __commitTransaction {
   my $class = shift;
 
-  if ( !$transactionLevel ) {
-    throw OP::TransactionFailed(
-      "$class->__commitTransaction() called outside of transaction!!!"
-    );
-  } elsif ( $transactionLevel == 1 ) {
-    $class->write(
-      $class->__commitTransactionStatement()
-    );
-  }
-
-  $transactionLevel--;
-
-  return $@ ? false : true;
+  return $class->__dispatch('__commitTransaction');
 }
 
 
@@ -1585,7 +1491,7 @@ Returns the SQL used to begin a SQL transaction
 sub __beginTransactionStatement {
   my $class = shift;
 
-  return "START TRANSACTION;\n";
+  return $class->__dispatch('__beginTransactionStatement');
 }
 
 
@@ -1601,7 +1507,7 @@ Returns the SQL used to commit a SQL transaction
 sub __commitTransactionStatement {
   my $class = shift;
 
-  return "COMMIT;\n";
+  return $class->__dispatch('__commitTransactionStatement');
 }
 
 
@@ -1617,7 +1523,7 @@ Returns the SQL used to rollback a SQL transaction
 sub __rollbackTransactionStatement {
   my $class = shift;
 
-  return "ROLLBACK;\n";
+  return $class->__dispatch('__rollbackTransactionStatement');
 }
 
 
@@ -1633,157 +1539,11 @@ Returns the SQL used to construct the receiving class's table.
 sub __schema {
   my $class = shift;
 
-  #
-  # Make sure the specified primary key is valid
-  #
-  my $primaryKey = $class->__primaryKey();
+  my $schema = $class->__dispatch('__schema');
 
-  throw OP::PrimaryKeyMissing(
-    "$class has no __primaryKey set, please fix"
-  ) if !$primaryKey;
+  # print $schema;
 
-  my $asserts = $class->asserts();
-
-  throw OP::PrimaryKeyMissing(
-    "$class did not assert __primaryKey $primaryKey"
-  ) if !exists $asserts->{$primaryKey};
-
-  #
-  # Tack on any UNIQUE secondary keys at the end of the schema
-  #
-  my $unique = OP::Hash->new();
-
-  #
-  # Tack on any FOREIGN KEY constraints at the end of the schema
-  #
-  my $foreign = OP::Array->new();
-
-  #
-  # Start building the CREATE TABLE statement:
-  #
-  my $schema = OP::Array->new();
-
-  my $table = $class->tableName();
-
-  $schema->push("CREATE TABLE $table (");
-
-  for my $attribute ( sort $class->attributes() ) {
-    my $type = $asserts->{$attribute};
-
-    next if !$type;
-
-    my $statement = $class->__statementForColumn(
-      $attribute, $type, $foreign, $unique
-    );
-
-    $schema->push( sprintf('  %s,', $statement) )
-      if $statement;
-  }
-
-  my $dbiType = $class->__dbiType();
-
-  #
-  # XXX TODO Check UNIQUE and other syntax for other DBs.
-  #
-  # Most of the really cool stuff is tied to InnoDB right now.
-  #
-  if ( $dbiType == OP::Enum::DBIType::MySQL ) {
-    if ( $unique->isEmpty() ) {
-      $schema->push(
-        sprintf('  PRIMARY KEY(%s)', $primaryKey)
-      );
-    } else {
-      $schema->push(
-        sprintf('  PRIMARY KEY(%s),', $primaryKey)
-      );
-
-      my $uniqueStatement = $unique->collect( sub {
-        my $key = $_;
-        my $multiples = $unique->{$key};
-
-        my $item;
-
-        #
-        # We can't reliably key on multiple columns if any of them are NULL.
-        # MySQL permits this as per the SQL spec, allowing duplicate values,
-        # because the statement ( NULL == NULL ) is always false.
-        #
-        # Basically, this check prevents OP class definitions from trying
-        # to key on something which might be undefined.
-        #
-        # This unfortunately prevents keying on multiple items within
-        # the same class, limiting this functionality to ExtID pointers
-        # only. I'm not sure how else to deal with this as of MySQL 5.
-        #
-        if ( ref $multiples ) {
-          for ( @{ $multiples } ) {
-            if ( !$asserts->{$_} ) {
-              throw OP::AssertFailed(
-                "Can't key on non-existent attribute '$_'"
-              );
-            } elsif ( $asserts->{$_}->optional() ) {
-              throw OP::AssertFailed(
-                "Can't reliably key on ::optional column '$_'"
-              );
-            }
-          }
-
-          $item = sprintf '  UNIQUE KEY (%s)',
-            join(", ", $key, @{ $multiples });
-        } elsif ( $multiples && $multiples ne '1' ) {
-          $item = "  UNIQUE KEY($key, $multiples)";
-        } elsif ( $multiples ) {
-          $item = "  UNIQUE KEY($key)";
-        }
-
-        if ( $item ) {
-          OP::Array::yield($item);
-        }
-      } );
-
-      $schema->push( $uniqueStatement->join(",\n") );
-    }
-
-    if ( !$foreign->isEmpty() ) {
-      $schema->push("  ,");
-
-      $schema->push( $foreign->collect( sub {
-        my $key = $_;
-        my $type = $asserts->{$key};
-
-        my $foreignClass = $type->memberClass();
-
-        my $deleteRefOpt = $type->onDelete() || 'RESTRICT';
-        my $updateRefOpt = $type->onUpdate() || 'CASCADE';
-
-        my $template = join("\n",
-          '  FOREIGN KEY (%s) REFERENCES %s (%s)',
-          "    ON DELETE $deleteRefOpt",
-          "    ON UPDATE $updateRefOpt"
-        );
-
-        OP::Array::yield sprintf( $template,
-          $_,
-          $foreignClass->tableName(),
-          $foreignClass->__primaryKey()
-        );
-      } )->join(",\n") );
-    }
-
-    $schema->push(") ENGINE=INNODB DEFAULT CHARACTER SET=utf8;");
-  } elsif ( $dbiType == OP::Enum::DBIType::SQLite ) {
-    $schema->push(
-      sprintf('  PRIMARY KEY(%s)', $primaryKey)
-    );
-
-    $schema->push(");");
-  }
-
-  $schema->push('');
-
-  # print $schema->join("\n");
-
-  return $schema->join("\n");
+  return $schema;
 }
 
 
@@ -1800,67 +1560,7 @@ other attributes which it is uniquely keyed with.
 sub __concatNameStatement {
   my $class = shift;
 
-  my $asserts = $class->asserts();
-
-  my $uniqueness = $class->asserts()->{name}->unique();
-
-  my $concatAttrs = OP::Array->new();
-
-  my @uniqueAttrs;
-
-  if ( ref $uniqueness ) {
-    @uniqueAttrs = @{ $uniqueness };
-  } elsif ( $uniqueness && $uniqueness ne '1' ) {
-    @uniqueAttrs = $uniqueness;
-  } else {
-    return join(".", $class->tableName, "name") . " as __name";
-
-    # @uniqueAttrs = "name";
-  }
-
-  #
-  # For each attribute that "name" is keyed with, include the
-  # value in a display name. If the value is an ID, look up the name.
-  #
-  for my $extAttr ( @uniqueAttrs ) {
-    #
-    # Get the class
-    #
-    my $type = $asserts->{ $extAttr };
-
-    if ( $type->objectClass()->isa("OP::ExtID") ) {
-      my $extClass = $type->memberClass();
-
-      my $tableName = $extClass->tableName();
-
-      #
-      # Method calls itself-- 
-      #
-      # I don't think this will ever infinitely loop,
-      # since we use constraints (see query)
-      #
-      my $subSel = $extClass->__concatNameStatement()
-        || sprintf('%s.name', $tableName);
-
-      $concatAttrs->push( sprintf q|
-          ( SELECT %s FROM %s WHERE %s.id = %s )
-        |,
-        $subSel, $tableName, $tableName, $extAttr
-      );
-
-    } else {
-      $concatAttrs->push($extAttr);
-    }
-  }
-
-  $concatAttrs->push(join(".", $class->tableName, "name"));
-
-  return if $concatAttrs->isEmpty();
-
-  my $select = sprintf
-    'concat(%s) as __name', $concatAttrs->join(', " / ", ');
-
-  return $select;
+  return $class->__dispatch('__concatNameStatement');
 }
 
 
@@ -1878,99 +1578,8 @@ syntax.
 # ) {
 sub __statementForColumn {
   my $class = shift;
-  my $attribute = shift;
-  my $type = shift;
-  my $foreign = shift;
-  my $unique = shift;
 
-  if (
-    $type->objectClass()->isa("OP::Hash")
-     || $type->objectClass()->isa("OP::Array")
-  ) {
-    #
-    # Value lives in a link table, not in this class's table
-    #
-    return "";
-  }
-
-  if ( $type->objectClass->isa("OP::ExtID") ) {
-    #
-    # Value references a foreign key
-    #
-    $foreign->push($attribute);
-  }
-
-  my $uniqueness = $type->unique();
-
-  $unique->{$attribute} = $uniqueness;
-
-  #
-  #
-  #
-  my $datatype;
-
-  if ( $type->columnType() ) {
-    $datatype = $type->columnType();
-  } else {
-    $datatype = 'TEXT';
-  }
-
-  #
-  # Using this key as an AUTO_INCREMENT primary key?
-  #
-  my $serial = $type->serial()
-    ? 'AUTO_INCREMENT'
-    : '';
-
-  #
-  # Permitting NULL/undef values for this key?
-  #
-  my $notNull = $type->optional()
-    ? ''
-    : 'NOT NULL';
-
-  my $attr = OP::Array->new();
-
-  if (
-    defined $type->default()
-    && $datatype !~ /^text/i
-    && $datatype !~ /^blob/i
-  ) {
-    #
-    # A default() modifier was provided in the assertion,
-    # so plug it in to the database table schema:
-    #
-    my $quotedDefault = $class->quote($type->default());
-
-    my $attr = OP::Array->new();
-
-    $attr->push(
-      $attribute,
-      $datatype,
-      'DEFAULT',
-      $quotedDefault
-    );
-
-    $attr->push($notNull) if $notNull;
-    $attr->push($serial) if $serial;
-
-    return $attr->join(" ");
-  } else {
-    #
-    # No default() was specified:
-    #
-    my $attr = OP::Array->new();
-
-    $attr->push(
-      $attribute,
-      $datatype
-    );
-
-    $attr->push($notNull) if $notNull;
-    $attr->push($serial) if $serial;
-
-    return $attr->join(" ");
-  }
+  return $class->__dispatch('__statementForColumn', @_);
 }
 
 
@@ -2027,11 +1636,7 @@ Drops the receiving class's database table.
 sub __dropTable {
   my $class = shift;
 
-  my $table = $class->tableName();
-
-  my $query = "DROP TABLE $table;\n";
-
-  return $class->write($query);
+  return $class->__dispatch('__dropTable');
 }
 
 
@@ -2051,9 +1656,7 @@ Creates the receiving class's database table
 sub __createTable {
   my $class = shift;
 
-  my $query = $class->__schema();
-
-  return $class->write($query);
+  return $class->__dispatch('__createTable');
 }
 
 
@@ -2070,12 +1673,7 @@ sub __selectRowStatement {
   my $class = shift;
   my $id = shift;
 
-  return sprintf(q| SELECT %s FROM %s WHERE %s = %s |,
-    $class->columnNames->join(", "),
-    $class->tableName(),
-    $class->__primaryKey(),
-    $class->quote($id)
-  );
+  return $class->__dispatch('__selectRowStatement', $id);
 }
 
 
@@ -2091,7 +1689,7 @@ Returns the SQL used to generate a list of all record names
 sub __allNamesStatement {
   my $class = shift;
 
-  return sprintf(q| SELECT name FROM %s |, $class->tableName());
+  return $class->__dispatch('__allNamesStatement');
 }
 
 
@@ -2107,12 +1705,7 @@ Returns the SQL used to generate a list of all record ids
 sub __allIdsStatement {
   my $class = shift;
 
-  return sprintf( q|
-      SELECT %s FROM %s ORDER BY name
-    |,
-    $class->__primaryKey(),
-    $class->tableName(),
-  );
+  return $class->__dispatch('__allIdsStatement');
 }
 
 # method __write(OP::Class $class: Str $query) {
@@ -2138,45 +1731,8 @@ sub __write {
 # method __wrapWithReconnect(OP::Class $class: Code $sub) {
 sub __wrapWithReconnect {
   my $class = shift;
-  my $sub = shift;
 
-  my $return;
-
-  while(1) {
-    try {
-      $return = &$sub;
-    } catch Error with {
-      my $error = shift;
-
-      if ( $error =~ /server has gone away|can't connect|unable to connect/is ) {
-        my $dbName = $class->databaseName;
-
-        my $sleepTime = 1;
-
-        #
-        # Try to reconnect on failure...
-        #
-        print STDERR "Lost connection - PID $$ re-connecting to "
-          . "\"$dbName\" database.\n";
-
-        sleep $sleepTime;
-
-        $class->__dbi->db_disconnect;
-
-        delete $dbi->{$dbName}->{$$};
-        delete $dbi->{$dbName};
-      } else {
-        #
-        # Rethrow
-        #
-        throw $error;
-      }
-    };
-
-    last if $return;
-  };
-
-  return $return;
+  return $class->__dispatch('__wrapWithReconnect', @_);
 }
 
 # method __query(OP::Class $class: Str $query) {
@@ -2477,6 +2033,198 @@ sub __dbi {
 
 =pod
 
+=item * $class->__doesIdExistStatement($id)
+
+Returns the SQL used to look up the presence of an ID in the current table
+
+=cut
+
+sub __doesIdExistStatement {
+  my $class = shift;
+  my $id = shift;
+
+  return $class->__dispatch('__doesIdExistStatement', $id);
+}
+
+
+=pod
+
+=item * $class->__doesNameExistStatement($name)
+
+Returns the SQL used to look up the presence of a name in the current table
+
+=cut
+
+sub __doesNameExistStatement {
+  my $class = shift;
+  my $name = shift;
+
+  return $class->__dispatch('__doesNameExistStatement', $name);
+}
+
+
+=pod
+
+=item * $class->__nameForIdStatement($id)
+
+Returns the SQL used to look up the name for a given ID
+
+=cut
+
+sub __nameForIdStatement {
+  my $class = shift;
+  my $id = shift;
+
+  return $class->__dispatch('__nameForIdStatement', $id);
+}
+
+
+=pod
+
+=item * $class->__idForNameStatement($name)
+
+Returns the SQL used to look up the ID for a given name
+
+=cut
+
+sub __idForNameStatement {
+  my $class = shift;
+  my $name = shift;
+
+  return $class->__dispatch('__idForNameStatement', $name);
+}
+
+
+=pod
+
+=item * $class->__serialType()
+
+Returns the database column type used for auto-incrementing IDs.
+
+=cut
+
+sub __serialType {
+  my $class = shift;
+
+  return $class->__dispatch('__serialType');
+}
+
+
+=pod
+
+=item * $class->__updateColumnNames();
+
+Returns an OP::Array of the column names to include with UPDATE statements.
+
+=cut
+
+sub __updateColumnNames {
+  my $class = shift;
+
+  return $class->__dispatch('__updateColumnNames');
+}
+
+
+=pod
+
+=item * $class->__selectColumnNames();
+
+Returns an OP::Array of the column names to include with SELECT statements.
+
+=cut
+
+sub __selectColumnNames {
+  my $class = shift;
+
+  return $class->__dispatch('__selectColumnNames');
+}
+
+
+=pod
+
+=item * $class->__insertColumnNames();
+
+Returns an OP::Array of the column names to include with INSERT statements.
+
+=cut
+
+sub __insertColumnNames {
+  my $class = shift;
+
+  return $class->__dispatch('__insertColumnNames');
+}
+
+
+=pod
+
+=item * $class->__quoteDatetimeInsert();
+
+Returns the SQL fragment used for unixtime->datetime conversion
+
+=cut
+
+sub __quoteDatetimeInsert {
+  my $class = shift;
+
+  return $class->__dispatch('__quoteDatetimeInsert', @_);
+}
+
+
+=pod
+
+=item * $class->__quoteDatetimeSelect();
+
+Returns the SQL fragment used for datetime->unixtime conversion
+
+=cut
+
+sub __quoteDatetimeSelect {
+  my $class = shift;
+
+  return $class->__dispatch('__quoteDatetimeSelect', @_);
+}
+
+
+=pod
+
+=item * $receiver->__dispatch($methodName, @args)
+
+Delegate the received class or instance method and arguments to the
+appropriate database-specific persistence module (ie
+OP::Persistence::MySQL, OP::Persistence::SQLite).
+
+=cut
+
+sub __dispatch {
+  my $receiver = shift;
+  my $method = shift;
+
+  my $module;
+
+  my $class = $receiver->class || $receiver;
+
+  if ( $class->__dbiType == OP::Enum::DBIType::MySQL ) {
+    $module = "OP::Persistence::MySQL";
+  } elsif ( $class->__dbiType == OP::Enum::DBIType::SQLite ) {
+    $module = "OP::Persistence::SQLite";
+  }
+
+  do {
+    no strict "refs";
+
+    if ( !defined( *{"$module\::$method"} ) ) {
+      $module = "OP::Persistence::Generic";
+    }
+
+    my $results = &{"$module\::$method"}($receiver, @_);
+
+    return $results;
+  };
+}
+
+
+=pod
+
 =back
 
 =head2 Flatfile I/O
@@ -2627,29 +2375,14 @@ Callers should invoke this at some point, if overriding in superclass.
 sub __init {
   my $class = shift;
 
-  if ( $class =~ /::Abstract/ ) {
-    return false;
+  if ( $class->__useMemcached
+    && ( !$memd || !%{ $memd->server_versions } )
+  ) {
+    warn "No memcached servers found for $class to use\n";
   }
 
-  #
-  # CREATE or ALTER the table if necessary...
-  #
-  if (
-    $class->__useDbi()
-    && $class->__dbiType() == OP::Enum::DBIType::MySQL
-  ) {
-    my $sth = $class->query('show tables');
-
-    my %tables;
-    while ( my ($table) = $sth->fetchrow_array() ) {
-      $tables{$table}++;
-    }
-
-    $sth->finish();
-
-    if ( !$tables{$class->tableName()} ) {
-      $class->__createTable();
-    }
+  if ( $class->__useDbi ) {
+    $class->__dispatch('__init');
   }
 
   #
@@ -2866,9 +2599,13 @@ Returns true if this object has ever been saved.
 sub exists {
   my $self = shift;
 
-  return false if !$self->{id};
+  return false if !defined( $self->{id} );
 
-  return $self->class->doesIdExist($self->id);
+  my $class = $self->class;
+
+  return $class->__useDbi
+    ? $self->class->doesIdExist($self->id)
+    : -e $self->_path;
 }
 
 =pod
@@ -3140,7 +2877,11 @@ Generates a new ID for the current object. Default is GUID-style.
 sub _newId {
   my $self = shift;
 
-  return OP::ID->new();
+  my $class = $self->class;
+
+  my $assert = $class->asserts->{ $class->__primaryKey };
+
+  return $assert->objectClass->new();
 }
 
 =pod
@@ -3191,6 +2932,8 @@ sub _localSave {
 
   try {
     $saved = $self->_localSaveInsideTransaction($comment);
+
+    $self->_saveToMemcached;
 
   } catch Error with {
     $OP::Persistence::errstr = $_[0];
@@ -3407,6 +3150,31 @@ sub _localSaveInsideTransaction {
 
 =pod
 
+=item * $self->_saveToMemcached
+
+Saves a copy of self to the memcached cluster
+
+=cut
+
+sub _saveToMemcached {
+  my $self = shift;
+
+  my $class = $self->class;
+
+  my $cacheTTL = $class->__useMemcached();
+
+  if ( $memd && $cacheTTL ) {
+    return $memd->set(
+      $class->__cacheKey($self->id), $self, $cacheTTL
+    );
+  }
+
+  return;
+}
+
+
+=pod
+
 =back
 
 =head2 Database I/O
@@ -3424,16 +3192,7 @@ receiving object.
 sub _updateRowStatement {
   my $self = shift;
 
-  my $class = $self->class();
-
-  my $statement = sprintf( q| UPDATE %s SET %s WHERE %s = %s; |,
-    $class->tableName(),
-    $self->_quotedValues(true)->join(",\n"),
-    $class->__primaryKey(),
-    $class->quote( $self->key() )
-  );
-
-  return $statement;
+  return $self->__dispatch("_updateRowStatement");
 }
 
 
@@ -3450,33 +3209,7 @@ receiving object.
 sub _insertRowStatement {
   my $self = shift;
 
-  my $class = $self->class();
-
-  my $attributes = OP::Array->new();
-
-  my $asserts = $class->asserts();
-
-  for ( $class->attributes() ) {
-    my $type = $asserts->{$_};
-
-    if ( $type && (
-      $type->objectClass->isa("OP::Hash")
-       || $type->objectClass->isa("OP::Array")
-    ) ) {
-      #
-      # Value lives in a link table, not in this class's schema
-      #
-      next;
-    }
-
-    $attributes->push($_);
-  }
-
-  return sprintf( q| INSERT INTO %s (%s) VALUES (%s); |,
-    $class->tableName(),
-    $attributes->join(', '),
-    $self->_quotedValues(false)->join(', '),
-  );
+  return $self->__dispatch("_insertRowStatement");
 }
 
 
@@ -3493,19 +3226,7 @@ receiving object.
 sub _deleteRowStatement {
   my $self = shift;
 
-  my $idKey = $self->class()->__primaryKey();
-
-  unless ( defined $self->{$idKey} ) {
-    throw OP::ObjectIsAnonymous( "Can't delete an object with no ID" );
-  }
-
-  my $class = $self->class();
-
-  return sprintf( q| DELETE FROM %s WHERE %s = %s |,
-    $class->tableName(),
-    $idKey,
-    $class->quote($self->{$idKey})
-  );
+  return $self->__dispatch("_deleteRowStatement");
 }
 
 
@@ -3540,6 +3261,19 @@ sub _updateRecord {
     $return = $class->write(
       $self->_insertRowStatement()
     );
+
+    my $priKey = $class->__primaryKey;
+
+    #
+    # If the ID was database-assigned (auto-increment), update self:
+    #
+    if ( $class->asserts->{$priKey}->isa("OP::Type::Serial") ) {
+      my $lastId = $class->__dbh->last_insert_id(
+        undef, undef, $class->tableName, $priKey
+      );
+
+      $self->set($priKey, $lastId);
+    }
   }
 
   return $return;
@@ -3564,84 +3298,8 @@ our $ForceUpdateSQL;
 # method _quotedValues(Bool ?$isUpdate ) {
 sub _quotedValues {
   my $self = shift;
-  my $isUpdate = shift;
 
-  my $class = $self->class();
-
-  my $values = OP::Array->new();
-
-  my $asserts = $class->asserts();
-
-  for my $key ( $class->attributes() ) {
-    my $value = $self->get($key);
-
-    my $quotedValue;
-
-    my $type = $asserts->{$key};
-    next if !$type;
-
-    #
-    # Apply 'quoting'
-    #
-    if (
-      $type->objectClass()->isa("OP::Hash")
-       || $type->objectClass()->isa("OP::Array")
-    ) {
-      #
-      # Value lives in a link table, not in this class's schema
-      #
-      next;
-
-    } elsif ( $type->sqlInsertValue && $ForceInsertSQL ) {
-      $quotedValue = $type->sqlInsertValue;
-
-    } elsif ( $type->sqlUpdateValue && $ForceUpdateSQL ) {
-      $quotedValue = $type->sqlUpdateValue;
-
-    } elsif ( $type->sqlValue() ) {
-      $quotedValue = $type->sqlValue();
-
-    } elsif ( $type->optional() && !defined($value) ) {
-      $quotedValue = 'NULL';
-
-    } elsif ( !defined($value) || ( !ref($value) && $value eq '' ) ) {
-      $quotedValue = "''";
-
-    } elsif ( !ref($value) || ( ref($value) && overload::Overloaded($value) ) ) {
-      if ( !UNIVERSAL::isa($value, $type->objectClass) ) {
-        #
-        # Sorry, but you're an object now.
-        #
-        $value = $type->objectClass->new( Clone::clone($value) );
-      }
-
-      if (
-        $type->objectClass->isa("OP::DateTime")
-          && $type->columnType eq 'DATETIME'
-      ) {
-        $quotedValue = sprintf('FROM_UNIXTIME(%i)', $value->escape);
-      } else {
-        $quotedValue = $class->quote($value);
-      }
-    } elsif ( ref($value) ) {
-      my $dumpedValue =
-        UNIVERSAL::can($value, "toYaml")
-        ? $value->toYaml
-        : YAML::Syck::Dump($value);
-
-      chomp($dumpedValue);
-
-      $quotedValue = $class->quote($dumpedValue);
-    }
-
-    if ( $isUpdate ) {
-      $values->push( "  $key = $quotedValue" )
-    } else { # Is Insert
-      $values->push( $quotedValue );
-    }
-  }
-
-  return $values;
+  return $self->__dispatch('_quotedValues', @_);
 }
 
 
@@ -3715,32 +3373,6 @@ sub _path {
 
 =pod
 
-=item * $self->_rcsPath()
-
-Return the filesystem path to self's RCS history file.
-
-=cut
-
-# method _rcsPath() {
-sub _rcsPath {
-  my $self = shift;
-
-  my $key = $self->key();
-
-  return false unless ( $key );
-
-  my $class = ref($self);
-
-  my $joinStr = ( $class->__baseRcsPath() =~ /\/$/ ) ? '' : '/';
-
-  return sprintf('%s%s',
-    join($joinStr, $class->__baseRcsPath(), $key), ',v'
-  );
-}
-
-
-=pod
-
 =item * $self->_saveToPath($path)
 
 Save $self as YAML to a the received filesystem path
@@ -3803,6 +3435,32 @@ sub _saveToPath {
 =head2 RCS I/O
 
 =over 4
+
+=item * $self->_rcsPath()
+
+Return the filesystem path to self's RCS history file.
+
+=cut
+
+# method _rcsPath() {
+sub _rcsPath {
+  my $self = shift;
+
+  my $key = $self->key();
+
+  return false unless ( $key );
+
+  my $class = ref($self);
+
+  my $joinStr = ( $class->__baseRcsPath() =~ /\/$/ ) ? '' : '/';
+
+  return sprintf('%s%s',
+    join($joinStr, $class->__baseRcsPath(), $key), ',v'
+  );
+}
+
+
+=pod
 
 =item * $self->_checkout($rcs, $path)
 

@@ -1,3 +1,12 @@
+2009-08-17: .310
+  - Rewrote tests and added runtime framework loader (OP::Runtime)
+  - Persistence now delegates to vendor-specific DBI packages,
+    rather than hosting a bunch of if/else statements. Future backing
+    store types should extend OP::Persistence::Generic and override
+    DBI logic as necessary.
+  - Gave SQLite support some attention
+  - Added OP::Serial for first-class Serial type assertions
+
 2009-08-10: .308
   - More doc updates and bug fixes
   - OP::DateTime now supports DATETIME + other column types, see POD

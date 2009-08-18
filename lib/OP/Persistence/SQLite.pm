@@ -14,7 +14,7 @@ package OP::Persistence::SQLite;
 
 =head1 NAME
 
-OP::Persistence::SQLite - Handle GlobalDBI setup for SQLite
+OP::Persistence::SQLite - Vendor-specific overrides for SQLite
 
 =head1 FUNCTION
 
@@ -36,7 +36,11 @@ Returns a new L<GlobalDBI> instance.
 use strict;
 use warnings;
 
-use GlobalDBI;
+use File::Path;
+use OP::Enum::Bool;
+use OP::Constants qw| sqliteRoot |;
+
+use base qw| OP::Persistence::Generic |;
 
 sub connect {
   my %args = @_;
@@ -62,4 +66,74 @@ This file is part of L<OP>.
 
 =cut
 
-1;
+########
+######## The remainder of this module contains vendor-specific overrides
+########
+
+sub __beginTransaction {
+  my $class = shift;
+
+  return true;
+}
+
+sub __rollbackTransaction {
+  my $class = shift;
+
+  return true;
+}
+
+sub __commitTransaction {
+  my $class = shift;
+
+  return true;
+}
+
+sub __wrapWithReconnect {
+  my $class = shift;
+  my $sub = shift;
+
+  return &$sub(@_);
+}
+
+sub __init {
+  my $class = shift;
+
+  if ( $class =~ /::Abstract/ ) {
+    return false;
+  }
+
+  if ( !-e sqliteRoot ) {
+    mkpath(sqliteRoot);
+  }
+
+  my $sth = $class->query('select tbl_name from sqlite_master');
+
+  my %tables;
+  while ( my ($table) = $sth->fetchrow_array() ) {
+    $tables{$table}++;
+  }
+
+  $sth->finish();
+
+  if ( !$tables{$class->tableName()} ) {
+    $class->__createTable();
+  }
+
+  return true;
+}
+
+sub __quoteDatetimeInsert {
+  my $class = shift;
+  my $value = shift;
+
+  return sprintf('datetime(%i, "unixepoch")', $value->escape);
+}
+
+sub __quoteDatetimeSelect {
+  my $class = shift;
+  my $attr = shift;
+
+  return "strftime('\%s', $attr) AS $attr";
+}
+
+true;

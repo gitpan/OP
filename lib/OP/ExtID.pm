@@ -12,17 +12,20 @@
 
 =head1 NAME
 
-OP::ExtID - Overloaded object class for foreign base64-encoded GUIDs
+OP::ExtID - Overloaded object class for foreign key constraints.
 
-=head1 DESCRIPTION
-
-Extends L<OP::ID>.
+Extends L<OP::Str>.
 
 =head1 SYNOPSIS
 
-  use OP::ExtID;
+  use OP;
 
-  my $id = OP::ExtID->new("EO2JXisF3hGSSg+s3t/Aww==");
+  create "YourApp::Example" => {
+    categoryId => OP::ExtID->assert(
+      "YourApp::Category"
+    ),
+
+  };
 
 =head1 PUBLIC CLASS METHODS
 
@@ -30,13 +33,13 @@ Extends L<OP::ID>.
 
 =item * $class->assert([$query], @rules)
 
-C<ExtID()> assertions are like pointers defining relationships with
+ExtID assertions are like pointers defining relationships with
 other classes, or within a class to define parent/child hierarchy.
 
-Attributes asserted as C<ExtID()> must match an id in the specified
+Attributes asserted as ExtID must match an id in the specified
 class's database table.
 
-C<ExtID()> may be wrapped in an C<Array()> assertion for handling
+ExtID may be wrapped in an Array assertion for handling
 one-to-many relationships, at a small performance cost.
 
 If using MySQL, C<ExtID> also enforces database-level foreign key
@@ -145,7 +148,7 @@ Caller example which populates some test folders and docs:
 
   main();
 
-If a string is specified as a second argument to C<ExtID()>, it will be
+If a string is specified as a second argument to ExtID, it will be
 used as a SQL query, which selects a subset of Ids used as allowed
 values at runtime. If this query is not given, a flat, immutable list
 of Ids will be plugged in for allowed values at compile time.
@@ -185,7 +188,7 @@ package OP::ExtID;
 use strict;
 use warnings;
 
-use base qw| OP::ID |;
+use base qw| OP::Str |;
 
 # method assert(OP::Class $class: *@rules) {
 sub assert {
