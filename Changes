@@ -1,4 +1,8 @@
-2009-08-17: .310
+2009-08-20: .311
+  - Changed from developer release to stable
+  - OP::Shell was moved to its own distribution, Acme::Shell
+
+2009-08-17: .310_001
   - Rewrote tests and added runtime framework loader (OP::Runtime)
   - Persistence now delegates to vendor-specific DBI packages,
     rather than hosting a bunch of if/else statements. Future backing

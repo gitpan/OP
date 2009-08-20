@@ -159,6 +159,15 @@ sub kickClassTires {
 
   return if !UNIVERSAL::isa($class, "OP::Object");
 
+  if ( $class->__useDbi ) {
+    #
+    # Just in case there was already a table, make sure the schema is fresh
+    #
+    ok( $class->__dropTable, "Drop existing table" );
+
+    ok( $class->__createTable, "Re-create table" );
+  }
+
   my $asserts = $class->asserts;
 
   do {

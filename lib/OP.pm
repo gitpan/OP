@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.310_001';
+our $VERSION = '0.311';
 
 use strict;
 use diagnostics;
@@ -79,7 +79,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.310_001> of OP.
+This documentation is for version B<0.311> of OP.
 
 =head1 STATUS
 
@@ -440,8 +440,6 @@ as inline attributes.
 =item * C<bin/oped> - Edit OP objects using VIM and YAML
 
 =item * C<bin/opid> - Dump OP objects to STDOUT in various formats
-
-=item * C<bin/opsh> - Interactive and persistent Perl 5 shell
 
 =back
 

@@ -7,7 +7,6 @@ README
 bin/opconf
 bin/oped
 bin/opid
-bin/opsh
 cpl1.0.txt
 ex/cheat.html
 lib/OP.pm
@@ -56,7 +55,6 @@ lib/OP/Scalar.pm
 lib/OP/Serial.pm
 lib/OP/Series.pm
 lib/OP/SeriesChart.pm
-lib/OP/Shell.pm
 lib/OP/Str.pm
 lib/OP/Subtype.pm
 lib/OP/TimeSpan.pm
