@@ -16,7 +16,7 @@ use constant true  => 1;
 
 use vars qw| $tempdir $path $nofs |;
 
-BEGIN: {
+BEGIN {
   $tempdir = File::Tempdir->new;
 
   $path = $tempdir->name;

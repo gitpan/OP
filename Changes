@@ -1,3 +1,8 @@
+2009-08-27: .312
+  - Try fixing test script to work properly under Perl 5.11
+  - Added manifesto-esque postamble to main OP.pm document
+  - Misc doc updates
+
 2009-08-20: .311
   - Changed from developer release to stable
   - OP::Shell was moved to its own distribution, Acme::Shell

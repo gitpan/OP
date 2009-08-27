@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.311';
+our $VERSION = '0.312';
 
 use strict;
 use diagnostics;
@@ -79,7 +79,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.311> of OP.
+This documentation is for version B<0.312> of OP.
 
 =head1 STATUS
 
@@ -102,7 +102,13 @@ A cheat sheet, C<ex/cheat.html>, is included with this distribution.
 
 =head1 DESCRIPTION
 
-OP is a Perl 5 framework for prototyping InnoDB-backed object classes.
+OP is a Perl 5 framework for prototyping InnoDB-backed object
+classes.
+
+Using OP's C<create()> function, the developer asserts rules for
+object classes. OP's purpose is to automatically derive a database
+schema, handle object-relational mapping, and provide input validation
+for classes created in this manner.
 
 This document covers the high-level concepts implemented in OP.
 
@@ -158,15 +164,26 @@ For more information on named objects, see L<OP::Name>.
 
 =item * C<ctime> => L<OP::DateTime>
 
-C<ctime> is the Unix timestamp representing the object's creation
-time. OP sets this when saving an object for the first time.
+C<ctime> is an object's creation timestamp. OP sets this when saving
+an object for the first time.
+
+This is not the same as, and should not be confused with, the
+C<st_ctime> filesystem attribute returned by the C<fstat> system
+call, which represents inode change time for files. If this ends
+up being too confusing or offensive, OP may use a name other than
+C<ctime> for creation time in a future version. It is currently
+being left alone.
 
 For more information on timestamps, see L<OP::DateTime>.
 
 =item * C<mtime> => L<OP::DateTime>
 
-C<mtime> is the Unix timestamp representing the object's last
+C<mtime> is the Unix timestamp representing an object's last
 modified time. OP updates this each time an object is saved.
+
+Again, this is an object attribute, and is unrelated to the C<st_mtime>
+filesystem attribute returned by the C<fstat> system call. OP may
+use a different name in a future version.
 
 =back
 
@@ -286,7 +303,7 @@ a prototype object for its argument.
     someInt    => 12345,
   );
 
-  $example->save("Saving my first object");
+  $example->save;
 
   $example->print;
 
@@ -502,10 +519,10 @@ itself. This lives under $ENV{OP_HOME}, which defaults to the current
 user's home directory.
 
 To generate a first-time config for the local machine, copy the
-.oprc (included with this distribution) to the proper location, or
-run C<bin/opconf> (also included with this distribution) as the
-user who will be running OP. This is a post-install step which is
-not currently handled by C<make install>.
+.oprc (included with this distribution as C<oprc-dist>) to the
+proper location, or run C<bin/opconf> (also included with this
+distribution) as the user who will be running OP. This is a
+post-install step which is not currently handled by C<make install>.
 
 See L<OP::Constants> for information regarding customizing and
 extending the local rc file.
@@ -538,6 +555,33 @@ And in your C<httpd.conf>:
 L<OP::Class>, C<ex/cheat.html>
 
 OP is on GitHub: http://github.com/aayars/op
+
+=head1 POSTAMBLE
+
+OP could be an acronym for Objective Perl, or Object Persistence,
+or Overpowered, or all of those things, or none of them, or something
+completely different. You are encouraged to come up with your own
+meaning, but please be kind. I'll admit the currently chosen name
+isn't great. It's an unregistered namespace, it conveys little
+meaning, and will probably offend the sensibilities of anyone who
+works with optree packages. The project's name may change eventually,
+but not today.
+
+OP existed in several incarnations and languages before making its
+way to CPAN in its current form. The dialect used for prototyping
+classes in OP is not L<Moose>, which is the current de-facto standard
+for doing things of that sort in Perl 5, and this may turn some
+people away (Moose has, apparently, great community support, not
+to mention a community). Though it is similar in that it provides
+a class prototyping dialect for Perl, OP was specifically written
+as an object persistence layer. Its purpose is focused to the task
+of letting developers save and retrieve objects to/from a backing
+store without incurring a lot of legwork, and its usage reflects
+this.
+
+Thanks to all who have provided feedback and testing. My aim is
+to make this software as good and as useful as possible. I welcome
+suggestions, contributions, and input.
 
 =head1 AUTHOR
 

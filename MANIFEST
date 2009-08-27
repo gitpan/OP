@@ -1,4 +1,3 @@
-.oprc
 Changes
 INSTALL
 MANIFEST
@@ -61,5 +60,6 @@ lib/OP/TimeSpan.pm
 lib/OP/Type.pm
 lib/OP/URI.pm
 lib/OP/Utility.pm
+oprc-dist
 t/OP.t
 META.yml                                 Module meta-data (added by MakeMaker)

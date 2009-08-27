@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.311
+version:             0.312
 abstract:            Compact prototyping of InnoDB-backed object classes
 license:             open_source
 author:              

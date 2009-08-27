@@ -130,8 +130,8 @@ sub init {
     print STDERR "This must be corrected before proceeding.\n";
     print STDERR "\n";
     print STDERR "A starter .oprc should have accompanied this\n";
-    print STDERR "distribution. An example is also given on the\n";
-    print STDERR "OP::Constants manual page.\n";
+    print STDERR "distribution as \"oprc-dist\". An example is\n";
+    print STDERR "also given on the OP::Constants manual page.\n";
     print STDERR "\n";
 
     exit(2);
@@ -179,10 +179,10 @@ be located under C<$ENV{OP_HOME}>, which defaults to the current
 user's home directory ($ENV{HOME} on Unix platforms)
 
 An example C<.oprc> is included in the top level directory of this
-distribution, and also given later in this document. Copy this file
-to the proper location, or just run C<bin/opconf> (also included with
-this distribution) to generate this for your local system and current
-user.
+distribution as C<oprc-dist>, and also given later in this document.
+Copy this file to the proper location, or just run C<bin/opconf>
+(also included with this distribution) to generate this for your
+local system and current user.
 
 =head1 SECURITY
 
