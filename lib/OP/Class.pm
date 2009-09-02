@@ -321,7 +321,7 @@ OP::Class - Root-level "Class" class
   # File: OP/Example.pm
   #
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::Example" => {
     #
@@ -451,7 +451,7 @@ Checks the "safeness" of a class variable name.
 The B<name> of the class being created is the first argument sent to
 C<create()>.
 
-  use OP;
+  use OP qw| :all |;
 
   #
   # The class name will be "OP::Example":
@@ -550,7 +550,7 @@ Class variables are declared as keys in the class prototype. They should
 be prepended with double underscores (__). The value in the prototype is
 the literal value to be used for the class variable.
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::Example" => {
     #
@@ -636,7 +636,7 @@ L<OP::Type> module for more about assertions.
 OP classes are regular old Perl packages. C<create()> is just a wrapper
 to the C<package> keyword, with some shortcuts thrown in.
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::Example" => {
     __someClassVar => true,

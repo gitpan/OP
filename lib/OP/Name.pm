@@ -49,7 +49,7 @@ OP::Name - A unique secondary key
 
 =head1 SYNOPSIS
 
-  use OP;
+  use OP qw| :all |;
 
   #
   # Permit NULL values for "name":

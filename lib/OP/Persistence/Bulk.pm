@@ -306,7 +306,7 @@ OP::Persistence::Bulk - Deferred fast bulk table writes
 
 =head1 SYNOPSIS
 
-  use OP;
+  use OP qw| :all |;
   use OP::Persistence::Bulk;
 
   use YourApp::Example;

@@ -18,7 +18,7 @@ Extends L<OP::Str>.
 
 =head1 SYNOPSIS
 
-  use OP;
+  use OP qw| :all |;
 
   create "YourApp::Example" => {
     categoryId => OP::ExtID->assert(
@@ -59,7 +59,7 @@ Create a folder class for documents and other folders:
   # File: ExampleFolder.pm
   #
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::ExampleFolder" => {
     #
@@ -81,7 +81,7 @@ A document class. Documents refer to their parent folder:
   # File: ExampleTextDocument.pm
   #
 
-  use OP;
+  use OP qw| :all |;
   use OP::ExampleFolder;
 
   create "OP::ExampleTextDocument" => {

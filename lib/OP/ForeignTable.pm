@@ -11,7 +11,7 @@
 use strict;
 use warnings;
 
-use OP;
+use OP qw| :all |;
 
 create "OP::ForeignTable" => {
   __BASE__ => "OP::Hash",
@@ -100,7 +100,7 @@ which was described.
 
 =head1 SYNOPSIS
 
-  use OP;
+  use OP qw| :all |;
 
   use OP::ForeignRow;
   use OP::ForeignTable;

@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.312';
+our $VERSION = '0.313';
 
 use strict;
 use diagnostics;
@@ -51,7 +51,7 @@ use OP::URI;
 
 use base qw| Exporter |;
 
-our @EXPORT = (
+our @EXPORT_OK = (
   #
   # From OP::Class:
   #
@@ -60,13 +60,17 @@ our @EXPORT = (
   # From OP::Type:
   #
   "subtype",
-);
-
-our @EXPORT_OK = (
   #
   # From OP::Array:
   #
   "yield", "emit", "break"
+);
+
+our %EXPORT_TAGS = (
+  create => [qw| create subtype |], 
+  bool   => [qw| true false |], 
+  yield  => [qw| yield |], 
+  all    => \@EXPORT_OK,
 );
 
 true;
@@ -79,7 +83,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.312> of OP.
+This documentation is for version B<0.313> of OP.
 
 =head1 STATUS
 
@@ -92,7 +96,7 @@ progress.
   use strict;
   use warnings;
 
-  use OP;
+  use OP qw| :all |;
 
   create "YourApp::YourClass" => { };
 
@@ -111,6 +115,33 @@ schema, handle object-relational mapping, and provide input validation
 for classes created in this manner.
 
 This document covers the high-level concepts implemented in OP.
+
+=head1 EXPORT TAGS
+
+All exports are optional. Specify a tag or symbol by name to import
+it into your caller's namespace.
+
+  use OP qw| :all |;
+
+=over 4
+
+=item * :all
+
+This imports each of the symbols listed below.
+
+=item * :create
+
+This imports the C<create> and C<subtype> class prototyping functions;
+see L<OP::Class>, L<OP::Subtype>, and examples in this document.
+
+=item * :bool
+
+This imports C<true> and C<false> boolean constants.
+
+=item * :yield
+
+This imports the C<yield>, C<emit>, and C<break> functions for array
+collectors; see L<OP::Array>.
 
 =head1 FRAMEWORK ASSUMPTIONS
 
@@ -260,7 +291,7 @@ in specific object class docs.
 By default, a superclass of L<OP::Node> is used for new classes. This
 may be overridden using __BASE__:
 
-  use OP;
+  use OP qw| :all |;
 
   create "YourApp::Example" => {
     __BASE__ => "OP::Hash",
@@ -276,7 +307,7 @@ method is used:
   #
   # File: Example.pm
   #
-  use OP;
+  use OP qw| :all |;
 
   create "YourApp::Example" => {
     someString => OP::Str->assert,

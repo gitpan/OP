@@ -2,7 +2,6 @@ use ExtUtils::MakeMaker;
 
 my $prereqs = {
    Cache::Memcached::Fast => 0.13,
-                     Carp => 1,
                     Clone => 0.29,
                Data::GUID => 0.043,
    Data::Validate::Domain => 0.09,

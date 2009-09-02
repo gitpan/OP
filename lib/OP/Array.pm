@@ -160,7 +160,7 @@ linked table, with foreign key constraints against the parent table.
   # File: Example.pm
   #
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::Example" => {
     #
@@ -199,7 +199,7 @@ assertion has independent rules:
   # File: Example.pm
   #
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::Example" => {
     #

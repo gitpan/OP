@@ -32,22 +32,17 @@ or C<try>/C<catch> (see L<Error>).
 The "built-in" subclasses derived from OP::Type and L<OP::Subtype>
 are auto-generated, and have no physical modules.
 
-Each concrete object class in OP provides access to its respective Type
-subclass, via the C<__assertClass()> and C<__assert()> class methods. For
-example, L<OP::Str> provides access to the dynamic class OP::Type::Str;
-L<OP::Hash> does so for OP::Type::Hash; etc.
-
-Types may be modified by Subtypes (e.g. C<::optional()>). See
-L<OP::Subtype> for more details and a list of these rule
-types. Subtype subclasses are allocated from the definitions found
-in the %OP::Type::RULES package variable.
+Types may be modified by Subtypes via the C<subtype> function. See
+L<OP::Subtype> for more details and a list of these rule types.
+Subtype subclasses are allocated from the definitions found in the
+%OP::Type::RULES package variable.
 
 =head1 SYNOPSIS
 
 Typing rules for instance variables are asserted in class prototypes
 as inline keys:
 
-  use OP;
+  use OP qw| :all |;
 
   create "OP::Example" => {
     #

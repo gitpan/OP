@@ -7,7 +7,7 @@ SYNOPSIS
       use strict;
       use warnings;
 
-      use OP;
+      use OP qw| :all |;
 
       create "YourApp::YourClass" => { };
 

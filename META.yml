@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.312
+version:             0.313
 abstract:            Compact prototyping of InnoDB-backed object classes
 license:             open_source
 author:              
@@ -9,7 +9,6 @@ generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     
     Cache::Memcached::Fast:        0.13
-    Carp:                          1
     Clone:                         0.29
     Data::GUID:                    0.043
     Data::Validate::Domain:        0.09

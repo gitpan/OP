@@ -1,3 +1,7 @@
+2009-09-02: .313
+  - Made all exports from OP.pm optional, added export tags
+  - Skip MySQL tests if database was not available
+
 2009-08-27: .312
   - Try fixing test script to work properly under Perl 5.11
   - Added manifesto-esque postamble to main OP.pm document

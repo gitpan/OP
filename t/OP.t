@@ -109,7 +109,7 @@ SKIP: {
   if ( $nofs ) {
     skip($nofs, 2);
   } elsif ( !$OP::Runtime::Backends->{"MySQL"} ) {
-    my $reason = "DBD::mysql is not installed";
+    my $reason = "DBD::mysql not installed or 'op' db not ready";
 
     skip($reason, 2);
   }
@@ -130,7 +130,7 @@ SKIP: {
   if ( $nofs ) {
     skip($nofs, 2);
   } elsif ( !$OP::Runtime::Backends->{"MySQL"} ) {
-    my $reason = "DBD::mysql is not installed";
+    my $reason = "DBD::mysql is not installed or 'op' db not ready";
 
     skip($reason, 2);
   }

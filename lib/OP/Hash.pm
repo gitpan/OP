@@ -311,7 +311,7 @@ Do not do this:
   #
   # File: Example.pm
   #
-  use OP;
+  use OP qw| :all |;
 
   create "YourApp::Example" => {
     someInlineHash => OP::Hash->assert()
@@ -341,7 +341,7 @@ akin to the following is the recommended approach:
   #
   # This is where we tuck extrinsic attributes:
   #
-  use OP;
+  use OP qw| :all |;
   use YourApp::Example;
 
   create "YourApp::Example::Attrib" => {
@@ -371,7 +371,7 @@ values which are always either true or false:
   # File: Example: BoolAttrib.pm
   #
 
-  use OP;
+  use OP qw| :all |;
   use YourApp::Example;
 
   create "YourApp::Example::BoolAttrib" => {

@@ -54,11 +54,57 @@ yamlRoot: $path/yaml
     $Backends->{"SQLite"}++;
   };
 
+  my $dbdMysqlIsInstalled;
+
   eval {
     require DBD::mysql;
 
-    $Backends->{"MySQL"}++;
+    $dbdMysqlIsInstalled++;
   };
+
+  if ( $dbdMysqlIsInstalled ) {
+    eval {
+      my $dbname = 'op';
+
+      my $dsn = sprintf('DBI:mysql:database=%s;host=%s;port=%s',
+        $dbname, 'localhost', 3306
+      );
+
+      my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
+        || die DBI->errstr;
+
+      my $sth = $dbh->prepare("show tables") || die $dbh->errstr;
+
+      $sth->execute || die $sth->errstr;
+
+      my $worked = $sth->fetchall_arrayref() || die $sth->errstr;
+
+      $Backends->{"MySQL"}++;
+    };
+  }
+
+  if (
+    $dbdMysqlIsInstalled && !$Backends->{"MySQL"}
+  ) {
+    print "----------------------------------------------------------\n";
+    print "If you would like to enable DB tests for OP, please remedy the\n";
+    print "issue shown in the diagnostic message below. You will need to\n";
+    print "create a local MySQL DB named 'op', and grant access, ie:\n";
+    print "\n";
+    print "> mysql -u root -p\n";
+    print "> create database op;\n";
+    print "> grant all on op.* to op\@localhost;\n";
+
+    if ( $@ ) {
+      my $error = $@;
+      chomp $error;
+
+      print "\n";
+      print "Diagnostic message:\n";
+      print $error;
+      print "\n";
+    }
+  }
 
   $Backends->{"Memcached"} = scalar(
     keys %{ $OP::Persistence::memd->server_versions }
@@ -73,7 +119,7 @@ sub __setenv {
 
   $ENV{OP_HOME} = $path;
 
-  eval q| use OP |;
+  eval q| use OP qw(:all) |;
 
   for ( @OP::EXPORT ) {
     do {

@@ -127,7 +127,7 @@ object.
 use strict;
 use warnings;
 
-use OP;
+use OP qw| :all |;
 
 use OP::Enum::DBIType;
 use OP::Enum::Inter;

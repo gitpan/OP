@@ -11,7 +11,7 @@
 use strict;
 use warnings;
 
-use OP;
+use OP qw| :all |;
 
 require Math::Spline;
 

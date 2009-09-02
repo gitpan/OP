@@ -20,7 +20,7 @@ Extends L<OP::Int>.
 
 =head1 SYNOPSIS
 
-  use OP;
+  use OP qw| :all |;
 
   create "YourApp::Example" => {
     id => OP::Serial->assert,
