@@ -14,7 +14,7 @@ use File::Tempdir;
 use constant false => 0;
 use constant true  => 1;
 
-use vars qw| $tempdir $path $nofs |;
+use vars qw| $tempdir $path $nofs %classPrototype %instancePrototype |;
 
 BEGIN {
   $tempdir = File::Tempdir->new;
@@ -34,9 +34,32 @@ SKIP: {
   skip($nofs, 2) if $nofs;
 
   require_ok("OP::Runtime");
-
   ok( OP::Runtime->import($path), 'setup environment' );
 }
+
+do {
+  %classPrototype = (
+    testBool      => OP::Bool->assert(),
+    testDouble    => OP::Double->assert(),
+    testFloat     => OP::Float->assert(),
+    testInt       => OP::Int->assert(),
+    testNum       => OP::Num->assert(),
+    testRule      => OP::Rule->assert(),
+    testStr       => OP::Str->assert(),
+    testTimeSpan  => OP::TimeSpan->assert(),
+  );
+
+  %instancePrototype = (
+    testBool      => true,
+    testDouble    => "1234.5678901",
+    testFloat     => 22/7,
+    testInt       => 23,
+    testNum       => 42,
+    testRule      => qr/foo/,
+    testStr       => "example",
+    testTimeSpan  => 60*24,
+  );
+};
 
 SKIP: {
   skip($nofs, 2) if $nofs;
@@ -47,6 +70,7 @@ SKIP: {
       __useDbi  => false,
       __useYaml => true,
       __useMemcached => 5,
+      %classPrototype
     }),
     "Class allocate"
   );
@@ -72,6 +96,7 @@ SKIP: {
     testCreate($class => {
       __dbiType => 1,
       __useMemcached => 5,
+      %classPrototype
     }),
     "Class allocate, table create"
   );
@@ -94,6 +119,7 @@ SKIP: {
       __dbiType => 1,
       __useMemcached => 5,
       id => OP::Serial->assert,
+      %classPrototype
     }),
     "Class allocate, table create"
   );
@@ -119,6 +145,7 @@ SKIP: {
     testCreate($class => {
       __dbiType => 0,
       __useMemcached => 5,
+      %classPrototype
     }),
     "Class allocate, table create"
   );
@@ -141,6 +168,7 @@ SKIP: {
       __dbiType => 0,
       __useMemcached => 5,
       id => OP::Serial->assert,
+      %classPrototype
     }),
     "Class allocate, table create"
   );
@@ -174,7 +202,8 @@ sub kickClassTires {
     my $obj;
     isa_ok(
       $obj = $class->new(
-        name => OP::Utility::randstr()
+        name => OP::Utility::randstr(),
+        %instancePrototype
       ),
       $class
     );
@@ -227,10 +256,10 @@ sub kickClassTires {
 #
 sub testCreate {
   my $class = shift;
-  my $prototype = shift;
+  my $classPrototype = shift;
 
   eval {
-    OP::create($class, $prototype);
+    OP::create($class, $classPrototype);
   };
 
   return $class->isa($class);

@@ -1,3 +1,12 @@
+2009-09-04: .314
+  - Removed default of 0 for DateTime, will allow NULL instead
+  - Split auxiliary datatypes off into their own distro
+  - Split experimental packages off into their own distro
+  - Reduced number of classes loaded by default
+  - Added more tests
+  - Fixed symbols exported via :yield tag
+  - More misc cleanup
+
 2009-09-02: .313
   - Made all exports from OP.pm optional, added export tags
   - Skip MySQL tests if database was not available

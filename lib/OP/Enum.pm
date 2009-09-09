@@ -31,27 +31,9 @@ modules.
 
 Provide C<false> and C<true> enumerated constants
 
-=item * L<OP::Enum::Consol>
-
-Constant enumeration of supported series consolidation methods
-
 =item * L<OP::Enum::DBIType>
 
 Constant enumeration of supported database types
-
-=item * L<OP::Enum::Inter>
-
-Constant enumeration of supported series interpolation methods
-
-=item * L<OP::Enum::State>
-
-Criticality enumeration. Exports "Nagios-style" states: OK (0), Warn
-(1), and Crit (2)
-
-=item * L<OP::Enum::StatType>
-
-Constant enumeration of supported series statistic handling methods
-(gauge, counter, derivative)
 
 =back
 

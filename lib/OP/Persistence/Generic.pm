@@ -128,7 +128,7 @@ sub __commitTransaction {
 sub __beginTransactionStatement {
   my $class = shift;
 
-  return "START TRANSACTION;\n";
+  return "BEGIN;\n";
 }
 
 

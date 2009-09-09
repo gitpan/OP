@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.313
+version:             0.314
 abstract:            Compact prototyping of InnoDB-backed object classes
 license:             open_source
 author:              
@@ -11,12 +11,7 @@ requires:
     Cache::Memcached::Fast:        0.13
     Clone:                         0.29
     Data::GUID:                    0.043
-    Data::Validate::Domain:        0.09
-    Data::Validate::Email:         0.04
-    Data::Validate::IP:            0.08
-    Data::Validate::URI:           0.05
     Digest::SHA1:                  2.11
-    Email::Address:                1.889
     Error:                         0.17015
     File::Copy:                    2
     File::HomeDir::Unix:           0.86
@@ -26,7 +21,6 @@ requires:
     IO::Handle:                    1.14
     Math::VecStat:                 0.08
     Net::Syslog:                   0.03
-    Parse::RPN:                    2.43
     Rcs:                           1.05
     Scalar::Util:                  1.19
     Sys::Hostname:                 1.11

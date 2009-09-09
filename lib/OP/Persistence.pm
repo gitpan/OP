@@ -1539,9 +1539,10 @@ Returns the SQL used to construct the receiving class's table.
 sub __schema {
   my $class = shift;
 
-  my $schema = $class->__dispatch('__schema');
+  OP::AssertFailed->throw("'name' must be asserted as unique")
+    if !$class->asserts->{name} || !$class->asserts->{name}->unique;
 
-  # print $schema;
+  my $schema = $class->__dispatch('__schema');
 
   return $schema;
 }
@@ -1722,7 +1723,7 @@ sub __write {
   if ( $@ ) {
     my $err = $class->__dbh()->errstr() || $@;
 
-    OP::DBQueryFailed->throw( join(': ', $class, $err) );
+    OP::DBQueryFailed->throw( join(': ', $class, $err, $query) );
   }
 
   return $rows;
@@ -2976,12 +2977,12 @@ sub _localSave {
           #
           throw OP::TransactionFailed(
             "ROLLBACK FAILED!!! Check DB and compare history for "
-              . "$idKey $quotedID in class $class. Reason: "
+              . "$idKey $quotedID in class $class: "
               . $OP::Persistence::errstr
           );
         } else {
           throw OP::TransactionFailed(
-            "Transaction failed, ROLLBACK successful. Reason: "
+            "Transaction failed: "
               . $OP::Persistence::errstr
           );
         }

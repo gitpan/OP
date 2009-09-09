@@ -70,24 +70,6 @@ This file is part of L<OP>.
 ######## The remainder of this module contains vendor-specific overrides
 ########
 
-sub __beginTransaction {
-  my $class = shift;
-
-  return true;
-}
-
-sub __rollbackTransaction {
-  my $class = shift;
-
-  return true;
-}
-
-sub __commitTransaction {
-  my $class = shift;
-
-  return true;
-}
-
 sub __wrapWithReconnect {
   my $class = shift;
   my $sub = shift;

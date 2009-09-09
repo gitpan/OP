@@ -46,6 +46,8 @@ use overload
   '""'  => '_sprint',
   '<=>' => '_compare';
 
+our $datetimeRegex = qr/^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)$/;
+
 # method assert(OP::Class $class: *@rules) {
 sub assert {
   my $class = shift;
@@ -53,23 +55,33 @@ sub assert {
 
   my %parsed = OP::Type::__parseTypeArgs(
     sub {
-      UNIVERSAL::isa($_[0], "Time::Piece")
-       || Scalar::Util::looks_like_number("$_[0]")
-       || throw OP::AssertFailed("Received value is not a time");
+      my $time = $_[0];
+
+      if ( $time && $time =~ $datetimeRegex ) {
+        $time = $class->newFrom($1, $2, $3, $4, $5, $6);
+      }
+
+      UNIVERSAL::isa($time, "Time::Piece")
+       || Scalar::Util::looks_like_number($time)
+       || OP::AssertFailed->throw("Received value is not a time");
     }, @rules
   );
 
   $parsed{min} = 0 if !defined $parsed{min};
   $parsed{max} = 2**32 if !defined $parsed{max};
-  $parsed{default} ||= "0.0000";
   $parsed{columnType} ||= 'DOUBLE(15,4)';
+  $parsed{optional} = true if !defined $parsed{optional};
 
   return $class->__assertClass()->new(%parsed);
-};
+}
 
 sub new {
   my $class = shift;
   my $time = shift;
+
+  if ( $time && $time =~ /$datetimeRegex/ ) {
+    return $class->newFrom($1, $2, $3, $4, $5, $6);
+  }
 
   my $epoch = 0;
 
@@ -88,7 +100,7 @@ sub new {
   my $self = Time::Piece::Nonpolluting->new($epoch);
 
   return bless $self, $class;
-};
+}
 
 # method newFrom(OP::Class $class:
 #   Num $year, Num $month, Num $day, Num $hour, Num $minute, Num $sec
@@ -107,7 +119,7 @@ sub newFrom {
       $day, $month - 1, $year - 1900
     )
   );
-};
+}
 
 #
 # Allow comparison of DateTime, Time::Piece, overloaded scalar,
@@ -128,11 +140,11 @@ sub _compare {
   }
 
   return $date1 <=> $date2;
-};
+}
 
 sub _sprint {
   return shift->epoch()
-};
+}
 
 #
 # Deny all knowledge of being OP::Array-like.

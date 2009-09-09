@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.313';
+our $VERSION = '0.314';
 
 use strict;
 use diagnostics;
@@ -31,15 +31,12 @@ use OP::Node;
 use OP::Array qw| yield emit break |;
 use OP::Bool;
 use OP::DateTime;
-use OP::Domain;
 use OP::Double;
-use OP::EmailAddr;
 use OP::ExtID;
 use OP::Float;
 use OP::Hash;
 use OP::ID;
 use OP::Int;
-use OP::IPv4Addr;
 use OP::Name;
 use OP::Num;
 use OP::Rule;
@@ -47,7 +44,6 @@ use OP::Scalar;
 use OP::Serial;
 use OP::Str;
 use OP::TimeSpan;
-use OP::URI;
 
 use base qw| Exporter |;
 
@@ -69,7 +65,7 @@ our @EXPORT_OK = (
 our %EXPORT_TAGS = (
   create => [qw| create subtype |], 
   bool   => [qw| true false |], 
-  yield  => [qw| yield |], 
+  yield  => [qw| yield emit break |], 
   all    => \@EXPORT_OK,
 );
 
@@ -83,7 +79,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.313> of OP.
+This documentation is for version B<0.314> of OP.
 
 =head1 STATUS
 
@@ -396,6 +392,8 @@ Native types are OK for setters:
 
 =item * L<OP::Persistence> - Storage and retrieval mix-in
 
+=item * L<OP::Persistence::Bulk> - Deferred fast bulk table writes
+
 =item * L<OP::Persistence::Generic> - Base for vendor-specific DBI modules
 
 =item * L<OP::Persistence::MySQL> - MySQL/InnoDB-specific runtime overrides
@@ -412,9 +410,9 @@ Native types are OK for setters:
 
 =back
 
-=head1 OBJECT TYPES
+=head1 CORE OBJECT TYPES
 
-The basic types listed here may be instantiated as objects, or asserted
+The basic types listed here may be instantiated as objects, and asserted
 as inline attributes.
 
 =over 4
@@ -425,11 +423,7 @@ as inline attributes.
 
 =item * L<OP::DateTime> - Overloaded time object
 
-=item * L<OP::Domain> - Overloaded domain name
-
 =item * L<OP::Double> - Overloaded double-precision number
-
-=item * L<OP::EmailAddr> - Overloaded email address
 
 =item * L<OP::ExtID> - Overloaded foreign key
 
@@ -440,8 +434,6 @@ as inline attributes.
 =item * L<OP::ID> - Overloaded GUID primary key
 
 =item * L<OP::Int> - Overloaded integer
-
-=item * L<OP::IPv4Addr> - Overloaded IPv4 address
 
 =item * L<OP::Name> - Unique secondary key
 
@@ -454,8 +446,6 @@ as inline attributes.
 =item * L<OP::Str> - Overloaded unicode string
 
 =item * L<OP::TimeSpan> - Overloaded time range object
-
-=item * L<OP::URI> - Overloaded URI
 
 =back
 
@@ -479,7 +469,7 @@ as inline attributes.
 
 =back
 
-=head1 TOYS & TOOLS
+=head1 TOOLS
 
 =over 4
 
@@ -491,55 +481,6 @@ as inline attributes.
 
 =back
 
-=head1 EXPERIMENTAL
-
-Experimental classes are subject to radical upheaval, questionable
-documentation, and unexplained disappearances. They represent proof of
-concept in their respective areas, and may move out of experimental status
-at some point.
-
-=head2 INFOMATICS
-
-The infomatics classes are an attempt to replicate certain functionality
-of RRD using SQL and Perl.
-
-=over 4
-
-=item * L<OP::Log> - OP::RRNode class factory
-
-=item * L<OP::RRNode> - Round Robin Database Table
-
-=item * L<OP::Series> - Cooked OP::RRNode Series Data
-
-=item * L<OP::SeriesChart> - Image-based Series Visualizer
-
-=back
-
-=head2 FOREIGN DB ACCESS
-
-Foreign DB access classes are similar in function to Class::DBI,
-in that they are used to derive object classes from existing schemas.
-This is an inversion of how OP normally functions, since OP was
-designed to derive schemas from classes.
-
-=over 4
-
-=item * L<OP::ForeignRow> - Non-OP Database Access
-
-=item * L<OP::ForeignTable> - ForeignRow class factory
-
-=back
-
-=head2 BULK TABLE WRITER
-
-The Bulk writer provides an alternate method for saving objects,
-utilizing MySQL's LOAD FILE syntax.
-
-=over 4
-
-=item * L<OP::Persistence::Bulk> - Deferred fast bulk table writes
-
-=back
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -598,17 +539,10 @@ meaning, and will probably offend the sensibilities of anyone who
 works with optree packages. The project's name may change eventually,
 but not today.
 
-OP existed in several incarnations and languages before making its
-way to CPAN in its current form. The dialect used for prototyping
-classes in OP is not L<Moose>, which is the current de-facto standard
-for doing things of that sort in Perl 5, and this may turn some
-people away (Moose has, apparently, great community support, not
-to mention a community). Though it is similar in that it provides
-a class prototyping dialect for Perl, OP was specifically written
-as an object persistence layer. Its purpose is focused to the task
-of letting developers save and retrieve objects to/from a backing
-store without incurring a lot of legwork, and its usage reflects
-this.
+OP was specifically written as an object persistence layer. Its
+purpose is focused to the task of letting developers save and
+retrieve objects to/from a backing store without incurring a lot
+of legwork, and its usage reflects this.
 
 Thanks to all who have provided feedback and testing. My aim is
 to make this software as good and as useful as possible. I welcome
