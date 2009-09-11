@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.314';
+our $VERSION = '0.315';
 
 use strict;
 use diagnostics;
@@ -79,7 +79,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.314> of OP.
+This documentation is for version B<0.315> of OP.
 
 =head1 STATUS
 

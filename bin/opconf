@@ -42,6 +42,7 @@ sub main {
   if ( !-e $path ) {
     my $conf = {
       ldapHost    => 'ldap',
+      yamlHost    => undef,
       yamlRoot    => join('/', $ENV{OP_HOME}, 'yaml'),
       sqliteRoot  => join('/', $ENV{OP_HOME}, 'sqlite'),
       scratchRoot => '/tmp',

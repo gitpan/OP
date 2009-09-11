@@ -67,9 +67,10 @@ SKIP: {
   my $class = "OP_YAMLTest::YAMLTest01";
   ok(
     testCreate($class => {
-      __useDbi  => false,
+      __useDbi => false,
       __useYaml => true,
       __useMemcached => 5,
+      __useRcs => true,
       %classPrototype
     }),
     "Class allocate"
@@ -96,6 +97,8 @@ SKIP: {
     testCreate($class => {
       __dbiType => 1,
       __useMemcached => 5,
+      __useRcs  => true,
+      __useYaml => true,
       %classPrototype
     }),
     "Class allocate, table create"
@@ -118,6 +121,8 @@ SKIP: {
     testCreate($class => {
       __dbiType => 1,
       __useMemcached => 5,
+      __useRcs  => true,
+      __useYaml => true,
       id => OP::Serial->assert,
       %classPrototype
     }),
@@ -145,6 +150,8 @@ SKIP: {
     testCreate($class => {
       __dbiType => 0,
       __useMemcached => 5,
+      __useRcs  => true,
+      __useYaml => true,
       %classPrototype
     }),
     "Class allocate, table create"
@@ -167,6 +174,8 @@ SKIP: {
     testCreate($class => {
       __dbiType => 0,
       __useMemcached => 5,
+      __useRcs  => true,
+      __useYaml => true,
       id => OP::Serial->assert,
       %classPrototype
     }),
@@ -210,18 +219,12 @@ sub kickClassTires {
     ok( $obj->save, "Save to backing store" );
     ok( $obj->exists, "Exists in backing store" );
 
-    $asserts->each( sub {
-      my $key = shift;
-      my $type = $asserts->{$key};
-
-      isa_ok(
-        $obj->{$key}, $type->objectClass, 
-        sprintf('%s "%s"', $class->pretty($key), $obj->{$key})
-      );
-    } );
+    kickObjectTires($obj);
   };
 
-  $class->allIds->each( sub {
+  my $ids = $class->allIds;
+
+  $ids->each( sub {
     my $id = shift;
 
     my $obj;
@@ -231,25 +234,47 @@ sub kickClassTires {
       "Object retrieved from backing store"
     );
 
-    $asserts->each( sub {
-      my $key = shift;
-      my $type = $asserts->{$key};
-
-      isa_ok(
-        $obj->{$key}, $type->objectClass, 
-        sprintf('%s "%s"', $class->pretty($key), $obj->{$key})
-      );
-    } );
+    kickObjectTires($obj);
 
     ok( $obj->remove, "Remove from backing store" );
 
     ok( !$obj->exists, "Object was removed" );
+
+    undef $obj;
+
+    if ( $class->__useRcs ) {
+      isa_ok(
+        $obj = $class->restore($id, '1.1'),
+        $class,
+        "Object restored from RCS archive"
+      );
+
+      kickObjectTires($obj);
+    }
   } );
 
   if ( $class->__useDbi ) {
     ok( $class->__dropTable, "Drop table");
-  }
+  } 
 }
+
+sub kickObjectTires {
+  my $obj = shift;
+
+  my $class = $obj->class;
+  my $asserts = $class->asserts;
+
+  $asserts->each( sub {
+    my $key = shift;
+    my $type = $asserts->{$key};
+
+    isa_ok(
+      $obj->{$key}, $type->objectClass, 
+      sprintf('%s "%s"', $class->pretty($key), $obj->{$key})
+    );
+  } );
+}
+
 
 #
 #

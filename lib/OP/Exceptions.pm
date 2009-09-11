@@ -60,6 +60,7 @@ my @__types = qw|
   StaleObject
   TimeoutExceeded
   TransactionFailed
+  WrongHost
 |;
 
 our @types;

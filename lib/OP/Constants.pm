@@ -217,6 +217,7 @@ valid YAML:
 
   ---
   yamlRoot: /opt/op/yaml
+  yamlHost: ~
   sqliteRoot: /opt/op/sqlite
   scratchRoot: /tmp
   dbHost: localhost

@@ -54,13 +54,12 @@ Instance variable assertions may be modified by providing the following argument
 
 =head3 columnType => $colType
 
-Override a database column type, eg "VARCHAR(128)". Returns a new
-OP::Subtype::columnType instance.
+Override a database column type, eg "VARCHAR(128)".
 
 =head3 default => $value
 
 Set the default value for a given instance variable and database table
-column. Returns a new OP::Subtype::default instance.
+column.
 
 Unless C<optional()> is given, the default value must also be included
 as an allowed value.
@@ -68,42 +67,29 @@ as an allowed value.
 =head3 min => $num
 
 Specifies the minimum allowed numeric value for a given instance variable.
-Returns a new OP::Subtype::min instance.
 
 =head3 minSize => $num
 
 Specifies the minimum length or scalar size for a given instance variable.
-Returns a new OP::Subtype::minSize instance.
 
 =head3 max => $num
 
 Specifies the maximum allowed numeric value for a given instance variable.
-Returns a new OP::Subtype::max instance.
 
 =head3 maxSize => $num
 
 Specifies the maximum length or scalar size for a given instance variable.
-Returns a new OP::Subtype::maxSize instance.
 
 =head3 optional => true
 
-Permit a NULL (undef) value for a given instance variable. Returns a
-new OP::Subtype::optional instance.
+Permit a NULL (undef) value for a given instance variable.
 
 =head3 regex => qr/.../
 
 Specifies an optional regular expression which the value of the given
-instance variable must match.  Returns a new OP::Subtype::regex
-instance.
-
-=head3 serial => true
-
-Specify an AUTO_INCREMENT column. This should only be used when asserting
-a primary key. Returns a new OP::Subtype::serial instance.
+instance variable must match.
 
 =head3 size => $num
-
-Returns a new OP::Subtype::serial instance.
 
 Specify that values must always be of a fixed size. The "size" is the
 value obtained through the built-in function C<length()> (string length)
@@ -114,8 +100,7 @@ for Scalars, C<scalar(...)> (element count) for Arrays, and C<scalar keys()>
 
 Override an asserted attribute's "insert" value when writing to a SQL
 database. This is useful if deriving a new value from existing table
-values at insertion time. Returns a new OP::Subtype::sqlValue
-instance.
+values at insertion time.
 
 C<::sqlInsertValue> and C<::sqlUpdateValue> override any provided value
 for ::sqlValue, but only on INSERT and UPDATE statements, respectively.
@@ -132,8 +117,7 @@ for ::sqlValue, but only on INSERT and UPDATE statements, respectively.
 
 =head3 unique => true
 
-Specify UNIQUE database table columns. Returns a new
-OP::Subtype::unique instance.
+Specify UNIQUE database table columns.
 
   create "OP::Example" => {
     #
@@ -165,8 +149,7 @@ OP::Subtype::unique instance.
 
 =head3 uom => $str
 
-Specify an attribute's unit of measurement label. Returns a new
-OP::Subtype::uom instance.
+Specify an attribute's unit of measurement label.
 
 =head1 PUBLIC INSTANCE METHODS
 

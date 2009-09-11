@@ -74,9 +74,19 @@ sub new {
   my $class = shift;
   my $self = shift;
 
-  return $self
-    ? Data::GUID::from_base64($class, $self)
-    : Data::GUID::new($class);
+  if ( $self ) {
+    my $len = length("$self");
+
+    if ( $len == 36 ) {
+      return Data::GUID::from_string($class, $self);
+    } elsif ( $len == 24 ) {
+      return Data::GUID::from_base64($class, $self);
+    } else {
+      OP::AssertFailed->throw("Unrecognized ID format: \"$self\"");
+    }
+  }
+
+  return Data::GUID::new($class);
 }
 
 # method assert(OP::Class $class: *@rules) {

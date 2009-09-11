@@ -20,4 +20,5 @@ rcsDir: RCS
 scratchRoot: /opt/op/scratch
 sqliteRoot: /opt/op/sqlite
 syslogHost: ~
+yamlHost: ~
 yamlRoot: /opt/op/yaml

@@ -46,7 +46,7 @@ use base qw| OP::Int |;
 
 sub new {
   my $class = shift;
-  my $value = shift || "";
+  my $value = shift || 0;
 
   return bless \$value, $class;
 }

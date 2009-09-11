@@ -41,6 +41,7 @@ scratchRoot: $path/scratch
 sqliteRoot: $path/sqlite
 syslogHost: ~
 yamlRoot: $path/yaml
+yamlHost: ~
 |;
   close(OPRC);
 

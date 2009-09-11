@@ -1,3 +1,8 @@
+2009-09-10: .315
+  - Most public methods with an "id" arg now accept either base64
+    or string GUID forms
+  - Gave RCS support some attention, added tests
+
 2009-09-04: .314
   - Removed default of 0 for DateTime, will allow NULL instead
   - Split auxiliary datatypes off into their own distro

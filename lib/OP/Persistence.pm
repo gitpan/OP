@@ -49,8 +49,8 @@ use File::Find;
 use IO::File;
 use JSON::Syck;
 use Rcs;
+use Sys::Hostname;
 use Time::HiRes qw| time |;
-use URI::Escape;
 use YAML::Syck;
 
 #
@@ -58,7 +58,7 @@ use YAML::Syck;
 #
 use OP::Class qw| create true false |;
 use OP::Constants qw|
-  yamlRoot scratchRoot sqliteRoot
+  yamlHost yamlRoot scratchRoot sqliteRoot
   dbHost dbPass dbPort dbUser
   memcachedHosts
   rcsBindir rcsDir
@@ -140,7 +140,7 @@ sub load {
   my $class = shift;
   my $id = shift;
 
-  return $class->__localLoad($id);
+  return $class->__localLoad( $class->__primaryKeyClass->new($id) );
 }
 
 
@@ -287,8 +287,8 @@ Example A:
   #
   # In a class prototype, there was an ExtID assertion:
   #
-  create "OP::Example" => {
-    userId => OP::ExtID->assert( "OP::Example::User" ),
+  create "YourApp::Example" => {
+    userId => OP::ExtID->assert( "YourApp::Example::User" ),
 
     # Stuff ...
   };
@@ -297,12 +297,12 @@ Example A:
   # Hypothetical object "Foo" has a "userId" attribute,
   # which specifies an ID in a user table:
   #
-  my $exa = OP::Example->spawn("Foo");
+  my $exa = YourApp::Example->spawn("Foo");
 
   #
   # Retrieve the external object by ID:
   #
-  my $userClass = OP::Example->memberClass("userId");
+  my $userClass = YourApp::Example->memberClass("userId");
 
   my $user = $userClass->load($exa->userId());
 
@@ -341,7 +341,7 @@ sub doesIdExist {
   my $id = shift;
 
   return $class->__selectBool(
-    $class->__doesIdExistStatement($id)
+    $class->__doesIdExistStatement( $class->__primaryKeyClass->new($id) )
   );
 }
 
@@ -501,7 +501,7 @@ sub nameForId {
   my $id = shift;
 
   return $class->__selectSingle(
-    $class->__nameForIdStatement($id)
+    $class->__nameForIdStatement( $class->__primaryKeyClass->new($id) )
   )->shift;
 }
 
@@ -571,9 +571,12 @@ sub quote {
 Returns the name of the receiving class's database. Corresponds to 
 the lower-cased first-level Perl namespace, unless overridden in subclass.
 
-  my $dbname = OP::Example->databaseName(); # returns "op"
-
-  $dbname = Foo::Bar->databaseName(); # returns "foo"
+  do {
+    #
+    # Database name is "yourapp"
+    #
+    my $dbname = YourApp::Example->databaseName();
+  };
 
 =cut
 
@@ -598,11 +601,19 @@ the second-and-higher level Perl namespaces, using an underscore delimiter.
 Will probably want to override this, if subclass lives in a deeply nested
 namespace.
 
-  my $table = OP::Example->tableName(); # returns "example"
+  do {
+    #
+    # Table name is "example"
+    #
+    my $table = YourApp::Example->tableName();
+  };
 
-  $table = Foo::Bar->tableName(); # returns "bar"
-
-  $table = OP::Job::Example->tableName(); # returns "job_example"
+  do {
+    #
+    # Table name is "example_job"
+    #
+    my $table = YourApp::Example::Job->tableName();
+  };
 
 =cut
 
@@ -713,6 +724,43 @@ sub loadJson {
 
 =pod
 
+=item * $class->restore($id, [$version]);
+
+Returns the object with the received ID from the RCS backing store.
+Does not call C<save>, caller must do so explicitly.
+
+Uses the latest RCS revision if no version number is provided.
+
+  do {
+    my $self = $class->restore("LmBkxTee3hGGZgM418LRwQ==", "1.1");
+
+    $self->save("Restoring from RCS archive");
+  };
+
+=cut
+
+sub restore {
+  my $class = shift;
+  my $id = shift;
+  my $version = shift;
+
+  if ( !$id ) {
+    OP::InvalidArgument->throw("No ID received");
+  }
+
+  if ( !$class->__useRcs() ) {
+    OP::RuntimeError->throw("$class instances do not have RCS history");
+  }
+
+  my $self = $class->proto;
+  $self->setId($id);
+
+  return $self->revert($version);
+}
+
+
+=pod
+
 =back
 
 =head1 PRIVATE CLASS METHODS
@@ -732,15 +780,39 @@ setting a class variable with the same name, as the examples illustrate.
 
 =item * $class->__useYaml()
 
-Return a true value to maintain a YAML backend for all saved objects. If
-you want to skip YAML and use a database exclusively, this method should
-return a false value.
+Return a true value to maintain a YAML backend for all saved objects.
 
 Default inherited value is false. Set class variable to override.
 
-  create "OP::Example" => {
-    __useYaml => false
+YAML and DBI backing stores are not mutually exclusive. Classes may
+use either, both, or neither, depending on use case.
+
+Generally, one would use YAML if they are not also using DBI, and
+just wish to use a flatfile YAML backing store for all objects of
+a class:
+
+  #
+  # Flatfile backing store only-- no DBI:
+  #
+  create "YourApp::Example::NoDbi" => {
+    __useYaml => true,
+    __useDbi  => false,
   };
+
+The main reason to use both YAML and DBI would be to maintain RCS
+version archives for objects. When using YAML and DBI, OP writes
+out a YAML file upon save, but uses the database for everything but
+version restores:
+
+  #
+  # Maintain version history, but otherwise use DBI for everything:
+  #
+  create "YourApp::Example::DbiPlusRcs" => {
+    __useYaml => true,
+    __useRcs  => true,
+  };
+
+Use C<__yamlHost> to enforce a master host for YAML/RCS archives.
 
 =cut
 
@@ -765,8 +837,14 @@ its YAML backend, otherwise false.
 
 Default inherited value is false. Set class variable to override.
 
-  create "OP::Example" => {
-    __useRcs => false
+__useRcs does nothing for classes which do not also use YAML. The
+RCS archive is derived from the physical files in the YAML backing
+store.
+
+  create "YourApp::Example" => {
+    __useYaml => true,
+    __useRcs => true
+
   };
 
 =cut
@@ -779,7 +857,50 @@ sub __useRcs {
     $class->set("__useRcs", false);
   }
 
-  return $class->get("__useRcs");
+  my $use = $class->get("__useRcs");
+
+  if ( $use && !$class->__useYaml ) {
+    OP::RuntimeError->throw(
+      "Using RCS without also using YAML has no effect"
+    );
+  }
+
+  return $use;
+}
+
+
+=pod
+
+=item * $class->__yamlHost()
+
+Optional; Returns the name of the RCS/YAML master host.
+
+If defined, the value for __yamlHost must *exactly* match the value
+returned by the local system's C<hostname> command, including
+fully-qualified-ness, or any attempt to save will throw an exception.
+This feature should be used if you don't want files to accidentally
+be created on the wrong host/filesystem.
+
+Defaults to the C<yamlHost> L<OP::Constants> value (ships as C<undef>),
+but may be overridden on a per-class basis.
+
+  create "YourApp::Example" => {
+    __useYaml  => true,
+    __useRcs   => true,
+    __yamlHost => "host023.example.com".
+
+  };
+
+=cut
+
+sub __yamlHost {
+  my $class = shift;
+
+  if ( !defined $class->get("__yamlHost") ) {
+    $class->set("__yamlHost", yamlHost);
+  }
+
+  return $class->get("__yamlHost");
 }
 
 
@@ -796,7 +917,7 @@ override the class's database type.
 
 Default inherited value is true. Set class variable to override.
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     __useDbi => false
   };
 
@@ -880,7 +1001,7 @@ OP::Enum::DBIType::SQLite.
 Default inherited value is OP::Enum::DBIType::MySQL. Set class variable
 to override.
 
-  create "OP::Example" => {
+  create "YourApp::Example" => {
     __dbiType => OP::Enum::DBIType::SQLite
   };
 
@@ -1037,6 +1158,20 @@ sub __primaryKey {
   return $key;
 }
 
+
+=pod
+
+=item * $class->__primaryKeyClass()
+
+Returns the object class used to represent this class's primary keys.
+
+=cut
+
+sub __primaryKeyClass {
+  my $class = shift;
+
+  return $class->asserts->{ $class->__primaryKey }->objectClass();
+}
 
 =pod
 
@@ -1627,9 +1762,9 @@ sub __cacheKey {
 
 Drops the receiving class's database table.
 
-  use OP::Example;
+  use YourApp::Example;
 
-  OP::Example->__dropTable();
+  YourApp::Example->__dropTable();
 
 =cut
 
@@ -1647,9 +1782,9 @@ sub __dropTable {
 
 Creates the receiving class's database table
 
-  use OP::Example;
+  use YourApp::Example;
 
-  OP::Example->__createTable();
+  YourApp::Example->__createTable();
 
 =cut
 
@@ -2360,6 +2495,36 @@ sub __fsIds {
   return $ids;
 }
 
+=pod
+
+=item * $class->__checkYamlHost
+
+Throws an exception if the current host is not the correct place
+for YAML/RCS filesystem ops.
+
+=cut
+
+sub __checkYamlHost {
+  my $class = shift;
+
+  #
+  # See if we are on the correct host before proceeding...
+  #
+  if ( $class->__useYaml() ) {
+    my $yamlHost = $class->__yamlHost();
+
+    if ( $yamlHost ) {
+      my $thisHost = hostname();
+
+      if ( $thisHost ne $yamlHost ) {
+        OP::WrongHost->throw(
+          "YAML archives must be saved on host $yamlHost, not $thisHost"
+        );
+      }
+    }
+  }
+}
+
 
 =pod
 
@@ -2418,6 +2583,8 @@ sub __init {
 =item * $self->save($comment)
 
 Saves self to all appropriate backing stores.
+
+Comment is ignored for classes not using RCS.
 
   $object->save("This is a checkin comment");
 
@@ -2481,8 +2648,10 @@ Does B<not> delete RCS history, if present.
 sub remove {
   my $self = shift;
   my $reason = shift;
-
+ 
   my $class = $self->class();
+
+  $class->__checkYamlHost();
 
   my $asserts = $class->asserts;
 
@@ -2550,11 +2719,21 @@ sub remove {
 
 =pod
 
-=item * $self->revert($version)
+=item * $self->revert([$version])
 
 Reverts self to the received version, which must be in the object's RCS
 file. This method is not usable unless __useRcs in the object's class
 is true.
+
+Uses the latest RCS revision if no version number is provided.
+
+Does not call C<save>, caller must do this explicitly.
+
+  do {
+    $self->revert("1.20"); # Load previous version from RCS
+
+    $self->save("Restoring from RCS archive");
+  };
 
 =cut
 
@@ -2571,11 +2750,15 @@ sub revert {
 
   my $rcs = $self->_rcs();
 
-  $rcs->co("-r$version", $self->_path());
+  if ( $version ) {
+    $rcs->co("-r$version", $self->_path());
+  } else {
+    $rcs->co($self->_path());
+  }
 
   %{ $self } = %{ $class->__loadYamlFromId($self->id()) };
 
-  $self->save("Reverting to version $version");
+  # $self->save("Reverting to version $version");
 
   return $self;
 }
@@ -2586,7 +2769,7 @@ sub revert {
 
 Returns true if this object has ever been saved.
 
-  my $object = OP::Example->new();
+  my $object = YourApp::Example->new();
 
   my $false = $object->exists();
 
@@ -2647,7 +2830,7 @@ Returns an OP::Array of objects referenced by the named attribute.
 Equivalent to using C<load()> on the class returned by class method
 C<memberClass()>, for each ID in the relationship.
 
-  my $exa = OP::Example->spawn("Foo");
+  my $exa = YourApp::Example->spawn("Foo");
 
   my $users = $exa->memberInstances("userId");
 
@@ -2911,7 +3094,9 @@ sub _localSave {
 
   my $idKey = $class->__primaryKey();
 
-  $self->{$idKey} ||= $self->_newId();
+  if ( !defined($self->{$idKey}) ) {
+    $self->{$idKey} = $self->_newId();
+  }
 
   if ( !defined($self->{ctime}) || $self->{ctime} == 0 ) {
     $self->setCtime($now);
@@ -2988,7 +3173,7 @@ sub _localSave {
         }
       }
     }
-  };
+  }; 
 
   return $saved;
 }
@@ -3007,9 +3192,11 @@ sub _localSaveInsideTransaction {
   my $self = shift;
   my $comment = shift;
 
+  my @caller = caller();
+
   my $class = $self->class();
 
-  my $path = $self->_path();
+  $class->__checkYamlHost();
 
   my $idKey = $class->__primaryKey();
 
@@ -3099,6 +3286,8 @@ sub _localSaveInsideTransaction {
   # Update the YAML backing store if using YAML
   #
   if ( $class->__useYaml() ) {
+    my $path = $self->_path();
+
     my $useRcs = $class->__useRcs();
 
     my $rcs;
@@ -3362,7 +3551,10 @@ sub _path {
 
   my $key = $self->key();
 
-  return false if !$key;
+  my @caller = caller();
+
+  OP::PrimaryKeyMissing->throw("Self has no primary key set")
+    if !defined $key;
 
   if ( UNIVERSAL::isa($key, "Data::GUID") ) {
     $key = $key->as_string();
