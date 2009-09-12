@@ -838,7 +838,7 @@ our %RULES = (
       "Extra arguments received by optional()"
     ) if @_ > 1;
 
-    return true;
+    return $_[0] ? true : false;
   },
 
   # regex => sub(Rule $regex) {
@@ -853,7 +853,7 @@ our %RULES = (
       "Extra arguments received by serial()"
     ) if @_ > 1;
 
-    return true;
+    return $_[0] ? true : false;
   },
 
   # size => sub(Int $value) {

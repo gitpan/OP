@@ -1,3 +1,6 @@
+2009-09-12: .316
+  - Warn and disable RCS if binaries are not found (thx testers)
+
 2009-09-10: .315
   - Most public methods with an "id" arg now accept either base64
     or string GUID forms

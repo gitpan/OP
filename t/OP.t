@@ -185,6 +185,49 @@ SKIP: {
   kickClassTires($class);
 }
 
+SKIP: {
+  if ( $nofs ) {
+    skip($nofs, 2);
+  }
+
+  my $arr;
+
+  isa_ok( $arr = OP::Array->new(qw| foo bar baz wang chung |), "OP::Array",
+    "Instanted array"
+  );
+
+  my $new;
+
+  isa_ok(
+    $new = $arr->collect(sub {
+      my $item = shift;
+
+      OP::Array::break() if $item eq 'wang';
+      OP::Array::emit($item);
+      return if $item eq 'baz';
+      OP::Array::yield($item);
+    }),
+    "OP::Array",
+    "collect() returns"
+  );
+
+  is($new->size, 5, "Compare element count");
+
+  my $count;
+
+  ok(
+    $arr->each(sub {
+      my $item = shift;
+      $count++;
+
+      OP::Array::break() if $count == 3;
+    } ),
+    "each() returns"
+  );
+
+  is($count, 3, "Compare element count");
+}
+
 #####
 #####
 #####

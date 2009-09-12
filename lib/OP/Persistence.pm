@@ -1031,9 +1031,9 @@ name, mtime, ctime.
 
     my $base = $class->SUPER::__baseAsserts();
 
-    $base->{parentId} ||= Str();
+    $base->{parentId} = OP::Str->assert();
 
-    return $base;
+    return Clone::clone( $base );
   }
 
 =cut
@@ -2541,10 +2541,21 @@ Callers should invoke this at some point, if overriding in superclass.
 sub __init {
   my $class = shift;
 
+  if ( $class->__useRcs ) {
+    my $ci = join('/', rcsBindir, 'ci');
+    my $co = join('/', rcsBindir, 'co');
+
+    if ( !-e $ci || !-e $co ) {
+      warn "$class: No RCS executables found\n";
+
+      $class->set("__useRcs", false);
+    }
+  }
+
   if ( $class->__useMemcached
     && ( !$memd || !%{ $memd->server_versions } )
   ) {
-    warn "No memcached servers found for $class to use\n";
+    warn "$class: No memcached servers found\n";
   }
 
   if ( $class->__useDbi ) {

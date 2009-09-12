@@ -637,7 +637,7 @@ sub yield {
 };
 
 sub break {
-  OP::Array::Break->throw();
+  OP::Array::Break->throw("");
 }
 
 
@@ -735,6 +735,8 @@ sub each {
       }
     }
   }
+
+  return true;
 };
 
 # method eachWithIndex(Code $sub) {
