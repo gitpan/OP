@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -64,24 +65,27 @@ use OP::Enum::Bool;
 
 use URI::Escape;
 
-use overload fallback => true,
-  '""' => sub { shift->as_base64() };
+use overload
+  fallback => true,
+  '""'     => sub { shift->as_base64() };
 
 use base qw| Data::GUID OP::Scalar |;
 
 # method new(OP::Class $class: Str ?$self) {
 sub new {
   my $class = shift;
-  my $self = shift;
+  my $self  = shift;
 
-  if ( $self ) {
+  if ($self) {
     my $len = length("$self");
 
     if ( $len == 36 ) {
-      return Data::GUID::from_string($class, $self);
-    } elsif ( $len == 24 ) {
-      return Data::GUID::from_base64($class, $self);
-    } else {
+      return Data::GUID::from_string( $class, $self );
+    }
+    elsif ( $len == 24 ) {
+      return Data::GUID::from_base64( $class, $self );
+    }
+    else {
       OP::AssertFailed->throw("Unrecognized ID format: \"$self\"");
     }
   }
@@ -94,15 +98,14 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isStr, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isStr, @rules );
 
-  $parsed{columnType}  ||= 'CHAR(24)';
+  $parsed{columnType} ||= 'CHAR(24)';
   $parsed{optional} = true;
-            # why? because this won't be set yet inside of new objects.
-            # if id is a PRIMARY KEY, it can't be null in the DB, so
-            # this works out fine.
+
+  # why? because this won't be set yet inside of new objects.
+  # if id is a PRIMARY KEY, it can't be null in the DB, so
+  # this works out fine.
 
   return $class->__assertClass()->new(%parsed);
 }
@@ -111,7 +114,7 @@ sub assert {
 sub escaped {
   my $self = shift;
 
-  return uri_escape($self->as_base64);
+  return uri_escape( $self->as_base64 );
 }
 
 true;

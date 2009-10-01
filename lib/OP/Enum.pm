@@ -167,7 +167,7 @@ sub import {
 
   throw OP::RuntimeError($@) if $@;
 
-  my $index = 0;
+  my $index  = 0;
   my $prefix = '';
 
   #
@@ -187,10 +187,11 @@ sub import {
   #
   if ( $prefix && $prefix =~ /^(\w+)=(\d+)$/ ) {
     $prefix = $1;
-    $index = $2;
+    $index  = $2;
   }
 
-  for my $var ( @vars ) {
+  for my $var (@vars) {
+
     #
     # emulates the interface of enum.pm
     # use OP::Enum qw|Foo Bar Baz=20 Bario|
@@ -198,15 +199,15 @@ sub import {
     # "Yes, you can change the start index at any time as in C"
     #
     if ( $var && $var =~ /^(\w+)=(\d+)$/ ) {
-      $var = $1;
+      $var   = $1;
       $index = $2;
     }
 
     #
     # prepend the prefix if one was provided
     #
-    if ( $prefix ) {
-      $var = join('', $prefix, $var);
+    if ($prefix) {
+      $var = join( '', $prefix, $var );
     }
 
     #

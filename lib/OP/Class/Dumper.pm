@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -46,8 +47,8 @@ in this class.
 sub members {
   my $class = shift;
 
-  return OP::Array->new(OP::Class::members($class));
-};
+  return OP::Array->new( OP::Class::members($class) );
+}
 
 =pod
 
@@ -62,8 +63,8 @@ this class, keyed on message (symbol) name.
 sub membersHash {
   my $class = shift;
 
-  return OP::Hash->new(OP::Class::membersHash($class));
-};
+  return OP::Hash->new( OP::Class::membersHash($class) );
+}
 
 =pod
 
@@ -88,13 +89,13 @@ sub asserts {
   if ( !$asserts ) {
     my %baseAsserts = %{ $class->__baseAsserts() };
 
-    $asserts = OP::Hash->new(%baseAsserts); # Re-reference
+    $asserts = OP::Hash->new(%baseAsserts);    # Re-reference
 
-    $class->set('ASSERTS', $asserts);
+    $class->set( 'ASSERTS', $asserts );
   }
 
   return $asserts;
-};
+}
 
 =pod
 
@@ -172,11 +173,11 @@ sub __baseAsserts {
   if ( !defined $asserts ) {
     $asserts = OP::Hash->new();
 
-    $class->set("__baseAsserts", $asserts);
+    $class->set( "__baseAsserts", $asserts );
   }
 
-  return( clone $asserts );
-};
+  return ( clone $asserts );
+}
 
 =pod
 
@@ -206,10 +207,10 @@ sub toYaml {
     return YAML::Syck::Dump($self);
   }
 
-  return YAML::Syck::Dump($self->escape);
+  return YAML::Syck::Dump( $self->escape );
 
   # return YAML::Syck::Dump($self);
-};
+}
 
 # method sprint() {
 sub sprint {
@@ -230,9 +231,8 @@ Prints a YAML representation of the current object to STDOUT.
 sub print {
   my $self = shift;
 
-  return CORE::print($self->sprint());
-};
-
+  return CORE::print( $self->sprint() );
+}
 
 =pod
 
@@ -256,8 +256,7 @@ sub prettySprint {
 
     print "$prettyKey: $value\n";
   }
-};
-
+}
 
 =pod
 
@@ -271,58 +270,70 @@ Prints a nicely formatted string representing self to STDOUT
 sub prettyPrint {
   my $self = shift;
 
-  return CORE::print($self->prettySprint());
-};
+  return CORE::print( $self->prettySprint() );
+}
 
 # method escape() {
 sub escape {
   my $self = shift;
 
-  my $asserts = $self->class->asserts;
-
   my $class = $self->class;
+
+  return $self if !$class;
+
+  my $asserts = $class->asserts;
 
   my $escaped;
 
   if ( $self->isa("OP::Hash") ) {
     $escaped = OP::Hash->new;
 
-    $self->each( sub {
-      if ( UNIVERSAL::isa($self->{$_},"OP::Object") ) {
-        $escaped->{$_} = $self->{$_}->escape();
-      } else {
-        $escaped->{$_} = $self->{$_};
+    $self->each(
+      sub {
+        if ( UNIVERSAL::isa( $self->{$_}, "OP::Object" ) ) {
+          $escaped->{$_} = $self->{$_}->escape();
+        }
+        else {
+          $escaped->{$_} = $self->{$_};
+        }
       }
-    } );
-  } elsif ( $self->isa("OP::Array") ) {
-    $escaped = $self->collect( sub {
-      if ( UNIVERSAL::isa($_,"OP::Object") ) {
-        OP::Array::yield($_->escape());
-      } else {
-        OP::Array::yield($_);
+    );
+  }
+  elsif ( $self->isa("OP::Array") ) {
+    $escaped = $self->collect(
+      sub {
+        if ( UNIVERSAL::isa( $_, "OP::Object" ) ) {
+          OP::Array::yield( $_->escape() );
+        }
+        else {
+          OP::Array::yield($_);
+        }
       }
-    } );
-  } elsif (
-    $self->isa("OP::Scalar")
-    || $self->isa("OP::DateTime")   # Scalar-like
-    || $self->isa("OP::EmailAddr")  # Scalar-like
-  ) {
+    );
+  }
+  elsif (
+       $self->isa("OP::Scalar")
+    || $self->isa("OP::DateTime")     # Scalar-like
+    || $self->isa("OP::EmailAddr")    # Scalar-like
+    )
+  {
     $escaped = "$self";
-  } else {
+  }
+  else {
     $escaped = $self;
   }
 
   return ref($escaped)
-    ? bless($escaped, $class)
+    ? bless( $escaped, $class )
     : $escaped;
-};
+}
 
 # method toJson() {
 sub toJson {
   my $self = shift;
 
-  return JSON::Syck::Dump($self->escape());
-};
+  return JSON::Syck::Dump( $self->escape() );
+}
 
 =pod
 

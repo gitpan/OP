@@ -69,16 +69,13 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isHash, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isHash, @rules );
 
-  $parsed{default} ||= { };
+  $parsed{default} ||= {};
   $parsed{columnType} ||= 'TEXT';
 
   return $class->__assertClass()->new(%parsed);
 }
-
 
 =pod
 
@@ -114,11 +111,10 @@ usage of C<collect>, C<yield>, and C<emit>.
 # method collect(Code $sub) {
 sub collect {
   my $self = shift;
-  my $sub = shift;
+  my $sub  = shift;
 
   return $self->keys()->collect($sub);
-};
-
+}
 
 =pod
 
@@ -152,7 +148,7 @@ on success.
 # method each(Code $sub) {
 sub each {
   my $self = shift;
-  my $sub = shift;
+  my $sub  = shift;
 
   return $self->keys()->each($sub);
 }
@@ -175,9 +171,8 @@ Returns an L<OP::Array> object containing self's alpha sorted keys.
 sub keys {
   my $self = shift;
 
-  return OP::Array->new(sort keys %{ $self });
+  return OP::Array->new( sort keys %{$self} );
 }
-
 
 =pod
 
@@ -197,13 +192,14 @@ Returns an L<OP::Array> object containing self's values, alpha sorted by key.
 sub values {
   my $self = shift;
 
-  return $self->keys()->collect( sub {
-    my $key = shift;
+  return $self->keys()->collect(
+    sub {
+      my $key = shift;
 
-    yield($self->{$key});
-  } );
+      yield( $self->{$key} );
+    }
+  );
 }
-
 
 =pod
 
@@ -220,8 +216,8 @@ use OP::Hash and L<OP::Array> when it can.
 
 # method set(Str $key, *@value) {
 sub set {
-  my $self = shift;
-  my $key = shift;
+  my $self  = shift;
+  my $key   = shift;
   my @value = @_;
 
   my $class = $self->class();
@@ -229,17 +225,17 @@ sub set {
   #
   # Call set() as a class method if $self was a class
   #
-  return $self->SUPER::set($key,@value)
+  return $self->SUPER::set( $key, @value )
     if !$class;
 
   my $type = $class->asserts()->{$key};
 
-  return $self->SUPER::set($key,@value)
+  return $self->SUPER::set( $key, @value )
     if !$type;
 
   throw OP::InvalidArgument(
-    "Too many args received by set(). Usage: set(\"$key\", VALUE)"
-  ) if @value > 1;
+    "Too many args received by set(). Usage: set(\"$key\", VALUE)" )
+    if @value > 1;
 
   my $value = $value[0];
 
@@ -247,15 +243,14 @@ sub set {
 
   my $attrClass = $type->class()->get("objectClass");
 
-  if ( defined($value) && (
-    !$valueType || !UNIVERSAL::isa($value, $attrClass)
-  ) ) {
-    $value = $attrClass->new($value)
+  if ( defined($value)
+    && ( !$valueType || !UNIVERSAL::isa( $value, $attrClass ) ) )
+  {
+    $value = $attrClass->new($value);
   }
 
-  return $self->SUPER::set($key,$value);
+  return $self->SUPER::set( $key, $value );
 }
-
 
 =pod
 
@@ -272,7 +267,7 @@ no warnings "redefine";
 sub size {
   my $self = shift;
 
-  return scalar( CORE::keys(%{$self}) );
+  return scalar( CORE::keys( %{$self} ) );
 }
 
 use warnings "redefine";

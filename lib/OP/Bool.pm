@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -61,10 +62,10 @@ use overload %OP::Num::overload;
 # method new(OP::Class $class: Bool $self) {
 sub new {
   my $class = shift;
-  my $self = shift;
+  my $self  = shift;
 
   OP::Type::insist $self, OP::Type::isBool;
-  
+
   return $class->SUPER::new($self);
 }
 
@@ -73,14 +74,12 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isBool, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isBool, @rules );
 
   $parsed{allowed}  = [ false, true ];
   $parsed{optional} = false;
   $parsed{default}  = false if !defined $parsed{default};
-  $parsed{columnType}  ||= 'INTEGER(1)';
+  $parsed{columnType} ||= 'INTEGER(1)';
 
   return $class->__assertClass()->new(%parsed);
 }

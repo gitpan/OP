@@ -37,7 +37,7 @@ variable and database table column which was asserted.
 The class variable %OP::Type::RULES is walked at package load
 time, and the necessary rule subclasses are created dynamically.
 
-=head2 SCHEMA ADVISEMENT
+=head1 SCHEMA ADVISEMENT
 
 Many of these rules affect database schema attributes-- meaning if you
 change them after the table already exists, the table will need to be
@@ -48,15 +48,16 @@ for the first time.
 Schema updates should be performed using carefully reviewed commands.
 Always back up the current table before executing an ALTER.
 
-=head2 RULE TYPES
+=head1 SUBTYPE ARGS
 
-Instance variable assertions may be modified by providing the following arguments to subtype():
+Instance variable assertions may be modified by providing the
+following arguments to subtype():
 
-=head3 columnType => $colType
+=head2 columnType => $colType
 
 Override a database column type, eg "VARCHAR(128)".
 
-=head3 default => $value
+=head2 default => $value
 
 Set the default value for a given instance variable and database table
 column.
@@ -64,39 +65,39 @@ column.
 Unless C<optional()> is given, the default value must also be included
 as an allowed value.
 
-=head3 min => $num
+=head2 min => $num
 
 Specifies the minimum allowed numeric value for a given instance variable.
 
-=head3 minSize => $num
+=head2 minSize => $num
 
 Specifies the minimum length or scalar size for a given instance variable.
 
-=head3 max => $num
+=head2 max => $num
 
 Specifies the maximum allowed numeric value for a given instance variable.
 
-=head3 maxSize => $num
+=head2 maxSize => $num
 
 Specifies the maximum length or scalar size for a given instance variable.
 
-=head3 optional => true
+=head2 optional => true
 
 Permit a NULL (undef) value for a given instance variable.
 
-=head3 regex => qr/.../
+=head2 regex => qr/.../
 
 Specifies an optional regular expression which the value of the given
 instance variable must match.
 
-=head3 size => $num
+=head2 size => $num
 
 Specify that values must always be of a fixed size. The "size" is the
 value obtained through the built-in function C<length()> (string length)
 for Scalars, C<scalar(...)> (element count) for Arrays, and C<scalar keys()>
 (key count) for Hashes.
 
-=head3 sqlValue => $str, sqlInsertValue => $str, sqlUpdateValue => $str
+=head2 sqlValue => $str, sqlInsertValue => $str, sqlUpdateValue => $str
 
 Override an asserted attribute's "insert" value when writing to a SQL
 database. This is useful if deriving a new value from existing table
@@ -115,7 +116,7 @@ for ::sqlValue, but only on INSERT and UPDATE statements, respectively.
     # ...
   };
 
-=head3 unique => true
+=head2 unique => true
 
 Specify UNIQUE database table columns.
 
@@ -147,7 +148,7 @@ Specify UNIQUE database table columns.
     # ...
   };
 
-=head3 uom => $str
+=head2 uom => $str
 
 Specify an attribute's unit of measurement label.
 
@@ -180,10 +181,8 @@ sub new {
   my @value = @_;
 
   my $value = ( scalar(@value) > 1 ) ? \@value : $value[0];
-  
-  return bless {
-     __value => $value,
-  }, $class;
+
+  return bless { __value => $value, }, $class;
 }
 
 # method value() {

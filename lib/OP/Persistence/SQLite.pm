@@ -45,13 +45,12 @@ use base qw| OP::Persistence::Generic |;
 sub connect {
   my %args = @_;
 
-  my $dsn = sprintf('DBI:SQLite:dbname=%s',$args{database});
+  my $dsn = sprintf( 'DBI:SQLite:dbname=%s', $args{database} );
 
-  $GlobalDBI::CONNECTION{$args{database}} ||= [
-    $dsn, '', '', { RaiseError => 1 }
-  ];
+  $GlobalDBI::CONNECTION{ $args{database} } ||=
+    [ $dsn, '', '', { RaiseError => 1 } ];
 
-  return GlobalDBI->new(dbname => $args{database});
+  return GlobalDBI->new( dbname => $args{database} );
 }
 
 =pod
@@ -72,7 +71,7 @@ This file is part of L<OP>.
 
 sub __wrapWithReconnect {
   my $class = shift;
-  my $sub = shift;
+  my $sub   = shift;
 
   return &$sub(@_);
 }
@@ -97,7 +96,7 @@ sub __init {
 
   $sth->finish();
 
-  if ( !$tables{$class->tableName()} ) {
+  if ( !$tables{ $class->tableName() } ) {
     $class->__createTable();
   }
 
@@ -108,12 +107,12 @@ sub __quoteDatetimeInsert {
   my $class = shift;
   my $value = shift;
 
-  return sprintf('datetime(%i, "unixepoch")', $value->escape);
+  return sprintf( 'datetime(%i, "unixepoch")', $value->escape );
 }
 
 sub __quoteDatetimeSelect {
   my $class = shift;
-  my $attr = shift;
+  my $attr  = shift;
 
   return "strftime('\%s', $attr) AS $attr";
 }

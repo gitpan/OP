@@ -38,7 +38,7 @@ use base qw/ Error::Simple /;
 sub new {
   my $class = shift;
 
-  my $self = $class->SUPER::new("", 0);
+  my $self = $class->SUPER::new( "", 0 );
 
   $self->{'-items'} = \@_;
 
@@ -101,7 +101,7 @@ our @EXPORT_OK = qw| yield emit break |;
 sub value {
   my $self = shift;
 
-  return @{ $self };
+  return @{$self};
 }
 
 =pod
@@ -129,20 +129,21 @@ sub new {
   #
   # Received a single argument as self, and it was already a reference.
   #
-  if (
-    @self && @self == 1
-    && ref $self[0] && UNIVERSAL::isa($self[0], 'ARRAY')
-  ) {
+  if ( @self
+    && @self == 1
+    && ref $self[0]
+    && UNIVERSAL::isa( $self[0], 'ARRAY' ) )
+  {
     return bless $self[0], $class;
   }
 
   #
   # Received an unreferenced array or nothing as self.
   #
-  my $self = @self ? \@self : [ ];
+  my $self = @self ? \@self : [];
 
   return bless $self, $class;
-};
+}
 
 =pod
 
@@ -253,21 +254,18 @@ In caller:
 
 # method assert(OP::Class $class: OP::Type $memberType, *@rules) {
 sub assert {
-  my $class = shift;
+  my $class      = shift;
   my $memberType = shift;
-  my @rules = @_;
+  my @rules      = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isArray, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isArray, @rules );
 
-  $parsed{default} ||= [ ];
+  $parsed{default} ||= [];
   $parsed{columnType} ||= "TEXT";
   $parsed{memberType} = $memberType;
 
   return $class->__assertClass()->new(%parsed);
-};
-
+}
 
 =pod
 
@@ -289,16 +287,16 @@ Get the received array index. Functionally the same as $ref->[$index].
 =cut
 
 sub get {
-  my $self = shift;
+  my $self  = shift;
   my $index = shift;
 
   if ( $self->class() ) {
     return $self->[$index];
-  } else {
+  }
+  else {
     return $self->SUPER::get($index);
   }
-};
-
+}
 
 =pod
 
@@ -314,7 +312,7 @@ same as $ref->[$index] = $value.
 =cut
 
 sub set {
-  my $self = shift;
+  my $self  = shift;
   my $index = shift;
   my @value = @_;
 
@@ -323,13 +321,13 @@ sub set {
       if @value > 1;
 
     $self->[$index] = $value[0];
-  } else {
-    return $self->SUPER::set($index,@value);
+  }
+  else {
+    return $self->SUPER::set( $index, @value );
   }
 
   return true;
-};
-
+}
 
 =pod
 
@@ -348,12 +346,11 @@ same as C<push(@$ref, @list)>.
 
 # method push(*@value) {
 sub push {
-  my $self = shift;
+  my $self  = shift;
   my @value = @_;
 
-  return push(@{ $self }, @value);
-};
-
+  return push( @{$self}, @value );
+}
 
 =pod
 
@@ -376,8 +373,8 @@ do {
   sub size {
     my $self = shift;
 
-    return scalar(@{$self});
-  };
+    return scalar( @{$self} );
+  }
 };
 
 =pod
@@ -572,8 +569,8 @@ the index integer as a second argument to the received CODE block.
 
 # method collect(Code $sub, Bool ?$withIndex) {
 sub collect {
-  my $self = shift;
-  my $sub = shift;
+  my $self      = shift;
+  my $sub       = shift;
   my $withIndex = shift;
 
   my $i = 0;
@@ -582,31 +579,38 @@ sub collect {
 
   for ( @{$self} ) {
     local $Error::THROWN = undef;
-    
-    if ( $withIndex ) {
-      eval { &$sub($_, $i) };
-    } else {
+
+    if ($withIndex) {
+      eval { &$sub( $_, $i ) };
+    }
+    else {
       eval { &$sub($_) };
     }
 
     $i++;
 
-    if ( $@ ) {
+    if ($@) {
       my $thrown = $Error::THROWN;
 
-      if ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::YieldedItems") ) {
-        $OP::Array::EmittedItems->push($thrown->items());
-      } elsif ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::Break") ) {
+      if ( $thrown && UNIVERSAL::isa( $thrown, "OP::Array::YieldedItems" ) ) {
+        $OP::Array::EmittedItems->push( $thrown->items() );
+      }
+      elsif ( $thrown && UNIVERSAL::isa( $thrown, "OP::Array::Break" ) ) {
+
         #
         # "break" was called
         #
         last;
-      } elsif ( $thrown && UNIVERSAL::isa($thrown, "Error") ) {
+      }
+      elsif ( $thrown && UNIVERSAL::isa( $thrown, "Error" ) ) {
+
         #
         # Rethrow
         #
         $thrown->throw();
-      } else {
+      }
+      else {
+
         #
         # Normal error encountered, just die
         #
@@ -616,30 +620,29 @@ sub collect {
   }
 
   return $OP::Array::EmittedItems;
-};
+}
 
 # method collectWithIndex(Code $sub) {
 sub collectWithIndex {
   my $self = shift;
-  my $sub = shift;
+  my $sub  = shift;
 
-  return $self->collect($sub, true);
-};
+  return $self->collect( $sub, true );
+}
 
 # sub emit(*@results) {
 sub emit {
   $OP::Array::EmittedItems->push(@_);
-};
+}
 
 # sub yield(*@results) {
 sub yield {
   OP::Array::YieldedItems->throw(@_);
-};
+}
 
 sub break {
   OP::Array::Break->throw("");
 }
-
 
 =pod
 
@@ -695,39 +698,41 @@ index integer as a second argument to the received CODE block.
 
 # method each(Code $sub, Bool ?$withIndex) {
 sub each {
-  my $self = shift;
-  my $sub = shift;
+  my $self      = shift;
+  my $sub       = shift;
   my $withIndex = shift;
 
   my $i = 0;
 
   for ( @{$self} ) {
-    if ( $withIndex ) {
-      eval {
-        &{ $sub }( $_, $i );
-      };
-    } else {
-      eval {
-        &{ $sub }( $_ );
-      };
+    if ($withIndex) {
+      eval { &{$sub}( $_, $i ); };
+    }
+    else {
+      eval { &{$sub}($_); };
     }
 
     $i++;
 
-    if ( $@ ) {
+    if ($@) {
       my $thrown = $Error::THROWN;
 
-      if ( $thrown && UNIVERSAL::isa($thrown, "OP::Array::Break") ) {
+      if ( $thrown && UNIVERSAL::isa( $thrown, "OP::Array::Break" ) ) {
+
         #
         # "break" was called
         #
         last;
-      } elsif ( $thrown && UNIVERSAL::isa($thrown, "Error") ) {
+      }
+      elsif ( $thrown && UNIVERSAL::isa( $thrown, "Error" ) ) {
+
         #
         # Rethrow
         #
         $thrown->throw();
-      } else {
+      }
+      else {
+
         #
         # Normal error encountered, just die
         #
@@ -737,16 +742,15 @@ sub each {
   }
 
   return true;
-};
+}
 
 # method eachWithIndex(Code $sub) {
 sub eachWithIndex {
   my $self = shift;
-  my $sub = shift;
+  my $sub  = shift;
 
-  return $self->each($sub, true);
-};
-
+  return $self->each( $sub, true );
+}
 
 =pod
 
@@ -763,12 +767,11 @@ same as C<join($joinStr, @{ $self })>.
 
 # method join(Str $string) {
 sub join {
-  my $self = shift;
+  my $self   = shift;
   my $string = shift;
 
-  return join($string, @{ $self });
-};
-
+  return join( $string, @{$self} );
+}
 
 =pod
 
@@ -788,17 +791,18 @@ sub compact {
 
   my $newSelf = $self->class()->new();
 
-  $self->each( sub {
-    next unless defined($_);
+  $self->each(
+    sub {
+      next unless defined($_);
 
-    $newSelf->push($_);
-  } );
+      $newSelf->push($_);
+    }
+  );
 
-  @{ $self } = @{ $newSelf };
+  @{$self} = @{$newSelf};
 
   return $self;
-};
-
+}
 
 =pod
 
@@ -816,9 +820,8 @@ the same as C<unshift(@{ $self })>.
 sub unshift {
   my $self = CORE::shift();
 
-  return CORE::unshift(@{ $self }, @_);
-};
-
+  return CORE::unshift( @{$self}, @_ );
+}
 
 =pod
 
@@ -836,9 +839,8 @@ Returns a pseudo-random array element.
 sub rand {
   my $self = shift;
 
-  return $self->[ int(rand($self->size())) ];
-};
-
+  return $self->[ int( rand( $self->size() ) ) ];
+}
 
 =pod
 
@@ -871,8 +873,7 @@ sub isEmpty {
   my $self = shift;
 
   return ( $self->size() == 0 );
-};
-
+}
 
 =pod
 
@@ -900,9 +901,8 @@ sub includes {
   my $self = shift;
   my $item = shift;
 
-  return grep { $_ eq $item } @{ $self };
-};
-
+  return grep { $_ eq $item } @{$self};
+}
 
 =pod
 
@@ -936,7 +936,7 @@ The second argument is an optional regex modifier string (e.g. "i",
 sub grep {
   my $self = shift;
   my $expr = shift;
-  my $mod = shift;
+  my $mod  = shift;
 
   return if !$expr;
 
@@ -957,8 +957,7 @@ sub grep {
   |;
 
   return $results;
-};
-
+}
 
 =pod
 
@@ -981,13 +980,12 @@ sub clear {
   my $self = shift;
 
   # @{ $self } = ( );
-  while ( @{ $self } ) {
+  while ( @{$self} ) {
     $self->shift;
   }
 
   return $self;
-};
-
+}
 
 =pod
 
@@ -1004,15 +1002,14 @@ up by Perl's GC.
 sub purge {
   my $self = shift;
 
-  while(1) {
+  while (1) {
     $self->shift();
 
     last if $self->isEmpty();
   }
 
   return $self;
-};
-
+}
 
 =pod
 
@@ -1034,11 +1031,10 @@ Returns the average of all items in self.
 sub average {
   my $self = shift;
 
-  my $n = Math::VecStat::average(@{ $self });
+  my $n = Math::VecStat::average( @{$self} );
 
   return $n;
-};
-
+}
 
 =pod
 
@@ -1060,17 +1056,17 @@ Returns the median value of all items in self.
 sub median {
   my $self = shift;
 
-  my $median = Math::VecStat::median(@{ $self });
+  my $median = Math::VecStat::median( @{$self} );
 
   if ( defined $median ) {
-    my $n = shift @{ $median };
+    my $n = shift @{$median};
 
     return $n;
-  } else {
+  }
+  else {
     return;
   }
-};
-
+}
 
 =pod
 
@@ -1095,12 +1091,11 @@ do {
   sub max {
     my $self = shift;
 
-    my $n = Math::VecStat::max($self); # Avoid VecStat wantarray
+    my $n = Math::VecStat::max($self);    # Avoid VecStat wantarray
 
     return $n;
-  };
+  }
 };
-
 
 =pod
 
@@ -1125,10 +1120,10 @@ do {
   sub min {
     my $self = shift;
 
-    my $n = Math::VecStat::min($self); # Avoid VecStat wantarray
+    my $n = Math::VecStat::min($self);    # Avoid VecStat wantarray
 
     return $n;
-  };
+  }
 };
 
 =pod
@@ -1151,10 +1146,10 @@ Returns the sum of all items in self.
 sub sum {
   my $self = shift;
 
-  my $n = Math::VecStat::sum(@{ $self });
+  my $n = Math::VecStat::sum( @{$self} );
 
   return $n;
-};
+}
 
 =pod
 
@@ -1174,11 +1169,15 @@ sub stddev {
 
   my $avg = $self->average;
 
-  return sqrt( $self->collect( sub {
-    my $i = shift;
+  return sqrt(
+    $self->collect(
+      sub {
+        my $i = shift;
 
-    OP::Array::yield( ( $i - $avg ) ** 2 );
-  } )->average );
+        OP::Array::yield( ( $i - $avg )**2 );
+      }
+      )->average
+  );
 }
 
 =pod
@@ -1198,20 +1197,20 @@ should take $a and $b as arguments.
 
 # method sort(Code ?$function) {
 sub sort {
-  my $self = shift;
+  my $self     = shift;
   my $function = shift;
 
   my $newSelf = $self->class()->new();
 
-  if ( $function ) {
-    @{ $newSelf } = sort { &$function($a,$b) } @{ $self };
-  } else {
-    @{ $newSelf } = sort @{ $self };
+  if ($function) {
+    @{$newSelf} = sort { &$function( $a, $b ) } @{$self};
+  }
+  else {
+    @{$newSelf} = sort @{$self};
   }
 
   return $newSelf;
-};
-
+}
 
 =pod
 
@@ -1233,8 +1232,7 @@ sub first {
   my $self = shift;
 
   return $self->isEmpty() ? undef : $self->[0];
-};
-
+}
 
 =pod
 
@@ -1256,8 +1254,7 @@ sub last {
   my $self = shift;
 
   return $self->isEmpty() ? undef : $self->[-1];
-};
-
+}
 
 =pod
 
@@ -1277,16 +1274,17 @@ sub uniq {
 
   my $newSelf = $class->new();
 
-  $self->each( sub {
-    next if $seen{$_};
-    $seen{$_}++;
+  $self->each(
+    sub {
+      next if $seen{$_};
+      $seen{$_}++;
 
-    $newSelf->push($_);
-  } );
+      $newSelf->push($_);
+    }
+  );
 
   return $newSelf;
-};
-
+}
 
 =pod
 
@@ -1302,13 +1300,14 @@ sub reversed {
 
   my $reversed = $self->class->new;
 
-  $self->each( sub {
-    $reversed->unshift($_);
-  } );
+  $self->each(
+    sub {
+      $reversed->unshift($_);
+    }
+  );
 
   return $reversed;
-};
-
+}
 
 =pod
 
@@ -1340,9 +1339,8 @@ the same as C<pop(@{ $self })>.
 sub pop {
   my $self = shift;
 
-  return CORE::pop @{ $self };
-};
-
+  return CORE::pop @{$self};
+}
 
 =pod
 
@@ -1374,9 +1372,8 @@ the same as C<shift(@{ $self })>.
 sub shift {
   my $self = CORE::shift();
 
-  return CORE::shift(@{ $self });
-};
-
+  return CORE::shift( @{$self} );
+}
 
 =pod
 

@@ -15,19 +15,20 @@ use warnings;
 
 use OP::Class qw| true false |;
 
-use overload fallback => true,
-  '""' => sub { shift->value() },
-  'ne' => sub {
-    my $first = shift;
-    my $second = shift;
+use overload
+  fallback => true,
+  '""'     => sub { shift->value() },
+  'ne'     => sub {
+  my $first  = shift;
+  my $second = shift;
 
-    "$first" ne "$second";
+  "$first" ne "$second";
   },
   'eq' => sub {
-    my $first = shift;
-    my $second = shift;
+  my $first  = shift;
+  my $second = shift;
 
-    "$first" eq "$second";
+  "$first" eq "$second";
   };
 
 use base qw| OP::Class::Dumper OP::Object |;
@@ -85,7 +86,7 @@ Usage is cited in the SYNOPSIS section of this document.
 # method new(OP::Class $class: Str $self) {
 sub new {
   my $class = shift;
-  my $self = shift;
+  my $self  = shift;
 
   # throw OP::InvalidArgument("$class instances may not be undefined")
   #  if !defined $self;
@@ -93,12 +94,13 @@ sub new {
   OP::Type::insist $self, OP::Type::isScalar;
 
   if ( ref($self) && overload::Overloaded($self) ) {
-    return bless $self, $class; # ONE OF US NOW
-  } elsif ( ref($self) ) {
+    return bless $self, $class;    # ONE OF US NOW
+  }
+  elsif ( ref($self) ) {
     throw OP::InvalidArgument(
-      "$class->new() requires a non-ref arg, not a ". ref($self)
-    );
-  } else {
+      "$class->new() requires a non-ref arg, not a " . ref($self) );
+  }
+  else {
     return bless \$self, $class;
   }
 }
@@ -108,9 +110,7 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isScalar, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isScalar, @rules );
 
   return $class->__assertClass()->new(%parsed);
 }
@@ -137,16 +137,17 @@ sub get {
   my @args = @_;
 
   if ( $self->class() ) {
-    my ($package, $filename, $line) = caller(1);
+    my ( $package, $filename, $line ) = caller(1);
 
-    throw OP::MethodIsAbstract("get() not implemented for scalars"
-      ." (you asked for \"". join(", ", @args) ."\" at $package:$line"
-    );
-  } else {
+    throw OP::MethodIsAbstract( "get() not implemented for scalars"
+        . " (you asked for \""
+        . join( ", ", @args )
+        . "\" at $package:$line" );
+  }
+  else {
     return $self->SUPER::get(@args);
   }
 }
-
 
 =pod
 
@@ -165,11 +166,11 @@ sub set {
 
   if ( $self->class() ) {
     throw OP::MethodIsAbstract("set() not implemented for scalars");
-  } else {
+  }
+  else {
     return $self->SUPER::set(@args);
   }
 }
-
 
 =pod
 
@@ -197,7 +198,6 @@ sub size {
 use warnings "redefine";
 ###
 
-
 =pod
 
 =item * $self->isEmpty()
@@ -224,7 +224,6 @@ sub isEmpty {
   return ( $self->size() == 0 );
 }
 
-
 =pod
 
 =item * $self->clear()
@@ -237,11 +236,10 @@ Truncate self to zero length.
 sub clear {
   my $self = shift;
 
-  ${ $self } = "";
+  ${$self} = "";
 
   return $self;
 }
-
 
 =pod
 
@@ -255,9 +253,8 @@ Returns the actual de-referenced value of self. Same as ${ $self };
 sub value {
   my $self = shift;
 
-  return ${ $self };
+  return ${$self};
 }
-
 
 =pod
 
@@ -273,7 +270,6 @@ sub sprint {
 
   return "$self";
 }
-
 
 =pod
 
@@ -291,7 +287,6 @@ sub say {
 
   print "\n";
 }
-
 
 =back
 

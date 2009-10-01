@@ -20,9 +20,7 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isStr, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isStr, @rules );
 
   if ( !$parsed{columnType} ) {
     $parsed{columnType} = 'VARCHAR(128)';
@@ -41,6 +39,7 @@ sub assert {
 
 1;
 __END__
+
 =pod
 
 =head1 NAME

@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -163,7 +164,8 @@ of Ids will be plugged in for allowed values at compile time.
   };
 
 =cut
-# 
+
+#
 # XXX TODO ???: Add support for actions other than CASCADE; allow toggling
 # of foreign key constraints; permit lazy checking of values at db rather
 # than app level, that is: give the option to ignore allowed(), and let
@@ -173,6 +175,7 @@ of Ids will be plugged in for allowed values at compile time.
 # still a good early indicator for data problems, but it can be a costly
 # operation.
 #
+
 =pod
 
 =back
@@ -196,22 +199,22 @@ sub assert {
   my @rules = @_;
 
   my $externalClass = shift @rules;
-  my $query = $rules[0];
+  my $query         = $rules[0];
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isStr, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isStr, @rules );
 
-  $parsed{columnType} ||= 'CHAR(24)';
+  $parsed{columnType} ||= $externalClass->asserts->{id}->columnType;
 
   if ( $query && !ref $query ) {
     $parsed{allowed} = sub { $externalClass->__selectMulti($query) };
-  } else {
+  }
+  else {
     $parsed{allowed} = sub {
       my $assertion = shift;
-      my $value = shift;
+      my $value     = shift;
 
-      my $q = sprintf( q| SELECT %s FROM %s WHERE %s = %s |,
+      my $q = sprintf(
+        q| SELECT %s FROM %s WHERE %s = %s |,
         $assertion->memberClass()->__primaryKey(),
         $assertion->memberClass()->tableName(),
         $assertion->memberClass()->__primaryKey(),
@@ -219,7 +222,7 @@ sub assert {
       );
 
       return $externalClass->__selectMulti($q);
-    }
+      }
   }
 
   $parsed{memberClass} = $externalClass;

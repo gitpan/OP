@@ -61,9 +61,7 @@ module should go away.
 
 use OP::Enum qw| false true |;
 
-eval {
-  @EXPORT = @EXPORT_OK;
-};
+eval { @EXPORT = @EXPORT_OK; };
 
 =pod
 

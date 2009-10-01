@@ -20,6 +20,7 @@ use strict;
 use warnings;
 
 do {
+
   package Time::Piece::Nonpolluting;
 
   use strict;
@@ -58,16 +59,17 @@ sub assert {
       my $time = $_[0];
 
       if ( $time && $time =~ $datetimeRegex ) {
-        $time = $class->newFrom($1, $2, $3, $4, $5, $6);
+        $time = $class->newFrom( $1, $2, $3, $4, $5, $6 );
       }
 
-      UNIVERSAL::isa($time, "Time::Piece")
-       || Scalar::Util::looks_like_number($time)
-       || OP::AssertFailed->throw("Received value is not a time");
-    }, @rules
+      UNIVERSAL::isa( $time, "Time::Piece" )
+        || Scalar::Util::looks_like_number($time)
+        || OP::AssertFailed->throw("Received value is not a time");
+    },
+    @rules
   );
 
-  $parsed{min} = 0 if !defined $parsed{min};
+  $parsed{min} = 0     if !defined $parsed{min};
   $parsed{max} = 2**32 if !defined $parsed{max};
   $parsed{columnType} ||= 'DOUBLE(15,4)';
   $parsed{optional} = true if !defined $parsed{optional};
@@ -77,10 +79,10 @@ sub assert {
 
 sub new {
   my $class = shift;
-  my $time = shift;
+  my $time  = shift;
 
   if ( $time && $time =~ /$datetimeRegex/ ) {
-    return $class->newFrom($1, $2, $3, $4, $5, $6);
+    return $class->newFrom( $1, $2, $3, $4, $5, $6 );
   }
 
   my $epoch = 0;
@@ -89,13 +91,15 @@ sub new {
 
   if ( $blessed && $time->can("epoch") ) {
     $epoch = $time->epoch();
-  } elsif ( $blessed && overload::Overloaded($time) ) {
+  }
+  elsif ( $blessed && overload::Overloaded($time) ) {
     $epoch = "$time";
-  } else {
+  }
+  else {
     $epoch = $time;
   }
 
-  OP::Type::insist($epoch, OP::Type::isFloat);
+  OP::Type::insist( $epoch, OP::Type::isFloat );
 
   my $self = Time::Piece::Nonpolluting->new($epoch);
 
@@ -105,18 +109,17 @@ sub new {
 # method newFrom(OP::Class $class:
 #   Num $year, Num $month, Num $day, Num $hour, Num $minute, Num $sec
 sub newFrom {
-  my $class = shift;
-  my $year = shift;
-  my $month = shift;
-  my $day = shift;
-  my $hour = shift;
+  my $class  = shift;
+  my $year   = shift;
+  my $month  = shift;
+  my $day    = shift;
+  my $hour   = shift;
   my $minute = shift;
-  my $sec = shift;
+  my $sec    = shift;
 
   return $class->new(
     Time::Local::timelocal(
-      $sec, $minute, $hour,
-      $day, $month - 1, $year - 1900
+      $sec, $minute, $hour, $day, $month - 1, $year - 1900
     )
   );
 }
@@ -143,7 +146,7 @@ sub _compare {
 }
 
 sub _sprint {
-  return shift->epoch()
+  return shift->epoch();
 }
 
 #
@@ -158,7 +161,7 @@ sub isa {
 
   return false if $what eq 'OP::Array';
 
-  return UNIVERSAL::isa($recv,$what);
+  return UNIVERSAL::isa( $recv, $what );
 }
 
 true;

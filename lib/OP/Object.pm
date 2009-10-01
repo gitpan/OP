@@ -99,42 +99,47 @@ Meanwhile, in caller:
 # method new(OP::Class $class: *@args)  {
 sub new {
   my $class = shift;
-  my @args = @_;
+  my @args  = @_;
 
   my $hash;
 
   if ( @args == 0 ) {
+
     #
     # No arguments provided, so start with an empty hash
     #
-    $hash = { };
+    $hash = {};
 
-  } elsif ( @args == 1 ) {
+  }
+  elsif ( @args == 1 ) {
+
     #
     # Single argument was provided:
     #
     if ( ref $args[0] ) {
+
       #
       # Single reference arg provided, which should walk like a HASH:
       #
       $hash = shift @args;
 
-      throw OP::InvalidArgument(
-        "In $class->new(...), arg was not HASH-like"
-      ) if !UNIVERSAL::isa($hash, "HASH");
-    } else {
+      throw OP::InvalidArgument( "In $class->new(...), arg was not HASH-like" )
+        if !UNIVERSAL::isa( $hash, "HASH" );
+    }
+    else {
+
       #
       # Garbage in?
       #
       my $caller = caller();
 
-      throw OP::InvalidArgument(
-        "BUG (Check $caller): "
-        . "In $class->new(...), args should be hash, hashref, or nothing"
-      );
+      throw OP::InvalidArgument( "BUG (Check $caller): "
+          . "In $class->new(...), args should be hash, hashref, or nothing" );
     }
 
-  } else {
+  }
+  else {
+
     #
     # Unreferenced list received; make a HASHREF from it:
     #
@@ -148,17 +153,18 @@ sub new {
   #
   my $assertions = $class->get('ASSERTS');
 
-  if ( $assertions ) {
+  if ($assertions) {
+
     #
     # We'll make a clean, new self and assign it later:
     #
-    my $sanitized = bless { }, $class;
+    my $sanitized = bless {}, $class;
 
-    # 
+    #
     # Class assertions were provided;
     # use provided value, or fall back to default
-    # 
-    for my $key ( keys %{ $assertions } ) {
+    #
+    for my $key ( keys %{$assertions} ) {
       my $type = $assertions->{$key};
 
       my $value = $hash->{$key};
@@ -168,7 +174,7 @@ sub new {
       # populate sanitized hash with undef and move on:
       #
       if ( !defined $value && $type->optional() ) {
-        $sanitized->set($key, undef);
+        $sanitized->set( $key, undef );
 
         next;
       }
@@ -177,27 +183,29 @@ sub new {
       # If these tests are failing in the constructor, the caller
       # probably did not send the proper (or any args).
       #
-      my $keyLabel = join("::", $class, $key);
+      my $keyLabel = join( "::", $class, $key );
 
       if ( defined $value ) {
-        $type->test($keyLabel, $value);
+        $type->test( $keyLabel, $value );
 
-        $sanitized->set($key, ref($value) ? clone($value) : $value);
+        $sanitized->set( $key, ref($value) ? clone($value) : $value );
 
-      } else {
+      }
+      else {
+
         #
         # fall back to default
         #
         my $default = $type->default();
 
-	#
-	# test the default value, because it might be invalid on purpose
-	# (that is, callers of this class might need to provide an
-	# allowed value for this attribute in the constructor)
-	#
-        $type->test($keyLabel, $default);
+        #
+        # test the default value, because it might be invalid on purpose
+        # (that is, callers of this class might need to provide an
+        # allowed value for this attribute in the constructor)
+        #
+        $type->test( $keyLabel, $default );
 
-        $sanitized->set($key, ref($default) ? clone($default) : $default);
+        $sanitized->set( $key, ref($default) ? clone($default) : $default );
       }
     }
 
@@ -205,15 +213,15 @@ sub new {
     # Perl reference magic
     #
     $hash = $sanitized;
-  } else {
+  }
+  else {
     bless $hash, $class;
   }
 
   $hash->_init();
 
   return $hash;
-};
-
+}
 
 =pod
 
@@ -229,7 +237,7 @@ must be populated before calling C<save()>.
 sub proto {
   my $class = shift;
 
-  my $self = bless { }, $class;
+  my $self = bless {}, $class;
 
   my $asserts = $class->asserts();
 
@@ -240,26 +248,23 @@ sub proto {
 
     next if !defined($default);
 
-    eval {
-      $self->set($attr, $default);
-    };
+    eval { $self->set( $attr, $default ); };
 
     ###
     ### This works, but ended up being really spammy in the logs.
     ### Changed to just eval instead, above.
     ###
     # try {
-      # $self->set($attr, $default);
+    # $self->set($attr, $default);
     # } catch OP::AssertFailed with {
-      # my $error = $_[0];
+    # my $error = $_[0];
 
-      # warn "Prototype warning (possibly harmless): $error";
+    # warn "Prototype warning (possibly harmless): $error";
     # };
   }
 
   return $self;
-};
-
+}
 
 =pod
 
@@ -281,8 +286,7 @@ sub attributes {
   }
 
   return sort keys %{ $class->asserts() };
-};
-
+}
 
 =pod
 
@@ -332,23 +336,24 @@ Meanwhile, in caller...
 # method isAttributeAllowed(OP::Class $class: Str $key) {
 sub isAttributeAllowed {
   my $class = shift;
-  my $key = shift;
+  my $key   = shift;
 
   my $asserts = $class->asserts();
 
-  if ( keys %{ $asserts } ) {
+  if ( keys %{$asserts} ) {
     if ( exists $asserts->{$key} ) {
       return true;
-    } else {
+    }
+    else {
       my $caller = caller();
       warn "BUG (Check $caller): \"$key\" is not a member of \"$class\"";
       return false;
     }
-  } else {
+  }
+  else {
     return true;
   }
-};
-
+}
 
 =pod
 
@@ -366,10 +371,8 @@ sub asserts {
   my $class = shift;
 
   throw OP::ClassIsAbstract(
-    "Abstract class $class will never have assertions"
-  );
-};
-
+    "Abstract class $class will never have assertions" );
+}
 
 =pod
 
@@ -443,22 +446,19 @@ sub assert {
   my @rules = @_;
 
   throw OP::ClassIsAbstract(
-    "You may not assert attributes for abstract class $class"
-  );
-};
-
+    "You may not assert attributes for abstract class $class" );
+}
 
 # method elementClass(OP::Class $class: Str $key) {
 sub elementClass {
   my $class = shift;
-  my $key = shift;
+  my $key   = shift;
 
   #
   # Fine for abstract method
   #
   return undef;
-};
-
+}
 
 =pod
 
@@ -480,7 +480,7 @@ with Types and Bools.
 # method import(OP::Class $class: *@what) {
 sub import {
   my $class = shift;
-  my @what = @_;
+  my @what  = @_;
 
   my $caller = caller();
 
@@ -500,19 +500,19 @@ sub import {
 
   return if !$asserts;
 
-  for my $key ( keys %{ $asserts } ) {
+  for my $key ( keys %{$asserts} ) {
     my $type = $asserts->{$key};
 
-    next if !ref($type)
-      || (
-        !UNIVERSAL::isa($type, 'HASH')
-        && !UNIVERSAL::isa($type, 'ARRAY')
-      );
-        # ref($type->{$key}) !~ /Hash|Array/i;
+    next
+      if !ref($type)
+        || ( !UNIVERSAL::isa( $type, 'HASH' )
+          && !UNIVERSAL::isa( $type, 'ARRAY' ) );
+
+    # ref($type->{$key}) !~ /Hash|Array/i;
 
     $class->elementClass($key);
   }
-};
+}
 
 =pod
 
@@ -583,10 +583,8 @@ To inherit no base assertions:
 sub __baseAsserts {
   my $class = shift;
 
-  throw OP::ClassIsAbstract(
-    "Abstract class $class has no base asserts"
-  );
-};
+  throw OP::ClassIsAbstract( "Abstract class $class has no base asserts" );
+}
 
 # method __assertClass(OP::Class $class:) {
 sub __assertClass {
@@ -600,20 +598,20 @@ sub __assertClass {
 
     #
     # Dynamically allocate a Type subclass
-    # 
+    #
     do {
       no strict "refs";
 
       @{"$assertClass\::ISA"} = qw| OP::Type |;
     };
 
-    $class->set("__assertClass", $assertClass);
+    $class->set( "__assertClass", $assertClass );
 
-    $assertClass->set("objectClass", $class);
+    $assertClass->set( "objectClass", $class );
   }
 
   return $assertClass;
-};
+}
 
 =pod
 
@@ -634,19 +632,20 @@ If using assertions, OP *DIES* if the key is invalid!
 # method get(Str $key) {
 sub get {
   my $self = shift;
-  my $key = shift;
+  my $key  = shift;
 
   my $class = $self->class();
 
-  if ( $class ) {
+  if ($class) {
     throw OP::RuntimeError("$key is not a member of $class")
       if !$class->isAttributeAllowed($key);
 
     return $self->{$key};
-  } else {
+  }
+  else {
     return $self->SUPER::get($key);
   }
-};
+}
 
 =pod
 
@@ -660,13 +659,13 @@ If using assertions, OP *DIES* on purpose here if key or value are invalid.
 
 # method set(Str $key, *@value) {
 sub set {
-  my $self = shift;
-  my $key = shift;
+  my $self  = shift;
+  my $key   = shift;
   my @value = @_;
 
   my $class = $self->class();
 
-  if ( $class ) {
+  if ($class) {
     throw OP::RuntimeError("Extra args received by set()")
       if scalar(@value) > 1;
 
@@ -676,16 +675,16 @@ sub set {
     my $type = $class->asserts()->{$key};
 
     throw OP::AssertFailed("Type for $key failed")
-      if $type && !$type->test($key, $value[0]);
+      if $type && !$type->test( $key, $value[0] );
 
     $self->{$key} = $value[0];
-  } else {
-    return $self->SUPER::set($key,@value);
+  }
+  else {
+    return $self->SUPER::set( $key, @value );
   }
 
   return true;
-};
-
+}
 
 =pod
 
@@ -712,11 +711,10 @@ Removes all items, leaving self with zero elements.
 sub clear {
   my $self = shift;
 
-  %{ $self } = ( );
+  %{$self} = ();
 
   return $self;
-};
-
+}
 
 =pod
 
@@ -731,8 +729,7 @@ sub class {
   my $self = shift;
 
   return ref($self);
-};
-
+}
 
 =pod
 
@@ -746,9 +743,8 @@ Returns self's value as a native data type, ie dereferences it
 sub value {
   my $self = shift;
 
-  return %{ $self };
-};
-
+  return %{$self};
+}
 
 =pod
 
@@ -806,7 +802,7 @@ sub AUTOLOAD {
     my $value = $class->get($message);
 
     if ( !defined $value ) {
-      my ($package, $filename, $line) = caller;
+      my ( $package, $filename, $line ) = caller;
 
       throw OP::RuntimeError(
         "BUG (Check $package:$line): Class var \@$class\::$message is undefined"
@@ -816,35 +812,38 @@ sub AUTOLOAD {
     return $value;
   }
 
-  if ($message =~ /^[Ss]et(\w+)/) {
+  if ( $message =~ /^[Ss]et(\w+)/ ) {
     my $attributeName = lcfirst($1);
 
     #
     # set() will perform attribute tests
     #
-    if ( scalar(@args > 1) ) {
-      return $self->set($attributeName, \@args);
-    } else {
-      return $self->set($attributeName, $args[0]);
+    if ( scalar( @args > 1 ) ) {
+      return $self->set( $attributeName, \@args );
     }
-  } elsif ($message =~ /^[Dd]elete(\w+)/) {
+    else {
+      return $self->set( $attributeName, $args[0] );
+    }
+  }
+  elsif ( $message =~ /^[Dd]elete(\w+)/ ) {
     my $attributeName = lcfirst($1);
 
     return if !$class->isAttributeAllowed($attributeName);
 
     return delete $self->{$attributeName};
-  } elsif ($message =~ /^[Gg]et(\w+)/) {
+  }
+  elsif ( $message =~ /^[Gg]et(\w+)/ ) {
     my $attributeName = lcfirst($1);
 
     #
     # get() will perform attribute tests
     #
     return $self->get($attributeName);
-  } else {
+  }
+  else {
     return $self->get($message);
   }
-};
-
+}
 
 =pod
 
@@ -867,8 +866,7 @@ sub _init {
   my $self = shift;
 
   return true;
-};
-
+}
 
 =pod
 

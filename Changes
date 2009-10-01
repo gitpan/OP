@@ -1,3 +1,6 @@
+2009-10-01: .317
+  - Doc updates, more tweaks and fixes for RCS
+
 2009-09-12: .316
   - Warn and disable RCS if binaries are not found (thx testers)
 

@@ -14,27 +14,33 @@ package OP::Redefines;
 $Carp::Internal{"OP::Redefines"}++;
 
 do {
+
   #
   # Override looks_like_number to recognize Num objects as numbers
   #
   no strict "refs";
   no warnings "redefine";
 
-  *{"Scalar::Util::looks_like_number"} = sub($){
+  *{"Scalar::Util::looks_like_number"} = sub($) {
     local $_ = shift;
 
     return 0 if !defined($_);
 
-    return 1 if "$_" =~ (/^[+-]?\d+$/); # is a +/- integer
-    return 1 if "$_" =~ (/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/); # a C float
-    return 1 if ($] >= 5.008 and /^(Inf(inity)?|NaN)$/i) or ($] >= 5.006001 and /^Inf$/i);
+    return 1 if "$_" =~ (/^[+-]?\d+$/);    # is a +/- integer
+    return 1
+      if "$_" =~
+        (/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/);    # a C float
+    return 1
+      if ( $] >= 5.008 and /^(Inf(inity)?|NaN)$/i )
+      or ( $] >= 5.006001 and /^Inf$/i );
 
     0;
-  }
+    }
 };
 
 1;
 __END__
+
 =pod
 
 =head1 NAME

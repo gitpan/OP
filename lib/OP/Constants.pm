@@ -29,39 +29,36 @@ use base qw( Exporter );
 our @EXPORT_OK;
 
 sub init {
-  my $RC = shift;
+  my $RC     = shift;
   my $caller = caller;
 
   $ENV{OP_HOME} ||= File::HomeDir->my_home;
 
   OP::RuntimeError->throw(
-    "Could not determine home directory for current user"
-  ) if !$ENV{OP_HOME};
+    "Could not determine home directory for current user" )
+    if !$ENV{OP_HOME};
 
   #
   #
   #
   my $rc;
 
-  my $path = join('/',$ENV{OP_HOME},$RC);
+  my $path = join( '/', $ENV{OP_HOME}, $RC );
 
-  my $override = join('/',
-    $ENV{OP_HOME},
-    join("-", $RC, hostname())
-  );
+  my $override = join( '/', $ENV{OP_HOME}, join( "-", $RC, hostname() ) );
 
   if ( $ENV{OP_HOME} && -f $path ) {
-    my $file = IO::File->new($path, 'r')
+    my $file = IO::File->new( $path, 'r' )
       || throw OP::FileAccessError("Could not read $path: $@");
 
     my @yaml;
 
-    while ( <$file> ) { push @yaml, $_ }
+    while (<$file>) { push @yaml, $_ }
 
     $file->close();
 
     eval {
-      $rc = YAML::Syck::Load( join('', @yaml) );
+      $rc = YAML::Syck::Load( join( '', @yaml ) );
 
       die $@ if $@;
     };
@@ -72,19 +69,19 @@ sub init {
       if !ref($rc) || ref($rc) ne 'HASH';
 
     if ( -f $override ) {
-      my $file = IO::File->new($override, 'r')
+      my $file = IO::File->new( $override, 'r' )
         || throw OP::FileAccessError("Could not read $override: $@");
 
       my @overrideYAML;
 
-      while ( <$file> ) { push @overrideYAML, $_ }
+      while (<$file>) { push @overrideYAML, $_ }
 
       $file->close();
 
       my $overlay;
 
       eval {
-        $overlay = YAML::Syck::Load( join('', @overrideYAML) ) || die $@;
+        $overlay = YAML::Syck::Load( join( '', @overrideYAML ) ) || die $@;
       };
 
       throw OP::RuntimeError($@) if $@;
@@ -92,11 +89,12 @@ sub init {
       throw OP::RuntimeError("Unexpected format in $override: Should be a HASH")
         if !ref($overlay) || ref($overlay) ne 'HASH';
 
-      for my $key ( keys %{ $overlay } ) {
+      for my $key ( keys %{$overlay} ) {
         $rc->{$key} = $overlay->{$key};
       }
     }
-  } else {
+  }
+  else {
     print STDERR q(!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     _  _____ _____ _____ _   _ _____ ___ ___  _   _ 
@@ -109,7 +107,7 @@ sub init {
 );
 
     my $current = $ENV{OP_HOME} || "";
-                                                    
+
     print STDERR "\n";
     print STDERR "\"$0\" needs some help finding a file.\n";
     print STDERR "\n";
@@ -140,7 +138,7 @@ sub init {
   do {
     no strict "refs";
 
-    @{"$caller\::EXPORT_OK"} = ( );
+    @{"$caller\::EXPORT_OK"} = ();
   };
 
   for my $key ( keys %{$rc} ) {

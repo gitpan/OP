@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -46,11 +47,9 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isInt, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isInt, @rules );
 
-  $parsed{maxSize} ||= 11;
+  $parsed{maxSize}    ||= 11;
   $parsed{columnType} ||= 'INT(11)';
 
   return $class->__assertClass()->new(%parsed);

@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.316';
+our $VERSION = '0.317';
 
 use strict;
 use diagnostics;
@@ -48,14 +48,17 @@ use OP::TimeSpan;
 use base qw| Exporter |;
 
 our @EXPORT_OK = (
+
   #
   # From OP::Class:
   #
   "create", "true", "false",
+
   #
   # From OP::Type:
   #
   "subtype",
+
   #
   # From OP::Array:
   #
@@ -63,14 +66,15 @@ our @EXPORT_OK = (
 );
 
 our %EXPORT_TAGS = (
-  create => [qw| create subtype |], 
-  bool   => [qw| true false |], 
-  yield  => [qw| yield emit break |], 
+  create => [qw| create subtype |],
+  bool   => [qw| true false |],
+  yield  => [qw| yield emit break |],
   all    => \@EXPORT_OK,
 );
 
 true;
 __END__
+
 =pod
 
 =head1 NAME
@@ -79,7 +83,7 @@ OP - Compact prototyping of InnoDB-backed object classes
 
 =head1 VERSION
 
-This documentation is for version B<0.316> of OP.
+This documentation is for version B<0.317> of OP.
 
 =head1 STATUS
 
@@ -158,9 +162,6 @@ it needs.
 If, rather, you need to derive object classes from a database schema,
 you may want to take a look at L<Class::DBI> and other similar
 packages on the CPAN, which specialize in doing just that.
-
-L<OP::ForeignTable> may be used to work with external datasources
-as if they were OP classes, but this functionality is quite limited.
 
 =head2 Default Base Attributes
 

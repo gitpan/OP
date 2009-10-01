@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -45,18 +46,18 @@ use base qw| OP::Scalar |;
 # atan2 cos sin exp log sqrt int
 
 our %overload = (
-  '++'  => sub { ++$ {$_[0]} ; shift }, # from overload.pm
-  '--'  => sub { --$ {$_[0]} ; shift },
-  '+'   => sub { "$_[0]" + "$_[1]" },
-  '-'   => sub { "$_[0]" - "$_[1]" },
-  '*'   => sub { "$_[0]" * "$_[1]" },
-  '/'   => sub { "$_[0]" / "$_[1]" },
-  '%'   => sub { "$_[0]" % "$_[1]" },
-  '**'  => sub { "$_[0]" ** "$_[1]" },
-  '=='  => sub { "$_[0]" == "$_[1]" },
-  'eq'  => sub { "$_[0]" eq "$_[1]" },
-  '!='  => sub { "$_[0]" != "$_[1]" },
-  'ne'  => sub { "$_[0]" ne "$_[1]" },
+  '++' => sub { ++${ $_[0] }; shift },    # from overload.pm
+  '--' => sub { --${ $_[0] }; shift },
+  '+'  => sub { "$_[0]" + "$_[1]" },
+  '-'  => sub { "$_[0]" - "$_[1]" },
+  '*'  => sub { "$_[0]" * "$_[1]" },
+  '/'  => sub { "$_[0]" / "$_[1]" },
+  '%'  => sub { "$_[0]" % "$_[1]" },
+  '**' => sub { "$_[0]"**"$_[1]" },
+  '==' => sub { "$_[0]" == "$_[1]" },
+  'eq' => sub { "$_[0]" eq "$_[1]" },
+  '!=' => sub { "$_[0]" != "$_[1]" },
+  'ne' => sub { "$_[0]" ne "$_[1]" },
 );
 
 use overload fallback => true, %overload;
@@ -66,11 +67,9 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isFloat, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isFloat, @rules );
 
-  $parsed{maxSize} ||= 11;
+  $parsed{maxSize}    ||= 11;
   $parsed{columnType} ||= 'INT(11)';
 
   return $class->__assertClass()->new(%parsed);
@@ -80,64 +79,64 @@ sub assert {
 sub abs {
   my $self = shift;
 
-  return CORE::abs(${ $self })
+  return CORE::abs( ${$self} );
 }
 
 # method atan2(Num $num) { CORE::atan2(${ $self }, $num) }
 sub atan2 {
   my $self = shift;
-  my $num = shift;
+  my $num  = shift;
 
-  return CORE::atan2(${ $self }, $num);
+  return CORE::atan2( ${$self}, $num );
 }
 
 # method cos() { CORE::cos(${ $self }) }
 sub cos {
   my $self = shift;
 
-  return CORE::cos(${ $self });
+  return CORE::cos( ${$self} );
 }
 
 # method exp() { CORE::exp(${ $self }) }
 sub exp {
   my $self = shift;
 
-  return CORE::exp(${ $self });
+  return CORE::exp( ${$self} );
 }
 
 # method int() { CORE::int(${ $self }) }
 sub int {
   my $self = shift;
 
-  CORE::int(${ $self });
+  CORE::int( ${$self} );
 }
 
 # method log() { CORE::log(${ $self }) }
 sub log {
   my $self = shift;
 
-  return CORE::log(${ $self });
+  return CORE::log( ${$self} );
 }
 
 # method rand() { CORE::rand(${ $self }) }
 sub rand {
   my $self = shift;
 
-  return CORE::rand(${ $self });
+  return CORE::rand( ${$self} );
 }
 
 # method sin() { CORE::sin(${ $self }) }
 sub sin {
   my $self = shift;
 
-  return CORE::sin(${ $self });
+  return CORE::sin( ${$self} );
 }
 
 # method sqrt() { CORE::sqrt(${ $self }) }
 sub sqrt {
   my $self = shift;
 
-  return CORE::sqrt(${ $self });
+  return CORE::sqrt( ${$self} );
 }
 
 true;

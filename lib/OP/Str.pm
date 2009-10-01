@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -82,29 +83,27 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isStr, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isStr, @rules );
 
-  $parsed{columnType}  ||= 'VARCHAR(1024)';
-  $parsed{maxSize} ||= 1024;
+  $parsed{columnType} ||= 'VARCHAR(1024)';
+  $parsed{maxSize}    ||= 1024;
 
   return $class->__assertClass()->new(%parsed);
 }
 
 # method split(Rule $regex) {
 sub split {
-  my $self = shift;
+  my $self  = shift;
   my $regex = shift;
 
-  return OP::Array->new( CORE::split($regex, $self) );
+  return OP::Array->new( CORE::split( $regex, $self ) );
 }
 
 # method chomp() { CORE::chomp($self) }
 sub chomp {
   my $self = shift;
 
-  return CORE::chomp($self)
+  return CORE::chomp($self);
 }
 
 # method chop() { CORE::chop($self) }
@@ -126,7 +125,7 @@ sub crypt {
   my $self = shift;
   my $salt = shift;
 
-  return CORE::crypt($self, $salt);
+  return CORE::crypt( $self, $salt );
 }
 
 # method eval() { CORE::eval($self) }
@@ -138,11 +137,11 @@ sub eval {
 
 # method index(Str $substr, Int $pos) { CORE::index($self, $substr, $pos) }
 sub index {
-  my $self = shift;
+  my $self   = shift;
   my $substr = shift;
-  my $pos = shift;
+  my $pos    = shift;
 
-  return CORE::index($self, $substr, $pos);
+  return CORE::index( $self, $substr, $pos );
 }
 
 # method lc() { CORE::lc($self) }
@@ -168,20 +167,20 @@ sub length {
 
 # method rindex(Str $substr, Int $pos) { CORE::rindex($self, $substr, $pos) }
 sub rindex {
-  my $self = shift;
+  my $self   = shift;
   my $substr = shift;
-  my $pos = shift;
+  my $pos    = shift;
 
-  return CORE::rindex($self, $substr, $pos);
+  return CORE::rindex( $self, $substr, $pos );
 }
 
 # method substr(Int $offset, Int $len) { CORE::substr($self, $offset, $len) }
 sub substr {
-  my $self = shift;
+  my $self   = shift;
   my $offset = shift;
-  my $len = shift;
+  my $len    = shift;
 
-  return CORE::substr($self, $offset, $len);
+  return CORE::substr( $self, $offset, $len );
 }
 
 # method uc() { CORE::uc($self) }

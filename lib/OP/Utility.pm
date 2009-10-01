@@ -46,13 +46,15 @@ use YAML::Syck;
 use OP::Constants qw| yamlRoot scratchRoot syslogHost |;
 use OP::Exceptions;
 
-my $logger = syslogHost ? Net::Syslog->new(
-  Facility => 'local1',
-  Priority => 'info',
+my $logger = syslogHost
+  ? Net::Syslog->new(
+  Facility   => 'local1',
+  Priority   => 'info',
   SyslogHost => syslogHost,
-) : undef;
+  )
+  : undef;
 
-our $longmess = 1; # Carp.pm long messages - 0 = no, 1 = yes
+our $longmess = 1;    # Carp.pm long messages - 0 = no, 1 = yes
 
 #
 # Install WARN/DIE signal handlers:
@@ -67,7 +69,6 @@ if ( !$ENV{OP_QUIET} ) {
   $SIG{__DIE__}  = \&OP::Utility::dieHandler;
 }
 
-
 #
 # Human-readable sizes
 #
@@ -76,20 +77,18 @@ use constant Mega => Kilo * 1024;
 use constant Giga => Mega * 1024;
 use constant Tera => Giga * 1024;
 
-
 #
 # Human-readable times
 #
 use constant Millisecond => .001;
-use constant Second => 1;
-use constant Minute => 60;
-use constant Hour => Minute * 60;
-use constant Day => Hour * 24;
-use constant Week => Day * 7;
-use constant Month => Day * 30;
-use constant Year => Day * 365.25;
-use constant Decade => Year * 10;
-
+use constant Second      => 1;
+use constant Minute      => 60;
+use constant Hour        => Minute * 60;
+use constant Day         => Hour * 24;
+use constant Week        => Day * 7;
+use constant Month       => Day * 30;
+use constant Year        => Day * 365.25;
+use constant Decade      => Year * 10;
 
 =pod
 
@@ -105,26 +104,30 @@ Kilo, Mega, Giga). Optionally acceps a second argument to use as a
 
 # sub humanSize(Int $int, Str $label) {
 sub humanSize {
-  my $int = shift;
+  my $int   = shift;
   my $label = shift;
 
   $label ||= "Bytes";
 
   if ( $label eq 'timeticks' ) {
-    return Net::SNMP::ticks_to_time( $int );
+    return Net::SNMP::ticks_to_time($int);
   }
 
   my $str;
 
   if ( $int >= Tera ) {
     $str = sprintf( "\%.02f T$label", $int / Tera );
-  } elsif ( $int >= Giga ) {
+  }
+  elsif ( $int >= Giga ) {
     $str = sprintf( "\%.02f G$label", $int / Giga );
-  } elsif ( $int >= Mega ) {
+  }
+  elsif ( $int >= Mega ) {
     $str = sprintf( "\%.02f M$label", $int / Mega );
-  } elsif ( $int >= Kilo ) {
+  }
+  elsif ( $int >= Kilo ) {
     $str = sprintf( "\%.02f K$label", $int / Kilo );
-  } else {
+  }
+  else {
     $str = sprintf( "\%.02f $label", $int );
   }
 
@@ -152,25 +155,31 @@ sub humanTime {
 
   if ( $num >= Year ) {
     $str = sprintf( '%.02f years', $num / Year );
-  } elsif ( $num >= Month ) {
+  }
+  elsif ( $num >= Month ) {
     $str = sprintf( '%.02f months', $num / Month );
-  } elsif ( $num >= Week ) {
+  }
+  elsif ( $num >= Week ) {
     $str = sprintf( '%.02f weeks', $num / Week );
-  } elsif ( $num >= Day ) {
+  }
+  elsif ( $num >= Day ) {
     $str = sprintf( '%.02f days', $num / Day );
-  } elsif ( $num >= Hour ) {
+  }
+  elsif ( $num >= Hour ) {
     $str = sprintf( '%.02f hours', $num / Hour );
-  } elsif ( $num >= Minute ) {
+  }
+  elsif ( $num >= Minute ) {
     $str = sprintf( '%.02f mins', $num / Minute );
-  } elsif ( $num >= Second ) {
+  }
+  elsif ( $num >= Second ) {
     $str = sprintf( '%.02f secs', $num / Second );
-  } else {
+  }
+  else {
     $str = sprintf( '%.02f ms', $num / Millisecond );
   }
 
-  return join('', $sign, $str);
+  return join( '', $sign, $str );
 }
-
 
 =pod
 
@@ -188,8 +197,8 @@ sub loadYaml {
 
   my $yaml;
 
-  open(YAML, "< $path");
-  while(<YAML>) { $yaml .= $_ }
+  open( YAML, "< $path" );
+  while (<YAML>) { $yaml .= $_ }
   close(YAML);
 
   return YAML::Syck::Load($yaml);
@@ -204,13 +213,14 @@ Return a random 6-byte alphabetic string
 =cut
 
 sub randstr {
+
   # my @chars=('a'..'z','A'..'Z', 0..9);
 
-  my @chars=('A'..'F', 0..9);
+  my @chars = ( 'A' .. 'F', 0 .. 9 );
 
   my $id;
 
-  for (1..6) { $id .= $chars[rand @chars]; }
+  for ( 1 .. 6 ) { $id .= $chars[ rand @chars ]; }
 
   return $id;
 }
@@ -236,11 +246,8 @@ sub timestamp {
     '%i-%02d-%02d %02d:%02d:%02d %s',
     $localtime[5] + 1900,
     $localtime[4] + 1,
-    $localtime[3],
-    $localtime[2],
-    $localtime[1],
-    $localtime[0],
-    strftime('%Z', @localtime)
+    $localtime[3], $localtime[2], $localtime[1], $localtime[0],
+    strftime( '%Z', @localtime )
   );
 }
 
@@ -261,8 +268,7 @@ sub date {
 
   my @localtime = localtime($unix);
 
-  return sprintf(
-    '%i-%02d-%02d',
+  return sprintf( '%i-%02d-%02d',
     $localtime[5] + 1900,
     $localtime[4] + 1,
     $localtime[3],
@@ -286,12 +292,8 @@ sub time {
 
   my @localtime = localtime($unix);
 
-  return sprintf(
-    '%02d:%02d:%02d',
-    $localtime[2],
-    $localtime[1],
-    $localtime[0]
-  );
+  return
+    sprintf( '%02d:%02d:%02d', $localtime[2], $localtime[1], $localtime[0] );
 }
 
 =pod
@@ -314,7 +316,6 @@ sub hour {
   return $localtime[2];
 }
 
-
 =pod
 
 =item * decodeExitStatus($status);
@@ -327,13 +328,12 @@ signal, and core dump true/false
 sub decodeExitStatus {
   my $status = shift;
 
-  my $exit = $status >> 8;
+  my $exit   = $status >> 8;
   my $signal = $status & 127;
-  my $core = $status & 128;
+  my $core   = $status & 128;
 
   return ( $exit, $signal, $core );
 }
-
 
 =pod
 
@@ -345,9 +345,9 @@ Return a new alpha-numeric ID (GUID).
 
 sub newId {
   return Data::GUID->new();
+
   # return Data::GUID->new()->as_string();
 }
-
 
 =pod
 
@@ -363,8 +363,8 @@ sub warnHandler {
   my $caller = caller();
 
   # my $message = $longmess
-    # ? Carp::longmess(@_)
-    # : Carp::shortmess(@_);
+  # ? Carp::longmess(@_)
+  # : Carp::shortmess(@_);
 
   my $message = Carp::shortmess(@_);
 
@@ -374,7 +374,7 @@ sub warnHandler {
 
   print STDERR $errStr;
 
-  if ( $logger ) {
+  if ($logger) {
     $errStr =~ s/\s+/ /g;
     $logger->send($errStr);
   }
@@ -389,10 +389,10 @@ Pretty-print a fatal error to STDERR
 =cut
 
 sub dieHandler {
-  my ( $exception ) = @_;
+  my ($exception) = @_;
 
-  die @_ if $^S; # Only die for *unhandled* exceptions. It's Magic!
-                 # See also: Error.pm
+  die @_ if $^S;    # Only die for *unhandled* exceptions. It's Magic!
+                    # See also: Error.pm
 
   my $timestamp = OP::Utility::timestamp();
 
@@ -401,21 +401,26 @@ sub dieHandler {
   my ( $firstLine, $message );
 
   if ( $type && ref($exception) && blessed($exception) ) {
+
     #
     # throw Error(message) was called:
     #
     $firstLine = "- Unhandled $type Exception:\n";
 
-    $message = $longmess
-      ? Carp::longmess($exception->stacktrace())
-      : Carp::shortmess($exception->stacktrace());
-  } else {
+    $message =
+      $longmess
+      ? Carp::longmess( $exception->stacktrace() )
+      : Carp::shortmess( $exception->stacktrace() );
+  }
+  else {
+
     #
     # die($string) was called:
     #
     $firstLine = "- Fatal error:\n";
 
-    $message = $longmess
+    $message =
+      $longmess
       ? Carp::longmess($exception)
       : Carp::shortmess($exception);
   }
@@ -423,16 +428,19 @@ sub dieHandler {
   my $errStr;
 
   if ( $message =~ /Fatal error:/ ) {
-    $errStr = $message
+    $errStr =
+      $message
       ? formatErrorString($message)
       : $exception;
-  } else {
-    $errStr = $message
-      ? join("  ", $firstLine, formatErrorString($message))
-      : join("  ", $firstLine, $exception);
+  }
+  else {
+    $errStr =
+      $message
+      ? join( "  ", $firstLine, formatErrorString($message) )
+      : join( "  ", $firstLine, $exception );
   }
 
-  if ( $logger ) {
+  if ($logger) {
     my $singleLine = $errStr;
     $singleLine =~ s/\s+/ /g;
     $logger->send($singleLine);
@@ -440,7 +448,6 @@ sub dieHandler {
 
   die "$errStr";
 }
-
 
 =pod
 

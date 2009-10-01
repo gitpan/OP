@@ -20,8 +20,9 @@ use Time::Seconds;
 
 use base qw| Time::Seconds OP::Scalar |;
 
-use overload fallback => true,
-  '<=>' => '_compare',
+use overload
+  fallback => true,
+  '<=>'    => '_compare',
   %OP::Num::overload;
 
 # method assert(OP::Class $class: *@rules) {
@@ -31,19 +32,20 @@ sub assert {
 
   my %parsed = OP::Type::__parseTypeArgs(
     sub {
-      UNIVERSAL::isa($_[0], "DateTime")
-       || Scalar::Util::looks_like_number("$_[0]")
-       || throw OP::AssertFailed("Received value is not a time");
-    }, @rules
+      UNIVERSAL::isa( $_[0], "DateTime" )
+        || Scalar::Util::looks_like_number("$_[0]")
+        || throw OP::AssertFailed("Received value is not a time");
+    },
+    @rules
   );
 
-  $parsed{min} = 0 if !defined $parsed{min};
+  $parsed{min} = 0     if !defined $parsed{min};
   $parsed{max} = 2**32 if !defined $parsed{max};
   $parsed{default} ||= "0.0000" if !defined $parsed{default};
   $parsed{columnType} ||= 'DOUBLE(15,4)';
 
   return $class->__assertClass()->new(%parsed);
-};
+}
 
 sub _compare {
   my $date1 = $_[2] ? $_[1] : $_[0];
@@ -53,7 +55,7 @@ sub _compare {
   $date2 ||= 0;
 
   return "$date1" <=> "$date2";
-};
+}
 
 true;
 

@@ -16,6 +16,7 @@ package OP::Class;
 
 use strict;
 use warnings;
+
 # use diagnostics;
 #
 # gentle stern harsh cruel brutal
@@ -50,7 +51,6 @@ our @EXPORT_OK = (
     |,
 );
 
-
 ##
 ## Private Class Methods
 ##
@@ -60,16 +60,15 @@ our @EXPORT_OK = (
 #
 # method __checkVarName (OP::Class $class: Str $varName) {
 sub __checkVarName {
-  my $class = shift;
+  my $class   = shift;
   my $varName = shift;
 
   if ( $varName !~ /^[\w\_]{1,64}$/xsm ) {
-    throw OP::InvalidArgument(
-      "Bad class var name \"$varName\" specified" );
+    throw OP::InvalidArgument("Bad class var name \"$varName\" specified");
   }
 
   return true;
-};
+}
 
 #
 #
@@ -79,7 +78,7 @@ sub __init {
   my $class = shift;
 
   return true;
-};
+}
 
 ##
 ## Public Class Methods
@@ -91,13 +90,12 @@ sub __init {
 # method create (Str $class: Hash $args) {
 sub create {
   my $class = shift;
-  my $args = shift;
+  my $args  = shift;
 
-  my $reftype = reftype( $args );
+  my $reftype = reftype($args);
 
   if ( !$reftype ) {
-    throw OP::InvalidArgument(
-      "create() needs a HASH ref for an argument" );
+    throw OP::InvalidArgument("create() needs a HASH ref for an argument");
   }
 
   if ( $reftype ne 'HASH' ) {
@@ -111,20 +109,22 @@ sub create {
 
   my @base;
 
-  if ( $basereftype ) {
-    if (
-      ( $basereftype eq 'SCALAR' )
-        && overload::Overloaded($args->{__BASE__})
-    ) {
-      @base = "$args->{__BASE__}"; # Stringify
-    } elsif ( $basereftype eq 'ARRAY' ) {
-      @base = @{$args->{__BASE__}};
-    } else {
+  if ($basereftype) {
+    if ( ( $basereftype eq 'SCALAR' )
+      && overload::Overloaded( $args->{__BASE__} ) )
+    {
+      @base = "$args->{__BASE__}";    # Stringify
+    }
+    elsif ( $basereftype eq 'ARRAY' ) {
+      @base = @{ $args->{__BASE__} };
+    }
+    else {
       throw OP::InvalidArgument(
-        "__BASE__ must be a string or ARRAY reference, not $basereftype" );
+        "__BASE__ must be a string or ARRAY reference, not $basereftype");
     }
 
-  } else {
+  }
+  else {
     @base = $args->{__BASE__};
   }
 
@@ -133,7 +133,7 @@ sub create {
   #
   delete $args->{__BASE__};
 
-  for my $base ( @base ) {
+  for my $base (@base) {
     my $baselib = $base;
     $baselib =~ s/::/\//gxms;
     $baselib .= ".pm";
@@ -160,8 +160,8 @@ sub create {
     my $arg = $args->{$key};
 
     if ( $key !~ /^__/xsm
-      && blessed( $arg )
-      && $arg->isa( "OP::Type" ) )
+      && blessed($arg)
+      && $arg->isa("OP::Type") )
     {
 
       #
@@ -171,7 +171,8 @@ sub create {
       #
       $class->asserts()->{$key} = $arg;
 
-    } elsif ( ref( $arg ) && reftype( $arg ) eq 'CODE' ) {
+    }
+    elsif ( ref($arg) && reftype($arg) eq 'CODE' ) {
 
       #
       # Defining a method
@@ -184,7 +185,8 @@ sub create {
         *{"$class\::$key"} = $arg;
       };
 
-    } elsif ( $key =~ /^__\w+$/xsm ) {
+    }
+    elsif ( $key =~ /^__\w+$/xsm ) {
 
       #
       # Setting a class variable
@@ -193,17 +195,17 @@ sub create {
       #
       $class->set( $key, $arg );
 
-    } else {
+    }
+    else {
       throw OP::ClassAllocFailed(
-"$class member $key needs to be an OP::Type instance or CODE ref"
-      );
+        "$class member $key needs to be an OP::Type instance or CODE ref" );
     }
   }
 
   $class->__init();
 
   return $class;
-};
+}
 
 #
 #
@@ -211,9 +213,9 @@ sub create {
 # method get (OP::Class $class: Str $key) {
 sub get {
   my $class = shift;
-  my $key = shift;
+  my $key   = shift;
 
-  $class->__checkVarName( $key );
+  $class->__checkVarName($key);
 
   my @value;
 
@@ -225,7 +227,7 @@ sub get {
   };
 
   return wantarray() ? @value : $value[0];
-};
+}
 
 #
 #
@@ -244,7 +246,7 @@ sub members {
   };
 
   return \@members;
-};
+}
 
 #
 #
@@ -255,12 +257,12 @@ sub membersHash {
 
   my %members;
 
-  for my $key ( @{$class->members()} ) {
+  for my $key ( @{ $class->members() } ) {
     $members{$key} = \&{"$class\::$key"};
   }
 
   return \%members;
-};
+}
 
 #
 #
@@ -268,14 +270,14 @@ sub membersHash {
 # method pretty (OP::Class $class: Str $key) {
 sub pretty {
   my $class = shift;
-  my $key = shift;
+  my $key   = shift;
 
   my $pretty = $key;
 
   $pretty =~ s/(.)([A-Z])/$1 $2/gxsm;
 
   return ucfirst $pretty;
-};
+}
 
 #
 #
@@ -283,10 +285,10 @@ sub pretty {
 # method set (OP::Class $class: Str $key, *@value) {
 sub set {
   my $class = shift;
-  my $key = shift;
+  my $key   = shift;
   my @value = @_;
 
-  $class->__checkVarName( $key );
+  $class->__checkVarName($key);
 
   do {
     no strict "refs";
@@ -296,7 +298,7 @@ sub set {
   };
 
   return true;
-};
+}
 
 ##
 ## End of package

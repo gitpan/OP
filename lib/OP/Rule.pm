@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -35,14 +36,13 @@ use warnings;
 
 use OP::Enum::Bool;
 
-use overload
-  '=~' => sub {
-    my $self = shift;
-    my $value = shift;
-    my $reg = qr/$self/x;
+use overload '=~' => sub {
+  my $self  = shift;
+  my $value = shift;
+  my $reg   = qr/$self/x;
 
-    return $value =~ /$reg/;
-   };
+  return $value =~ /$reg/;
+};
 
 use base qw| OP::Str |;
 
@@ -51,9 +51,7 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isRule, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isRule, @rules );
 
   return $class->__assertClass()->new(%parsed);
 }
@@ -61,13 +59,13 @@ sub assert {
 # method isa(OP::Class $class: Str $what) {
 sub isa {
   my $class = shift;
-  my $what = shift;
+  my $what  = shift;
 
   if ( $what eq 'Regexp' ) {
     return true;
   }
 
-  return UNIVERSAL::isa($class,$what);
+  return UNIVERSAL::isa( $class, $what );
 }
 
 # method sprint() {

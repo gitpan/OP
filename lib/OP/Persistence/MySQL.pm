@@ -46,15 +46,13 @@ use constant RefOpts => [ "CASCADE", "SET NULL", "RESTRICT", "NO ACTION" ];
 sub connect {
   my %args = @_;
 
-  my $dsn = sprintf('DBI:mysql:database=%s;host=%s;port=%s',
-    $args{database}, $args{host}, $args{port}
-  );
+  my $dsn = sprintf( 'DBI:mysql:database=%s;host=%s;port=%s',
+    $args{database}, $args{host}, $args{port} );
 
-  $GlobalDBI::CONNECTION{$args{database}} ||= [
-    $dsn, $args{user}, $args{pass}, { RaiseError => 1 }
-  ];
+  $GlobalDBI::CONNECTION{ $args{database} } ||=
+    [ $dsn, $args{user}, $args{pass}, { RaiseError => 1 } ];
 
-  return GlobalDBI->new(dbname => $args{database});
+  return GlobalDBI->new( dbname => $args{database} );
 }
 
 =pod
@@ -81,15 +79,14 @@ sub __schema {
   #
   my $primaryKey = $class->__primaryKey();
 
-  throw OP::PrimaryKeyMissing(
-    "$class has no __primaryKey set, please fix"
-  ) if !$primaryKey;
+  throw OP::PrimaryKeyMissing( "$class has no __primaryKey set, please fix" )
+    if !$primaryKey;
 
   my $asserts = $class->asserts();
 
   throw OP::PrimaryKeyMissing(
-    "$class did not assert __primaryKey $primaryKey"
-  ) if !exists $asserts->{$primaryKey};
+    "$class did not assert __primaryKey $primaryKey" )
+    if !exists $asserts->{$primaryKey};
 
   #
   # Tack on any UNIQUE secondary keys at the end of the schema
@@ -115,68 +112,67 @@ sub __schema {
 
     next if !$type;
 
-    my $statement = $class->__statementForColumn(
-      $attribute, $type, $foreign, $unique
-    );
+    my $statement =
+      $class->__statementForColumn( $attribute, $type, $foreign, $unique );
 
-    $schema->push( sprintf('  %s,', $statement) )
+    $schema->push( sprintf( '  %s,', $statement ) )
       if $statement;
   }
 
   my $dbiType = $class->__dbiType();
 
   if ( $unique->isEmpty() ) {
-    $schema->push(
-      sprintf('  PRIMARY KEY(%s)', $primaryKey)
-    );
-  } else {
-    $schema->push(
-      sprintf('  PRIMARY KEY(%s),', $primaryKey)
-    );
+    $schema->push( sprintf( '  PRIMARY KEY(%s)', $primaryKey ) );
+  }
+  else {
+    $schema->push( sprintf( '  PRIMARY KEY(%s),', $primaryKey ) );
 
-    my $uniqueStatement = $unique->collect( sub {
-      my $key = $_;
-      my $multiples = $unique->{$key};
+    my $uniqueStatement = $unique->collect(
+      sub {
+        my $key       = $_;
+        my $multiples = $unique->{$key};
 
-      my $item;
+        my $item;
 
-      #
-      # We can't reliably key on multiple columns if any of them are NULL.
-      # MySQL permits this as per the SQL spec, allowing duplicate values,
-      # because the statement ( NULL == NULL ) is always false.
-      #
-      # Basically, this check prevents OP class definitions from trying
-      # to key on something which might be undefined.
-      #
-      # This unfortunately prevents keying on multiple items within
-      # the same class, limiting this functionality to ExtID pointers
-      # only. I'm not sure how else to deal with this as of MySQL 5.
-      #
-      if ( ref $multiples ) {
-        for ( @{ $multiples } ) {
-          if ( !$asserts->{$_} ) {
-            throw OP::AssertFailed(
-              "Can't key on non-existent attribute '$_'"
-            );
-          } elsif ( $asserts->{$_}->optional() ) {
-            throw OP::AssertFailed(
-              "Can't reliably key on ::optional column '$_'"
-            );
+        #
+        # We can't reliably key on multiple columns if any of them are NULL.
+        # MySQL permits this as per the SQL spec, allowing duplicate values,
+        # because the statement ( NULL == NULL ) is always false.
+        #
+        # Basically, this check prevents OP class definitions from trying
+        # to key on something which might be undefined.
+        #
+        # This unfortunately prevents keying on multiple items within
+        # the same class, limiting this functionality to ExtID pointers
+        # only. I'm not sure how else to deal with this as of MySQL 5.
+        #
+        if ( ref $multiples ) {
+          for ( @{$multiples} ) {
+            if ( !$asserts->{$_} ) {
+              throw OP::AssertFailed(
+                "Can't key on non-existent attribute '$_'" );
+            }
+            elsif ( $asserts->{$_}->optional() ) {
+              throw OP::AssertFailed(
+                "Can't reliably key on ::optional column '$_'" );
+            }
           }
+
+          $item = sprintf '  UNIQUE KEY (%s)',
+            join( ", ", $key, @{$multiples} );
+        }
+        elsif ( $multiples && $multiples ne '1' ) {
+          $item = "  UNIQUE KEY($key, $multiples)";
+        }
+        elsif ($multiples) {
+          $item = "  UNIQUE KEY($key)";
         }
 
-        $item = sprintf '  UNIQUE KEY (%s)',
-          join(", ", $key, @{ $multiples });
-      } elsif ( $multiples && $multiples ne '1' ) {
-        $item = "  UNIQUE KEY($key, $multiples)";
-      } elsif ( $multiples ) {
-        $item = "  UNIQUE KEY($key)";
+        if ($item) {
+          OP::Array::yield($item);
+        }
       }
-
-      if ( $item ) {
-        OP::Array::yield($item);
-      }
-    } );
+    );
 
     $schema->push( $uniqueStatement->join(",\n") );
   }
@@ -184,27 +180,31 @@ sub __schema {
   if ( !$foreign->isEmpty() ) {
     $schema->push("  ,");
 
-    $schema->push( $foreign->collect( sub {
-      my $key = $_;
-      my $type = $asserts->{$key};
+    $schema->push(
+      $foreign->collect(
+        sub {
+          my $key  = $_;
+          my $type = $asserts->{$key};
 
-      my $foreignClass = $type->memberClass();
+          my $foreignClass = $type->memberClass();
 
-      my $deleteRefOpt = $type->onDelete() || 'RESTRICT';
-      my $updateRefOpt = $type->onUpdate() || 'CASCADE';
+          my $deleteRefOpt = $type->onDelete() || 'RESTRICT';
+          my $updateRefOpt = $type->onUpdate() || 'CASCADE';
 
-      my $template = join("\n",
-        '  FOREIGN KEY (%s) REFERENCES %s (%s)',
-        "    ON DELETE $deleteRefOpt",
-        "    ON UPDATE $updateRefOpt"
-      );
+          my $template = join( "\n",
+            '  FOREIGN KEY (%s) REFERENCES %s (%s)',
+            "    ON DELETE $deleteRefOpt",
+            "    ON UPDATE $updateRefOpt" );
 
-      OP::Array::yield( sprintf( $template,
-        $_,
-        $foreignClass->tableName(),
-        $foreignClass->__primaryKey()
-      ) );
-    } )->join(",\n") );
+          OP::Array::yield(
+            sprintf( $template,
+              $_,
+              $foreignClass->tableName(),
+              $foreignClass->__primaryKey() )
+          );
+        }
+        )->join(",\n")
+    );
   }
 
   $schema->push(") ENGINE=INNODB DEFAULT CHARACTER SET=utf8;");
@@ -220,16 +220,16 @@ sub __serialType {
 }
 
 sub __statementForColumn {
-  my $class = shift;
+  my $class     = shift;
   my $attribute = shift;
-  my $type = shift;
-  my $foreign = shift;
-  my $unique = shift;
+  my $type      = shift;
+  my $foreign   = shift;
+  my $unique    = shift;
 
-  if (
-    $type->objectClass()->isa("OP::Hash")
-     || $type->objectClass()->isa("OP::Array")
-  ) {
+  if ( $type->objectClass()->isa("OP::Hash")
+    || $type->objectClass()->isa("OP::Array") )
+  {
+
     #
     # Value lives in a link table, not in this class's table
     #
@@ -237,6 +237,7 @@ sub __statementForColumn {
   }
 
   if ( $type->objectClass->isa("OP::ExtID") ) {
+
     #
     # Value references a foreign key
     #
@@ -254,7 +255,8 @@ sub __statementForColumn {
 
   if ( $type->columnType() ) {
     $datatype = $type->columnType();
-  } else {
+  }
+  else {
     $datatype = 'TEXT';
   }
 
@@ -266,58 +268,55 @@ sub __statementForColumn {
   #
   # Permitting NULL/undef values for this key?
   #
-  my $notNull = $type->optional()
+  my $notNull =
+    $type->optional()
     ? ''
     : 'NOT NULL';
 
   my $attr = OP::Array->new();
 
-  if (
-    defined $type->default()
+  if ( defined $type->default()
     && $datatype !~ /^text/i
-    && $datatype !~ /^blob/i
-  ) {
+    && $datatype !~ /^blob/i )
+  {
+
     #
     # A default() modifier was provided in the assertion,
     # so plug it in to the database table schema:
     #
-    my $quotedDefault = $class->quote($type->default());
+    my $quotedDefault = $class->quote( $type->default() );
 
-    $attr->push(
-      $attribute,
-      $datatype,
-      'DEFAULT',
-      $quotedDefault
-    );
-  } else {
+    $attr->push( $attribute, $datatype, 'DEFAULT', $quotedDefault );
+  }
+  else {
+
     #
     # No default() was specified:
     #
-    $attr->push(
-      $attribute,
-      $datatype
-    );
+    $attr->push( $attribute, $datatype );
   }
 
   $attr->push($notNull) if $notNull;
-  $attr->push($serial) if $serial;
+  $attr->push($serial)  if $serial;
 
   return $attr->join(" ");
 }
 
 sub __wrapWithReconnect {
   my $class = shift;
-  my $sub = shift;
+  my $sub   = shift;
 
   my $return;
 
-  while(1) {
+  while (1) {
     try {
       $return = &$sub;
-    } catch Error with {
+    }
+    catch Error with {
       my $error = shift;
 
-      if ( $error =~ /server has gone away|can't connect|unable to connect/is ) {
+      if ( $error =~ /server has gone away|can't connect|unable to connect/is )
+      {
         my $dbName = $class->databaseName;
 
         my $sleepTime = 1;
@@ -334,7 +333,9 @@ sub __wrapWithReconnect {
 
         delete $OP::Persistence::dbi->{$dbName}->{$$};
         delete $OP::Persistence::dbi->{$dbName};
-      } else {
+      }
+      else {
+
         #
         # Rethrow
         #
@@ -343,7 +344,7 @@ sub __wrapWithReconnect {
     };
 
     last if $return;
-  };
+  }
 
   return $return;
 }
@@ -364,7 +365,7 @@ sub __init {
 
   $sth->finish();
 
-  if ( !$tables{$class->tableName()} ) {
+  if ( !$tables{ $class->tableName() } ) {
     $class->__createTable();
   }
 
@@ -375,12 +376,12 @@ sub __quoteDatetimeInsert {
   my $class = shift;
   my $value = shift;
 
-  return sprintf('FROM_UNIXTIME(%i)', $value->escape);
+  return sprintf( 'FROM_UNIXTIME(%i)', $value->escape );
 }
 
 sub __quoteDatetimeSelect {
   my $class = shift;
-  my $attr = shift;
+  my $attr  = shift;
 
   return "UNIX_TIMESTAMP($attr) AS $attr";
 }

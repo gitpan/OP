@@ -145,23 +145,23 @@ use Error qw| :try |;
 use OP::Enum::Bool;
 use OP::Exceptions;
 use OP::Redefines;
-use OP::Persistence::MySQL; # For RefOpts constants
+use OP::Persistence::MySQL;    # For RefOpts constants
 
 use base qw| Exporter OP::Class::Dumper OP::Class |;
 
 our @EXPORT_OK = qw| subtype |;
 
 # sub insist($value, Code $code) { &$code($value) }
-sub insist{
+sub insist {
   my $value = shift;
-  my $code = shift;
+  my $code  = shift;
 
-  return &$code($value)
+  return &$code($value);
 }
 
 # sub member(Str $key, OP::Type $type) {
 sub member {
-  my $key = shift;
+  my $key  = shift;
   my $type = shift;
 
   return false unless defined($key);
@@ -179,7 +179,7 @@ sub member {
 use constant isStr => sub {
   my $value = shift;
 
-  my ($package, $filename, $line) = caller(1);
+  my ( $package, $filename, $line ) = caller(1);
 
   throw OP::AssertFailed("undef is not a string, check $package:$line")
     if !defined $value;
@@ -197,7 +197,7 @@ use constant isFloat => sub {
   throw OP::AssertFailed("undef is not a number")
     if !defined $value;
 
-  my $tempValue = sprintf('%.10f', $value);
+  my $tempValue = sprintf( '%.10f', $value );
 
   throw OP::AssertFailed("Received value is not a number")
     if !Scalar::Util::looks_like_number($value);
@@ -218,7 +218,7 @@ use constant isInt => sub {
 use constant isArray => sub {
   my $value = shift;
 
-  if ( ref($value) && UNIVERSAL::isa($value, 'ARRAY') ) {
+  if ( ref($value) && UNIVERSAL::isa( $value, 'ARRAY' ) ) {
     return true;
   }
 
@@ -228,11 +228,10 @@ use constant isArray => sub {
 use constant isBool => sub {
   my $value = shift;
 
-  if (
-    !defined($value)
-      || !Scalar::Util::looks_like_number($value)
-      || ( ( $value != 0 ) && ( $value != 1 ) )
-  ) {
+  if ( !defined($value)
+    || !Scalar::Util::looks_like_number($value)
+    || ( ( $value != 0 ) && ( $value != 1 ) ) )
+  {
     throw OP::AssertFailed("Received value must be 0 or 1, not: $value");
   }
 
@@ -252,7 +251,7 @@ use constant isCode => sub {
 use constant isHash => sub {
   my $value = shift;
 
-  if ( ref($value) && UNIVERSAL::isa($value, 'HASH') ) {
+  if ( ref($value) && UNIVERSAL::isa( $value, 'HASH' ) ) {
     return true;
   }
 
@@ -349,9 +348,9 @@ Consumed args are as follows:
 # method new(OP::Type $class: *%args) {
 sub new {
   my $class = shift;
-  my %args = @_;
+  my %args  = @_;
 
-  my $self = { };
+  my $self = {};
 
   for my $key ( keys %args ) {
     $self->{"__$key"} = $args{$key};
@@ -359,7 +358,6 @@ sub new {
 
   return bless $self, $class;
 }
-
 
 =pod
 
@@ -381,25 +379,27 @@ XXX TODO This would be much faster as a hash table keyed on value
 # method allowed(Str ?$key) {
 sub allowed {
   my $self = shift;
-  my $key = shift;
+  my $key  = shift;
 
   return if !$self->{__allowed} || !ref $self->{__allowed};
 
-  if ( ref($self->{__allowed}) eq 'CODE' ) {
+  if ( ref( $self->{__allowed} ) eq 'CODE' ) {
+
     #
     # Allowed values are derived from a function at runtime:
     #
     my $answer = &{ $self->{__allowed} }( $self, $key );
 
-    return @{ $answer };
-  } else {
+    return @{$answer};
+  }
+  else {
+
     #
     # Allowed values are specified in a hard coded list:
     #
     return @{ $self->{__allowed} };
   }
 }
-
 
 =pod
 
@@ -420,7 +420,6 @@ sub code {
   return $self->{__code};
 }
 
-
 =pod
 
 =item * $type->memberType()
@@ -437,7 +436,6 @@ sub memberType {
   return $self->{__memberType};
 }
 
-
 =pod
 
 =item * $type->memberClass()
@@ -453,7 +451,6 @@ sub memberClass {
 
   return $self->{__memberClass};
 }
-
 
 =pod
 
@@ -478,17 +475,16 @@ sub externalClass {
   my $extClass;
 
   if ( $self->isa("OP::Type::ExtID") ) {
-    $extClass = $self->memberClass()
-  } elsif (
-    $self->isa("OP::Type::Array")
-      && $self->memberType()->isa("OP::Type::ExtID")
-  ) {
+    $extClass = $self->memberClass();
+  }
+  elsif ( $self->isa("OP::Type::Array")
+    && $self->memberType()->isa("OP::Type::ExtID") )
+  {
     $extClass = $self->memberType()->memberClass();
   }
 
   return $extClass;
 }
-
 
 =pod
 
@@ -508,7 +504,7 @@ sub objectClass {
   return $self->class()
     ? $self->class()->get("objectClass")
     : $self->get("objectClass");
-};
+}
 
 =pod
 
@@ -531,7 +527,6 @@ sub class {
   return ref($self);
 }
 
-
 =pod
 
 =item * $type->test($key, $value)
@@ -549,8 +544,8 @@ and into the assertion code tests. Will make things cleaner and faster.
 
 # method test(Str $key, $value) {
 sub test {
-  my $self = shift;
-  my $key = shift;
+  my $self  = shift;
+  my $key   = shift;
   my $value = shift;
 
   #
@@ -559,12 +554,11 @@ sub test {
   if ( !defined $value ) {
     if ( $self->optional() ) {
       return true;
-    } else {
+    }
+    else {
       my ( $package, $filename, $line ) = caller;
 
-      throw OP::AssertFailed(
-        "undef is not permitted for $key"
-      );
+      throw OP::AssertFailed( "undef is not permitted for $key" );
     }
   }
 
@@ -574,26 +568,23 @@ sub test {
   my @allowed = $self->allowed($value);
 
   if ( @allowed && !grep { $_ eq $value } @allowed ) {
-    throw OP::AssertFailed(
-      "Value \"$value\" is not permitted for $key"
-    );
+    throw OP::AssertFailed( "Value \"$value\" is not permitted for $key" );
   }
 
   my $default = $self->default();
 
   my $defaultRef = ref($default);
-  my $valueRef = ref($value);
+  my $valueRef   = ref($value);
 
   #
   # Compare size against fixed or min/max sizes
   #
-  if (
-    defined $self->size()
+  if ( defined $self->size()
     || defined $self->minSize()
-    || defined $self->maxSize()
-  ) {
+    || defined $self->maxSize() )
+  {
     my $haveSize;
-    my $wantSize = $self->size(); # For fixed size asserts
+    my $wantSize = $self->size();    # For fixed size asserts
 
     my $minSize = $self->minSize();
     my $maxSize = $self->maxSize();
@@ -601,57 +592,63 @@ sub test {
     #
     # Determine what the "size" of the object in the current context is
     #
-    if ( !$valueRef || UNIVERSAL::isa($value, "OP::Scalar") ) {
+    if ( !$valueRef || UNIVERSAL::isa( $value, "OP::Scalar" ) ) {
+
       #
       # Scalar length
       #
       $haveSize = length($value);
-    } elsif ( UNIVERSAL::isa($value, 'ARRAY') ) {
+    }
+    elsif ( UNIVERSAL::isa( $value, 'ARRAY' ) ) {
+
       #
       # Array size
       #
-      $haveSize = scalar(@{ $value });
-    } elsif ( UNIVERSAL::isa($value, 'HASH') ) {
+      $haveSize = scalar( @{$value} );
+    }
+    elsif ( UNIVERSAL::isa( $value, 'HASH' ) ) {
+
       #
       # Key count
       #
-      $haveSize = scalar(keys %{ $value });
-    } else {
+      $haveSize = scalar( keys %{$value} );
+    }
+    else {
+
       #
       # Unknown
       #
       throw OP::RuntimeError(
-        "UNSUPPORTED (FIXME?): Can't tell size of a $valueRef for $key"
-      );
+        "UNSUPPORTED (FIXME?): Can't tell size of a $valueRef for $key" );
     }
 
     if ( defined $wantSize ) {
+
       #
       # Fixed size was specified
       #
       if ( $wantSize != $haveSize ) {
         throw OP::AssertFailed(
           sprintf 'Received size for %s was %i, needs to be %i',
-            $key, $haveSize, $wantSize
-        );
+          $key, $haveSize, $wantSize );
       }
-      
-    } else {
+
+    }
+    else {
+
       #
       # Min and/or max sizes were specified
       #
       if ( defined $minSize && $haveSize < $minSize ) {
         throw OP::AssertFailed(
           sprintf 'Received size for %s was %i, needs to be >= %i',
-            $key, $haveSize, $minSize
-        );
+          $key, $haveSize, $minSize );
       }
 
       if ( defined $maxSize && $haveSize > $maxSize ) {
         throw OP::AssertFailed(
           sprintf 'Received size for %s was %i, needs to be <= %i',
-            $key, $haveSize, $maxSize
-        );
+          $key, $haveSize, $maxSize );
       }
     }
   }
@@ -666,29 +663,26 @@ sub test {
     if ( defined $min && "$value" < $min ) {
       throw OP::AssertFailed(
         sprintf 'Received value of %s was %f, needs to be >= %f',
-          $key, $value, $min
-      );
+        $key, $value, $min );
     }
 
     if ( defined $max && "$value" > $max ) {
       throw OP::AssertFailed(
         sprintf 'Received value for %s was %f, needs to be <= %f',
-          $key, $value, $max
-      );
+        $key, $value, $max );
     }
   }
 
   #
   # Compare value against a required regex match
   #
-  if ( defined($value) && defined($self->regex()) ) {
+  if ( defined($value) && defined( $self->regex() ) ) {
     my $regex = $self->regex();
 
     if ( $value !~ /$regex/ ) {
       throw OP::AssertFailed(
         sprintf 'Received value for %s was %s, needs to match /%s/',
-          $key, $value, $regex
-      );
+        $key, $value, $regex );
     }
   }
 
@@ -699,35 +693,31 @@ sub test {
 
   if ( !$sub ) {
     throw OP::RuntimeError(
-      "BUG IN CALLER: No code block set in assertion for key $key"
-    );
+      "BUG IN CALLER: No code block set in assertion for key $key" );
   }
 
   try {
     insist $value, $sub;
-  } catch Error with {
+  }
+  catch Error with {
     my $error = $_[0];
 
-    throw OP::AssertFailed(
-      sprintf 'Assertion for %s "%s" failed: %s',
-        $key, $value, $error
-    );
+    throw OP::AssertFailed( sprintf 'Assertion for %s "%s" failed: %s',
+      $key, $value, $error );
   };
 
   #
   # Test individual array elements
   #
-  if (
-    ref($value) && $self->memberType()
-      && $self->memberType()->objectClass()->isa("OP::Array")
-  ) {
-    for my $element ( @{ $value } ) {
-      my $memberSuccess = $self->memberType->test($key, $element);
+  if ( ref($value)
+    && $self->memberType()
+    && $self->memberType()->objectClass()->isa("OP::Array") )
+  {
+    for my $element ( @{$value} ) {
+      my $memberSuccess = $self->memberType->test( $key, $element );
 
       if ( !$memberSuccess ) {
-        throw OP::AssertFailed(
-          "Element assertion for key $key failed"
-        );
+        throw OP::AssertFailed( "Element assertion for key $key failed" );
       }
     }
   }
@@ -747,6 +737,7 @@ sub test {
 # assertion rules (you'll need to modify test() to handle new cases)
 #
 our %RULES = (
+
   # max => sub(Num $value) {
   max => sub {
     my $value = shift;
@@ -758,7 +749,7 @@ our %RULES = (
   columnType => sub {
     my $value = shift;
 
-    insist( $value, isStr ) && return uc( $value );
+    insist( $value, isStr ) && return uc($value);
   },
 
   # default => sub(*@value) {
@@ -767,9 +758,11 @@ our %RULES = (
 
     if ( scalar(@value) == 0 ) {
       return undef;
-    } elsif ( scalar(@value) == 1 ) {
+    }
+    elsif ( scalar(@value) == 1 ) {
       return $value[0];
-    } else {
+    }
+    else {
       return \@value;
     }
   },
@@ -815,7 +808,7 @@ our %RULES = (
     my $value = shift;
 
     insist( $value, isStr )
-      && ( grep { uc($value) eq $_ } @{ ( OP::Persistence::MySQL::RefOpts ) } )
+      && ( grep { uc($value) eq $_ } @{ (OP::Persistence::MySQL::RefOpts) } )
       || ( throw OP::InvalidArgument("Invalid reference option specified") );
 
     return uc($value);
@@ -826,7 +819,7 @@ our %RULES = (
     my $value = shift;
 
     insist( $value, isStr )
-      && ( grep { uc($value) eq $_ } @{ ( OP::Persistence::MySQL::RefOpts ) } )
+      && ( grep { uc($value) eq $_ } @{ (OP::Persistence::MySQL::RefOpts) } )
       || ( throw OP::InvalidArgument("Invalid reference option specified") );
 
     return uc($value);
@@ -834,9 +827,8 @@ our %RULES = (
 
   # optional => sub() {
   optional => sub {
-    throw OP::InvalidArgument(
-      "Extra arguments received by optional()"
-    ) if @_ > 1;
+    throw OP::InvalidArgument( "Extra arguments received by optional()" )
+      if @_ > 1;
 
     return $_[0] ? true : false;
   },
@@ -849,9 +841,8 @@ our %RULES = (
   },
 
   serial => sub {
-    throw OP::InvalidArgument(
-      "Extra arguments received by serial()"
-    ) if @_ > 1;
+    throw OP::InvalidArgument( "Extra arguments received by serial()" )
+      if @_ > 1;
 
     return $_[0] ? true : false;
   },
@@ -902,20 +893,23 @@ our %RULES = (
     # combinatory key, up to whatever the InnoDB byte
     # limit for keys is (768ish)
     #
-    if ( $value && !ref($value)
-      && !Scalar::Util::looks_like_number($value)
-    ) {
-      $value = [ $value ];
+    if ( $value
+      && !ref($value)
+      && !Scalar::Util::looks_like_number($value) )
+    {
+      $value = [$value];
     }
 
-    if ( $value && UNIVERSAL::isa($value, 'ARRAY') ) {
+    if ( $value && UNIVERSAL::isa( $value, 'ARRAY' ) ) {
+
       #
       # Keying on multiple items:
       #
-      for my $key ( @{ $value } ) {
+      for my $key ( @{$value} ) {
         insist( $key, isStr );
       }
-    } else {
+    }
+    else {
       $value = $value ? true : false;
     }
 
@@ -971,23 +965,26 @@ for ( keys %RULES ) {
 # sub __parseTypeArgs(Code $testSub, *@args) {
 sub __parseTypeArgs {
   my $testSub = shift;
-  my @args = @_;
+  my @args    = @_;
 
   my %parsed;
 
   my @allowedValues;
 
   if ( scalar @args ) {
-    for my $value ( @args ) {
+    for my $value (@args) {
       my $ref = ref($value) || "";
       $ref =~ s/.*:://;
 
       if ( $ref && $RULES{$ref} ) {
+
         #
         # Matches a rule; return result of the rule's value test
         #
         $parsed{$ref} = &{ $RULES{$ref} }( $value->value() );
-      } elsif ( !$ref || UNIVERSAL::isa($ref,'OP::Subtype::default') ) {
+      }
+      elsif ( !$ref || UNIVERSAL::isa( $ref, 'OP::Subtype::default' ) ) {
+
         #
         # Is a default or literal value, test against received testSub.
         #
@@ -1006,9 +1003,10 @@ sub __parseTypeArgs {
   #
   # Check to see if we have an array or a coderef:
   #
-  $parsed{allowed} = @allowedValues == 1
-    && ref($allowedValues[0])
-    && UNIVERSAL::isa($allowedValues[0], "CODE")
+  $parsed{allowed} =
+       @allowedValues == 1
+    && ref( $allowedValues[0] )
+    && UNIVERSAL::isa( $allowedValues[0], "CODE" )
     ? $allowedValues[0]
     : \@allowedValues;
 
@@ -1020,18 +1018,21 @@ sub __parseTypeArgs {
 sub subtype {
   my $rules = OP::Hash->new(@_);
 
-  return $rules->collect( sub {
-    my $key   = shift;
-    my $value = $rules->{$key};
+  return $rules->collect(
+    sub {
+      my $key   = shift;
+      my $value = $rules->{$key};
 
-    my $ruleClass = join("::", "OP::Subtype", $key);
+      my $ruleClass = join( "::", "OP::Subtype", $key );
 
-    if ( UNIVERSAL::isa($ruleClass, "OP::Subtype") ) {
-      OP::Array::yield($ruleClass->new($value));
-    } else {
-      OP::RuntimeError->throw("Unknown subtype class $ruleClass");
+      if ( UNIVERSAL::isa( $ruleClass, "OP::Subtype" ) ) {
+        OP::Array::yield( $ruleClass->new($value) );
+      }
+      else {
+        OP::RuntimeError->throw("Unknown subtype class $ruleClass");
+      }
     }
-  } )->value();
+  )->value();
 }
 
 =pod

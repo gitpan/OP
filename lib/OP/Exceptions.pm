@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -61,12 +62,12 @@ my @__types = qw|
   TimeoutExceeded
   TransactionFailed
   WrongHost
-|;
+  |;
 
 our @types;
 
-for my $type ( @__types ) {
-  my $class = sprintf('OP::%s', $type);
+for my $type (@__types) {
+  my $class = sprintf( 'OP::%s', $type );
 
   eval qq|
     package $class;

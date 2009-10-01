@@ -11,17 +11,18 @@ sub import {
 
   my $caller = caller;
 
-  my $temprc = join("/", $path, ".oprc");
+  my $temprc = join( "/", $path, ".oprc" );
 
-  return __setenv($caller, $path) if -e $temprc;
+  return __setenv( $caller, $path ) if -e $temprc;
 
   if ( !-d $path ) {
     die "$path is not a directory (weird)";
-  } elsif ( !-w $path ) {
+  }
+  elsif ( !-w $path ) {
     die "$path is not writable (can't make a temp .oprc)";
   }
 
-  if ( !open(OPRC, ">", $temprc) ) {
+  if ( !open( OPRC, ">", $temprc ) ) {
     my $reason = $! || "Unusable filesystem ($temprc unwritable)";
 
     die($reason);
@@ -45,7 +46,7 @@ yamlHost: ~
 |;
   close(OPRC);
 
-  __setenv($caller, $path);
+  __setenv( $caller, $path );
 
   $Backends = OP::Hash->new;
 
@@ -63,13 +64,12 @@ yamlHost: ~
     $dbdMysqlIsInstalled++;
   };
 
-  if ( $dbdMysqlIsInstalled ) {
+  if ($dbdMysqlIsInstalled) {
     eval {
       my $dbname = 'op';
 
-      my $dsn = sprintf('DBI:mysql:database=%s;host=%s;port=%s',
-        $dbname, 'localhost', 3306
-      );
+      my $dsn = sprintf( 'DBI:mysql:database=%s;host=%s;port=%s',
+        $dbname, 'localhost', 3306 );
 
       my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
         || die DBI->errstr;
@@ -84,9 +84,7 @@ yamlHost: ~
     };
   }
 
-  if (
-    $dbdMysqlIsInstalled && !$Backends->{"MySQL"}
-  ) {
+  if ( $dbdMysqlIsInstalled && !$Backends->{"MySQL"} ) {
     print "----------------------------------------------------------\n";
     print "If you would like to enable DB tests for OP, please remedy the\n";
     print "issue shown in the diagnostic message below. You will need to\n";
@@ -96,7 +94,7 @@ yamlHost: ~
     print "> create database op;\n";
     print "> grant all on op.* to op\@localhost;\n";
 
-    if ( $@ ) {
+    if ($@) {
       my $error = $@;
       chomp $error;
 
@@ -107,22 +105,21 @@ yamlHost: ~
     }
   }
 
-  $Backends->{"Memcached"} = scalar(
-    keys %{ $OP::Persistence::memd->server_versions }
-  );
+  $Backends->{"Memcached"} =
+    scalar( keys %{ $OP::Persistence::memd->server_versions } );
 
   return 1;
 }
 
 sub __setenv {
   my $caller = shift;
-  my $path = shift;
+  my $path   = shift;
 
   $ENV{OP_HOME} = $path;
 
   eval q| use OP qw(:all) |;
 
-  for ( @OP::EXPORT ) {
+  for (@OP::EXPORT) {
     do {
       no warnings "once";
       no strict "refs";
@@ -136,6 +133,7 @@ sub __setenv {
 
 1;
 __END__
+
 =pod
 
 =head1 NAME

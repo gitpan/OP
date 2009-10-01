@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -66,22 +67,25 @@ use OP::Enum::Bool;
 
 use base qw| OP::Float |;
 
-use overload fallback => true, %OP::Num::overload,
+use overload
+  fallback => true,
+  %OP::Num::overload,
   '*' => sub { my $a = shift; my $b = shift; return "$a" * "$b" };
 
 sub new {
-  my $class = shift;
+  my $class   = shift;
   my $greater = shift;
-  my $lesser = shift;
+  my $lesser  = shift;
 
   my $self;
 
   if ( defined $lesser ) {
-    OP::Type::insist($greater, OP::Type::isInt);
-    OP::Type::insist($lesser, OP::Type::isInt);
+    OP::Type::insist( $greater, OP::Type::isInt );
+    OP::Type::insist( $lesser,  OP::Type::isInt );
 
-    $self = join(".", $greater, $lesser);
-  } else {
+    $self = join( ".", $greater, $lesser );
+  }
+  else {
     $self = $greater;
   }
 
@@ -90,22 +94,25 @@ sub new {
 
   $self = "$self";
 
-  OP::Type::insist($self, OP::Type::isFloat);
+  OP::Type::insist( $self, OP::Type::isFloat );
 
   my ( $msv, $lsv );
 
   if ( $self =~ /e/ ) {
-    ( $msv, $lsv ) = split(/\./, sprintf('%.10f', $self));
+    ( $msv, $lsv ) = split( /\./, sprintf( '%.10f', $self ) );
 
-  } elsif ( $self !~ /\./ ) {
+  }
+  elsif ( $self !~ /\./ ) {
     $msv = $self;
     $lsv = 0;
-  } elsif ( $self =~ /^\./ ) {
+  }
+  elsif ( $self =~ /^\./ ) {
     $msv = 0;
     $lsv = $self;
     $lsv =~ s/\.//;
-  } else {
-    ( $msv, $lsv ) = split(/\./, $self);
+  }
+  else {
+    ( $msv, $lsv ) = split( /\./, $self );
   }
 
   return bless [ $msv, $lsv ], $class;
@@ -116,9 +123,7 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isFloat, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isFloat, @rules );
 
   $parsed{default} = "0.0000000000" if !exists $parsed{default};
   $parsed{columnType} ||= 'DOUBLE(30,10)';
@@ -134,10 +139,8 @@ sub value {
   do {
     no warnings "numeric";
 
-    $value = join(".",
-      sprintf('%i', $self->[0]), 
-      sprintf('%s', $self->[1])
-    );
+    $value =
+      join( ".", sprintf( '%i', $self->[0] ), sprintf( '%s', $self->[1] ) );
   };
 
   return $value;

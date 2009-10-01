@@ -8,6 +8,7 @@
 # which accompanies this distribution, and is available at
 # http://opensource.org/licenses/cpl1.0.txt
 #
+
 =pod
 
 =head1 NAME
@@ -46,12 +47,10 @@ sub assert {
   my $class = shift;
   my @rules = @_;
 
-  my %parsed = OP::Type::__parseTypeArgs(
-    OP::Type::isFloat, @rules
-  );
+  my %parsed = OP::Type::__parseTypeArgs( OP::Type::isFloat, @rules );
 
   $parsed{default} = "0.0" if !exists $parsed{default};
-  $parsed{columnType}  ||= 'FLOAT';
+  $parsed{columnType} ||= 'FLOAT';
 
   return $class->__assertClass()->new(%parsed);
 }

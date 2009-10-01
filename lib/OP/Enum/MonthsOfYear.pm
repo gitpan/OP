@@ -10,10 +10,10 @@
 #
 package OP::Enum::MonthsOfYear;
 
-use OP::Enum qw| 
+use OP::Enum qw|
   JAN=1 FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC
   _JAN=0 _FEB _MAR _APR _MAY _JUN _JUL _AUG _SEP _OCT _NOV _DEC
-|;
+  |;
 
 eval { @EXPORT = @EXPORT_OK };
 

@@ -52,24 +52,24 @@ sub assert {
   my $test = sub {
     my $value = shift;
 
-    if ( ref($value) && UNIVERSAL::isa($value, $class) ) {
+    if ( ref($value) && UNIVERSAL::isa( $value, $class ) ) {
       return true;
     }
 
     throw OP::AssertFailed("Received value is not a $class");
   };
 
-  my %parsed = OP::Type::__parseTypeArgs($test, @rules);
+  my %parsed = OP::Type::__parseTypeArgs( $test, @rules );
 
   $parsed{columnType} ||= 'TEXT';
 
   return $class->__assertClass()->new(%parsed);
-};
+}
 
 # method new(OP::Class $class: *@args) {
 sub new {
   my $class = shift;
-  my @args = @_;
+  my @args  = @_;
 
   my $self = $class->SUPER::new(@args);
 
