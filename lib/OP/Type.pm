@@ -391,8 +391,7 @@ sub allowed {
     my $answer = &{ $self->{__allowed} }( $self, $key );
 
     return @{$answer};
-  }
-  else {
+  } else {
 
     #
     # Allowed values are specified in a hard coded list:
@@ -476,8 +475,7 @@ sub externalClass {
 
   if ( $self->isa("OP::Type::ExtID") ) {
     $extClass = $self->memberClass();
-  }
-  elsif ( $self->isa("OP::Type::Array")
+  } elsif ( $self->isa("OP::Type::Array")
     && $self->memberType()->isa("OP::Type::ExtID") )
   {
     $extClass = $self->memberType()->memberClass();
@@ -554,11 +552,10 @@ sub test {
   if ( !defined $value ) {
     if ( $self->optional() ) {
       return true;
-    }
-    else {
+    } else {
       my ( $package, $filename, $line ) = caller;
 
-      throw OP::AssertFailed( "undef is not permitted for $key" );
+      throw OP::AssertFailed("undef is not permitted for $key");
     }
   }
 
@@ -568,7 +565,7 @@ sub test {
   my @allowed = $self->allowed($value);
 
   if ( @allowed && !grep { $_ eq $value } @allowed ) {
-    throw OP::AssertFailed( "Value \"$value\" is not permitted for $key" );
+    throw OP::AssertFailed("Value \"$value\" is not permitted for $key");
   }
 
   my $default = $self->default();
@@ -598,28 +595,25 @@ sub test {
       # Scalar length
       #
       $haveSize = length($value);
-    }
-    elsif ( UNIVERSAL::isa( $value, 'ARRAY' ) ) {
+    } elsif ( UNIVERSAL::isa( $value, 'ARRAY' ) ) {
 
       #
       # Array size
       #
       $haveSize = scalar( @{$value} );
-    }
-    elsif ( UNIVERSAL::isa( $value, 'HASH' ) ) {
+    } elsif ( UNIVERSAL::isa( $value, 'HASH' ) ) {
 
       #
       # Key count
       #
       $haveSize = scalar( keys %{$value} );
-    }
-    else {
+    } else {
 
       #
       # Unknown
       #
       throw OP::RuntimeError(
-        "UNSUPPORTED (FIXME?): Can't tell size of a $valueRef for $key" );
+        "UNSUPPORTED (FIXME?): Can't tell size of a $valueRef for $key");
     }
 
     if ( defined $wantSize ) {
@@ -633,8 +627,7 @@ sub test {
           $key, $haveSize, $wantSize );
       }
 
-    }
-    else {
+    } else {
 
       #
       # Min and/or max sizes were specified
@@ -693,7 +686,7 @@ sub test {
 
   if ( !$sub ) {
     throw OP::RuntimeError(
-      "BUG IN CALLER: No code block set in assertion for key $key" );
+      "BUG IN CALLER: No code block set in assertion for key $key");
   }
 
   try {
@@ -717,7 +710,7 @@ sub test {
       my $memberSuccess = $self->memberType->test( $key, $element );
 
       if ( !$memberSuccess ) {
-        throw OP::AssertFailed( "Element assertion for key $key failed" );
+        throw OP::AssertFailed("Element assertion for key $key failed");
       }
     }
   }
@@ -758,11 +751,9 @@ our %RULES = (
 
     if ( scalar(@value) == 0 ) {
       return undef;
-    }
-    elsif ( scalar(@value) == 1 ) {
+    } elsif ( scalar(@value) == 1 ) {
       return $value[0];
-    }
-    else {
+    } else {
       return \@value;
     }
   },
@@ -827,7 +818,7 @@ our %RULES = (
 
   # optional => sub() {
   optional => sub {
-    throw OP::InvalidArgument( "Extra arguments received by optional()" )
+    throw OP::InvalidArgument("Extra arguments received by optional()")
       if @_ > 1;
 
     return $_[0] ? true : false;
@@ -841,7 +832,7 @@ our %RULES = (
   },
 
   serial => sub {
-    throw OP::InvalidArgument( "Extra arguments received by serial()" )
+    throw OP::InvalidArgument("Extra arguments received by serial()")
       if @_ > 1;
 
     return $_[0] ? true : false;
@@ -908,8 +899,7 @@ our %RULES = (
       for my $key ( @{$value} ) {
         insist( $key, isStr );
       }
-    }
-    else {
+    } else {
       $value = $value ? true : false;
     }
 
@@ -982,8 +972,7 @@ sub __parseTypeArgs {
         # Matches a rule; return result of the rule's value test
         #
         $parsed{$ref} = &{ $RULES{$ref} }( $value->value() );
-      }
-      elsif ( !$ref || UNIVERSAL::isa( $ref, 'OP::Subtype::default' ) ) {
+      } elsif ( !$ref || UNIVERSAL::isa( $ref, 'OP::Subtype::default' ) ) {
 
         #
         # Is a default or literal value, test against received testSub.
@@ -1027,8 +1016,7 @@ sub subtype {
 
       if ( UNIVERSAL::isa( $ruleClass, "OP::Subtype" ) ) {
         OP::Array::yield( $ruleClass->new($value) );
-      }
-      else {
+      } else {
         OP::RuntimeError->throw("Unknown subtype class $ruleClass");
       }
     }

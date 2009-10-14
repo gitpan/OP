@@ -46,7 +46,8 @@ use YAML::Syck;
 use OP::Constants qw| yamlRoot scratchRoot syslogHost |;
 use OP::Exceptions;
 
-my $logger = syslogHost
+my $logger =
+  syslogHost
   ? Net::Syslog->new(
   Facility   => 'local1',
   Priority   => 'info',
@@ -117,17 +118,13 @@ sub humanSize {
 
   if ( $int >= Tera ) {
     $str = sprintf( "\%.02f T$label", $int / Tera );
-  }
-  elsif ( $int >= Giga ) {
+  } elsif ( $int >= Giga ) {
     $str = sprintf( "\%.02f G$label", $int / Giga );
-  }
-  elsif ( $int >= Mega ) {
+  } elsif ( $int >= Mega ) {
     $str = sprintf( "\%.02f M$label", $int / Mega );
-  }
-  elsif ( $int >= Kilo ) {
+  } elsif ( $int >= Kilo ) {
     $str = sprintf( "\%.02f K$label", $int / Kilo );
-  }
-  else {
+  } else {
     $str = sprintf( "\%.02f $label", $int );
   }
 
@@ -155,26 +152,19 @@ sub humanTime {
 
   if ( $num >= Year ) {
     $str = sprintf( '%.02f years', $num / Year );
-  }
-  elsif ( $num >= Month ) {
+  } elsif ( $num >= Month ) {
     $str = sprintf( '%.02f months', $num / Month );
-  }
-  elsif ( $num >= Week ) {
+  } elsif ( $num >= Week ) {
     $str = sprintf( '%.02f weeks', $num / Week );
-  }
-  elsif ( $num >= Day ) {
+  } elsif ( $num >= Day ) {
     $str = sprintf( '%.02f days', $num / Day );
-  }
-  elsif ( $num >= Hour ) {
+  } elsif ( $num >= Hour ) {
     $str = sprintf( '%.02f hours', $num / Hour );
-  }
-  elsif ( $num >= Minute ) {
+  } elsif ( $num >= Minute ) {
     $str = sprintf( '%.02f mins', $num / Minute );
-  }
-  elsif ( $num >= Second ) {
+  } elsif ( $num >= Second ) {
     $str = sprintf( '%.02f secs', $num / Second );
-  }
-  else {
+  } else {
     $str = sprintf( '%.02f ms', $num / Millisecond );
   }
 
@@ -411,8 +401,7 @@ sub dieHandler {
       $longmess
       ? Carp::longmess( $exception->stacktrace() )
       : Carp::shortmess( $exception->stacktrace() );
-  }
-  else {
+  } else {
 
     #
     # die($string) was called:
@@ -432,8 +421,7 @@ sub dieHandler {
       $message
       ? formatErrorString($message)
       : $exception;
-  }
-  else {
+  } else {
     $errStr =
       $message
       ? join( "  ", $firstLine, formatErrorString($message) )

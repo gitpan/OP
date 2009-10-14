@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:                OP
-version:             0.317
-abstract:            Compact prototyping of InnoDB-backed object classes
+version:             0.318
+abstract:            Compact prototyping of schema-backed object classes
 license:             open_source
 author:              
     - Alex Ayars <pause@nodekit.org>

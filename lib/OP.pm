@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.317';
+our $VERSION = '0.318';
 
 use strict;
 use diagnostics;
@@ -79,17 +79,7 @@ __END__
 
 =head1 NAME
 
-OP - Compact prototyping of InnoDB-backed object classes
-
-=head1 VERSION
-
-This documentation is for version B<0.317> of OP.
-
-=head1 STATUS
-
-The usual pre-1.0 warnings apply. Consider this alpha code. It does what
-we currently ask of it, and maybe a little more, but it is a work in
-progress.
+OP - Compact prototyping of schema-backed object classes
 
 =head1 SYNOPSIS
 
@@ -106,7 +96,7 @@ A cheat sheet, C<ex/cheat.html>, is included with this distribution.
 
 =head1 DESCRIPTION
 
-OP is a Perl 5 framework for prototyping InnoDB-backed object
+OP is a Perl 5 framework for prototyping schema-backed object
 classes.
 
 Using OP's C<create()> function, the developer asserts rules for
@@ -114,7 +104,15 @@ object classes. OP's purpose is to automatically derive a database
 schema, handle object-relational mapping, and provide input validation
 for classes created in this manner.
 
-This document covers the high-level concepts implemented in OP.
+OP works with MySQL/InnoDB, SQLite, and YAML flatfile. If the
+backing store type for a class is not specified, OP will try to
+determine the best type for the local system. If memcached is
+available, OP will use it in conjunction with the permanent backing
+store.
+
+=head1 VERSION
+
+This documentation is for version B<0.318> of OP.
 
 =head1 EXPORT TAGS
 
@@ -143,6 +141,8 @@ This imports C<true> and C<false> boolean constants.
 This imports the C<yield>, C<emit>, and C<break> functions for array
 collectors; see L<OP::Array>.
 
+=back
+
 =head1 FRAMEWORK ASSUMPTIONS
 
 When using OP, as with any framework, a number of things "just happen"
@@ -155,13 +155,8 @@ See CONFIGURATION AND ENVIRONMENT in this document.
 
 =head2 Classes Make Tables
 
-The core function of OP is to derive database tables from the
-assertions contained in object classes. OP creates the tables that
-it needs.
-
-If, rather, you need to derive object classes from a database schema,
-you may want to take a look at L<Class::DBI> and other similar
-packages on the CPAN, which specialize in doing just that.
+OP derives database schemas from the assertions contained in object
+classes, and creates the tables that it needs.
 
 =head2 Default Base Attributes
 
@@ -381,36 +376,6 @@ Native types are OK for setters:
   # "OP::Int"
 
 
-=head1 ABSTRACT CLASSES & MIX-INS
-
-=over 4
-
-=item * L<OP::Class> - Abstract "Class" class
-
-=item * L<OP::Class::Dumper> - Introspection mix-in
-
-=item * L<OP::Object> - Abstract object class
-
-=item * L<OP::Persistence> - Storage and retrieval mix-in
-
-=item * L<OP::Persistence::Bulk> - Deferred fast bulk table writes
-
-=item * L<OP::Persistence::Generic> - Base for vendor-specific DBI modules
-
-=item * L<OP::Persistence::MySQL> - MySQL/InnoDB-specific runtime overrides
-
-=item * L<OP::Persistence::SQLite> - SQLite-specific runtime overrides
-
-=item * L<OP::Node> - Abstract stored object class
-
-=item * L<OP::Type> - Instance variable typing
-
-=item * L<OP::Scalar> - Base class for scalar values
-
-=item * L<OP::Subtype> - Instance variable subtyping
-
-=back
-
 =head1 CORE OBJECT TYPES
 
 The basic types listed here may be instantiated as objects, and asserted
@@ -460,6 +425,36 @@ as inline attributes.
 
 =back
 
+=head1 ABSTRACT CLASSES & MIX-INS
+
+=over 4
+
+=item * L<OP::Class> - Abstract "Class" class
+
+=item * L<OP::Class::Dumper> - Introspection mix-in
+
+=item * L<OP::Object> - Abstract object class
+
+=item * L<OP::Persistence> - Storage and retrieval mix-in
+
+=item * L<OP::Persistence::Bulk> - Deferred fast bulk table writes
+
+=item * L<OP::Persistence::Generic> - Base for vendor-specific DBI modules
+
+=item * L<OP::Persistence::MySQL> - MySQL/InnoDB-specific runtime overrides
+
+=item * L<OP::Persistence::SQLite> - SQLite-specific runtime overrides
+
+=item * L<OP::Node> - Abstract stored object class
+
+=item * L<OP::Type> - Instance variable typing
+
+=item * L<OP::Scalar> - Base class for scalar values
+
+=item * L<OP::Subtype> - Instance variable subtyping
+
+=back
+
 =head1 HELPER MODULES
 
 =over 4
@@ -474,33 +469,35 @@ as inline attributes.
 
 =over 4
 
-=item * C<bin/opconf> - Generate an .oprc on the local machine
+=item * C<opconf> - Generate an .oprc on the local machine
 
-=item * C<bin/oped> - Edit OP objects using VIM and YAML
+=item * C<oped> - Edit OP objects using VIM and YAML
 
-=item * C<bin/opid> - Dump OP objects to STDOUT in various formats
+=item * C<opid> - Dump OP objects to STDOUT in various formats
 
 =back
 
-
 =head1 CONFIGURATION AND ENVIRONMENT
 
-=head2 OP_HOME + .oprc
+=head2 OP and your DBA
 
-OP needs to be able to find a valid .oprc file in order to bootstrap
-itself. This lives under $ENV{OP_HOME}, which defaults to the current
-user's home directory.
+If using MySQL, your app's database and the "op" database should
+exist with the proper access prior to use - see L<OP::Persistence::MySQL>.
+
+=head2 OP_HOME and .oprc
+
+OP looks for its config file, C<.oprc>, under $ENV{OP_HOME}. OP_HOME
+defaults to the current user's home directory.
 
 To generate a first-time config for the local machine, copy the
 .oprc (included with this distribution as C<oprc-dist>) to the
-proper location, or run C<bin/opconf> (also included with this
-distribution) as the user who will be running OP. This is a
-post-install step which is not currently handled by C<make install>.
+proper location, or run C<opconf> (also included with this distribution)
+as the user who will be running OP.
 
 See L<OP::Constants> for information regarding customizing and
 extending the local rc file.
 
-=head2 OP + mod_perl
+=head2 OP and mod_perl
 
 OP-based classes used in a mod_perl app should be preloaded by a
 startup script. OP_HOME must be set in the script's BEGIN block.

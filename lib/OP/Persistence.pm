@@ -112,8 +112,6 @@ use constant DefaultPrimaryKey => "id";
 
 =head1 PUBLIC CLASS METHODS
 
-=head2 General
-
 =over 4
 
 =item * $class->load($id)
@@ -135,7 +133,6 @@ not found.
 
 =cut
 
-# method load(OP::Class $class: Str $id) {
 sub load {
   my $class = shift;
   my $id    = shift;
@@ -144,12 +141,6 @@ sub load {
 }
 
 =pod
-
-=back
-
-=head2 Database I/O
-
-=over 4
 
 =item * $class->query($query)
 
@@ -179,7 +170,6 @@ Reconnects to database, if necessary.
 
 =cut
 
-# method query(OP::Class $class: Str $query) {
 sub query {
   my $class = shift;
   my $query = shift;
@@ -191,7 +181,7 @@ sub query {
 
 =item * $class->write()
 
-Runs the received query against the reporting database, using the
+Runs the received query against the database, using the
 DBI do() method. Returns number of rows updated.
 
 Reconnects to database, if necessary.
@@ -209,12 +199,146 @@ Reconnects to database, if necessary.
 
 =cut
 
-# method write(OP::Class $class: Str $query) {
 sub write {
   my $class = shift;
   my $query = shift;
 
   return $class->__wrapWithReconnect( sub { return $class->__write($query) } );
+}
+
+=pod
+
+=item * $class->selectBool($query)
+
+Returns the results of the received query, as a binary true or false value.
+
+=cut
+
+sub selectBool {
+  my $class = shift;
+  my $query = shift;
+
+  return $class->selectSingle($query)->shift ? true : false;
+}
+
+sub __selectBool {
+  warn "Depracated usage; please use selectBool";
+
+  return selectBool(@_);
+}
+
+=pod
+
+=item * $class->selectSingle($query)
+
+Returns the first row of results from the received query, as a
+one-dimensional OP::Array.
+
+  sub($$) {
+    my $class = shift;
+    my $name = shift;
+
+    my $query = sprintf( q|
+        SELECT mtime, ctime FROM %s WHERE name = %s
+      |,
+      $class->tableName(), $class->quote($name)
+    );
+
+    return $class->selectSingle($query);
+  }
+
+  #
+  # Flat array of selected values, ie:
+  #
+  #   [ *userId, *ctime ]
+  #
+
+=cut
+
+sub selectSingle {
+  my $class = shift;
+  my $query = shift;
+
+  my $sth = $class->query($query);
+
+  my $out = OP::Array->new();
+
+  while ( my @row = $sth->fetchrow_array() ) {
+    $out->push(@row);
+  }
+
+  $sth->finish();
+
+  return $out;
+}
+
+sub __selectSingle {
+  warn "Depracated usage; please use selectSingle";
+
+  return selectSingle(@_);
+}
+
+
+=pod
+
+=item * $class->selectMulti($query)
+
+Returns each row of results from the received query, as a one-dimensional
+OP::Array.
+
+  my $query = "SELECT userId FROM session";
+
+  #
+  # Flat array of User IDs, ie:
+  #
+  #   [
+  #     *userId,
+  #     *userId,
+  #     ...
+  #   ]
+  #
+  my $userIds = $class->selectMulti($query);
+
+
+Returns a two-dimensional OP::Array of OP::Arrays, if * or multiple
+columns are specified in the query.
+
+  my $query = "SELECT userId, mtime FROM session";
+
+  #
+  # Array of arrays, ie:
+  #
+  #   [
+  #     [ *userId, *mtime ],
+  #     [ *userId, *mtime ],
+  #     ...
+  #   ]
+  #
+  my $idsWithTime = $class->selectMulti($query);
+
+=cut
+
+sub selectMulti {
+  my $class = shift;
+  my $query = shift;
+
+  my $sth = $class->query($query);
+
+  my $results = OP::Array->new();
+
+  while ( my @row = $sth->fetchrow_array() ) {
+    $results->push( @row > 1 ? OP::Array->new(@row) : $row[0] );
+  }
+
+  $sth->finish();
+
+  return $results;
+}
+
+sub __selectMulti {
+  warn "Depracated usage; please use selectMulti";
+
+  return selectMulti(@_);
 }
 
 =pod
@@ -245,7 +369,6 @@ Returns an OP::Array of all object ids in the receiving class.
 
 =cut
 
-# method allIds(OP::Class $class:) {
 sub allIds {
   my $class = shift;
 
@@ -300,7 +423,6 @@ Example A:
 
 =cut
 
-# method memberClass(OP::Class $class: Str $key) {
 sub memberClass {
   my $class = shift;
   my $key   = shift;
@@ -331,7 +453,7 @@ sub doesIdExist {
   my $class = shift;
   my $id    = shift;
 
-  return $class->__selectBool(
+  return $class->selectBool(
     $class->__doesIdExistStatement( $class->__primaryKeyClass->new($id) ) );
 }
 
@@ -353,13 +475,12 @@ sub doesNameExist {
   my $class = shift;
   my $name  = shift;
 
-  return $class->__selectBool( $class->__doesNameExistStatement($name) );
+  return $class->selectBool( $class->__doesNameExistStatement($name) );
 }
 
 #
 # Overrides
 #
-# method pretty (OP::Class $class: Str $key) {
 sub pretty {
   my $class = shift;
   my $key   = shift;
@@ -386,7 +507,6 @@ Loader for named objects. Works just as load().
 
 =cut
 
-# method loadByName(OP::Class $class: Str $name) {
 sub loadByName {
   my $class = shift;
   my $name  = shift;
@@ -395,15 +515,14 @@ sub loadByName {
     my $caller = caller();
 
     throw OP::InvalidArgument(
-      "BUG (Check $caller): empty name sent to loadByName(\$name)" );
+      "BUG (Check $caller): empty name sent to loadByName(\$name)");
   }
 
   my $id = $class->idForName($name);
 
   if ( defined $id ) {
     return $class->load($id);
-  }
-  else {
+  } else {
     my $table = $class->tableName();
     my $db    = $class->databaseName();
 
@@ -412,7 +531,7 @@ sub loadByName {
     # return undef;
 
     throw OP::ObjectNotFound(
-      "Object name \"$name\" does not exist in table $db.$table" );
+      "Object name \"$name\" does not exist in table $db.$table");
   }
 }
 
@@ -427,7 +546,6 @@ exist on backing store, a new object with the received name is returned.
 
 =cut
 
-# method spawn(OP::Class $class: Str $name) {
 sub spawn {
   my $class = shift;
   my $name  = shift;
@@ -436,8 +554,7 @@ sub spawn {
 
   if ( defined $id ) {
     return $class->load($id);
-  }
-  else {
+  } else {
     my $self = $class->proto;
 
     $self->setName($name);
@@ -464,7 +581,7 @@ sub idForName {
   my $class = shift;
   my $name  = shift;
 
-  return $class->__selectSingle( $class->__idForNameStatement($name) )->shift;
+  return $class->selectSingle( $class->__idForNameStatement($name) )->shift;
 }
 
 =pod
@@ -481,7 +598,7 @@ sub nameForId {
   my $class = shift;
   my $id    = shift;
 
-  return $class->__selectSingle(
+  return $class->selectSingle(
     $class->__nameForIdStatement( $class->__primaryKeyClass->new($id) ) )
     ->shift;
 }
@@ -502,13 +619,12 @@ Returns a list of all object ids in the receiving class. Requires DBI.
 
 =cut
 
-# method allNames(OP::Class $class:) {
 sub allNames {
   my $class = shift;
 
   if ( !$class->__useDbi() ) {
     throw OP::MethodIsAbstract(
-      "Sorry, allNames() requires a DBI backing store" );
+      "Sorry, allNames() requires a DBI backing store");
   }
 
   my $sth = $class->__allNamesSth();
@@ -534,7 +650,6 @@ Returns a DBI-quoted (escaped) version of the received value. Requires DBI.
 
 =cut
 
-# method quote(OP::Class $class: Str $value) {
 sub quote {
   my $class = shift;
   my $value = shift;
@@ -558,7 +673,6 @@ the lower-cased first-level Perl namespace, unless overridden in subclass.
 
 =cut
 
-# method databaseName(OP::Class $class:) {
 sub databaseName {
   my $class = shift;
 
@@ -594,7 +708,6 @@ namespace.
 
 =cut
 
-# method tableName(OP::Class $class:) {
 sub tableName {
   my $class = shift;
 
@@ -623,7 +736,6 @@ a seperate linked table.
 
 =cut
 
-# method columnNames(OP::Class $class:) {
 sub columnNames {
   my $class = shift;
 
@@ -632,11 +744,95 @@ sub columnNames {
 
 =pod
 
-=back
+=item * $class->elementClass($key);
 
-=head2 YAML Input
+Returns the dynamic subclass used for an Array or Hash attribute.
 
-=over 4
+Instances of the element class represent rows in a linked table.
+
+  #
+  # File: Example.pm
+  #
+  create "YourApp::Example" => {
+    testArray => OP::Array->assert( ... )
+
+  };
+
+  #
+  # File: testcaller.pl
+  #
+  my $elementClass = YourApp::Example->elementClass("testArray");
+
+  print "$elementClass\n"; # YourApp::Example::testArray
+
+In the above example, YourApp::Example::testArray is the name of
+the dynamic subclass which was allocated as a container for
+YourApp::Example's array elements.
+
+=cut
+
+sub elementClass {
+  my $class = shift;
+  my $key   = shift;
+
+  return if !$class->__useDbi;
+
+  my $elementClasses = $class->get("__elementClasses");
+
+  if ( !$elementClasses ) {
+    $elementClasses = OP::Hash->new();
+
+    $class->set( "__elementClasses", $elementClasses );
+  }
+
+  if ( $elementClasses->{$key} ) {
+    return $elementClasses->{$key};
+  }
+
+  my $asserts = $class->asserts();
+
+  my $type = $asserts->{$key};
+
+  my $elementClass;
+
+  if ($type) {
+    my $base = $class->__baseAsserts();
+    delete $base->{name};
+
+    if ( $type->objectClass()->isa('OP::Array') ) {
+      $elementClass = join( "::", $class, $key );
+
+      create $elementClass => {
+        __dbiType => $class->__dbiType,
+
+        name     => OP::Name->assert( OP::Type::subtype( optional => true ) ),
+        parentId => OP::ExtID->assert($class),
+        elementIndex => OP::Int->assert(),
+        elementValue => $type->memberType()
+      };
+
+    } elsif ( $type->objectClass()->isa('OP::Hash') ) {
+      $elementClass = join( "::", $class, $key );
+
+      my $memberClass = $class->memberClass($key);
+
+      create $elementClass => {
+        __dbiType => $class->__dbiType,
+
+        name       => OP::Name->assert( OP::Type::subtype( optional => true ) ),
+        parentId   => OP::ExtID->assert($class),
+        elementKey => OP::Str->assert(),
+        elementValue => OP::Str->assert(),
+      };
+    }
+  }
+
+  $elementClasses->{$key} = $elementClass;
+
+  return $elementClass;
+}
+
+=pod
 
 =item * $class->loadYaml($string)
 
@@ -654,7 +850,6 @@ Warns and returns undef if the load fails.
 
 =cut
 
-# method loadYaml(OP::Class $class: Str $yaml) {
 sub loadYaml {
   my $class = shift;
   my $yaml  = shift;
@@ -680,7 +875,6 @@ Warns and returns undef if the load fails.
 
 =cut
 
-# method loadJson(OP::Class $class: Str $json) {
 sub loadJson {
   my $class = shift;
   my $json  = shift;
@@ -737,15 +931,7 @@ sub restore {
 
 =head1 PRIVATE CLASS METHODS
 
-=head2 Class Callback Methods
-
-Callback methods should be overridden when allocating a class with
-C<create()> or C<package>, but only if the defaults are not what the
-developer desires. Callback methods typically won't be used by external
-callers. This section documents the default behavior of OP::Persistence
-class callbacks, and provides override examples.
-
-For ease of use, most of these methods can be overridden simply by
+The __use<Feature> methods listed below can be overridden simply by
 setting a class variable with the same name, as the examples illustrate.
 
 =over 4
@@ -754,7 +940,8 @@ setting a class variable with the same name, as the examples illustrate.
 
 Return a true value to maintain a YAML backend for all saved objects.
 
-Default inherited value is false. Set class variable to override.
+Default inherited value is the best detected value for the local
+system. Set class variable to override.
 
 YAML and DBI backing stores are not mutually exclusive. Classes may
 use either, both, or neither, depending on use case.
@@ -782,21 +969,27 @@ version restores:
   create "YourApp::Example::DbiPlusRcs" => {
     __useYaml => true,
     __useRcs  => true,
+    __useDbi  => true,
   };
 
 Use C<__yamlHost> to enforce a master host for YAML/RCS archives.
 
 =cut
 
-# method __useYaml(OP::Class $class:) {
 sub __useYaml {
   my $class = shift;
 
-  if ( !defined $class->get("__useYaml") ) {
-    $class->set( "__useYaml", false );
+  my $useYaml = $class->get("__useYaml");
+
+  if ( !defined $useYaml ) {
+    my %args = __autoArgs();
+
+    $useYaml = $args{"__useYaml"};
+
+    $class->set( "__useYaml", $useYaml );
   }
 
-  return $class->get("__useYaml");
+  return $useYaml;
 }
 
 =pod
@@ -820,7 +1013,6 @@ store.
 
 =cut
 
-# method __useRcs(OP::Class $class:) {
 sub __useRcs {
   my $class = shift;
 
@@ -831,8 +1023,7 @@ sub __useRcs {
   my $use = $class->get("__useRcs");
 
   if ( $use && !$class->__useYaml ) {
-    OP::RuntimeError->throw(
-      "Using RCS without also using YAML has no effect" );
+    OP::RuntimeError->throw("Using RCS without also using YAML has no effect");
   }
 
   return $use;
@@ -883,7 +1074,8 @@ If __useDbi() returns true, the database type specified by
 __dbiType() (MySQL, SQLite) will be used.  See __dbiType() for how to
 override the class's database type.
 
-Default inherited value is true. Set class variable to override.
+Default inherited value is the best detected value for the local
+system. Set class variable to override.
 
   create "YourApp::Example" => {
     __useDbi => false
@@ -891,14 +1083,15 @@ Default inherited value is true. Set class variable to override.
 
 =cut
 
-# method __useDbi(OP::Class $class:) {
 sub __useDbi {
   my $class = shift;
 
   my $useDbi = $class->get("__useDbi");
 
-  if ( !defined $useDbi ) {
-    $useDbi = true;
+  if ( !defined($useDbi) ) {
+    my %args = __autoArgs();
+
+    $useDbi = $args{__useDbi};
 
     $class->set( "__useDbi", $useDbi );
   }
@@ -921,7 +1114,7 @@ will load from the physical backing store.
 Default inherited value is 300 seconds (5 minutes). Set class variable
 to override.
 
-  create "OP::CachedExample" => {
+  create "YourApp::CachedExample" => {
     #
     # Ten minute TTL on cached objects:
     #
@@ -930,7 +1123,7 @@ to override.
 
 Set to C<false> or 0 to disable caching.
 
-  create "OP::NeverCachedExample" => {
+  create "YourApp::NeverCachedExample" => {
     #
     # No caching in play:
     #
@@ -939,7 +1132,6 @@ Set to C<false> or 0 to disable caching.
 
 =cut
 
-# method __useMemcached(OP::Class $class:) {
 sub __useMemcached {
   my $class = shift;
 
@@ -964,8 +1156,8 @@ Returns a constant from the L<OP::Enum::DBIType> enumeration. Currently,
 valid return values are OP::Enum::DBIType::MySQL and
 OP::Enum::DBIType::SQLite.
 
-Default inherited value is OP::Enum::DBIType::MySQL. Set class variable
-to override.
+Default inherited value is the best detected value for the local
+system. Set class variable to override.
 
   create "YourApp::Example" => {
     __dbiType => OP::Enum::DBIType::SQLite
@@ -973,15 +1165,55 @@ to override.
 
 =cut
 
-# method __dbiType(OP::Class $class:) {
 sub __dbiType {
   my $class = shift;
 
-  if ( !defined $class->get("__dbiType") ) {
-    $class->set( "__dbiType", OP::Enum::DBIType::MySQL );
+  my $type = $class->get("__dbiType");
+
+  if ( !defined($type) ) {
+    my %args = __autoArgs();
+
+    $type = $args{__dbiType};
+
+    $class->set( "__dbiType", $type );
   }
 
-  return $class->get("__dbiType");
+  return $type;
+}
+
+my %createArgs;
+
+sub __autoArgs {
+  return %createArgs if %createArgs;
+
+  eval {
+    $createArgs{__useDbi}  = false;
+    $createArgs{__useYaml} = true;
+    $createArgs{__dbiType} = OP::Enum::DBIType::SQLite;
+
+    require DBD::SQLite;
+
+    $createArgs{__useDbi}  = true;
+    $createArgs{__useYaml} = false;
+
+    require DBD::mysql;
+
+    my $dbname = 'op';
+
+    my $dsn = sprintf( 'DBI:mysql:database=%s;host=%s;port=%s',
+      $dbname, dbHost, dbPort );
+
+    my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
+      || die DBI->errstr;
+
+    my $sth = $dbh->prepare("show tables") || die $dbh->errstr;
+    $sth->execute || die $sth->errstr;
+    $sth->fetchall_arrayref() || die $sth->errstr;
+
+    $createArgs{__dbiType} = OP::Enum::DBIType::MySQL;
+  };
+
+  return %createArgs;
 }
 
 =pod
@@ -1003,7 +1235,6 @@ name, mtime, ctime.
 
 =cut
 
-# method __baseAsserts(OP::Class $class:) {
 sub __baseAsserts {
   my $class = shift;
 
@@ -1065,7 +1296,6 @@ To override the base path in subclass if needed:
 
 =cut
 
-# method __basePath(OP::Class $class:) {
 sub __basePath {
   my $class = shift;
 
@@ -1082,7 +1312,6 @@ By default, this just tucks "RCS" onto the end of C<__basePath()>.
 
 =cut
 
-# method __baseRcsPath(OP::Class $class:) {
 sub __baseRcsPath {
   my $class = shift;
 
@@ -1091,12 +1320,6 @@ sub __baseRcsPath {
 
 =pod
 
-=back
-
-=head2 General
-
-=over 4
-
 =item * $class->__primaryKey()
 
 Returns the name of the attribute representing this class's primary
@@ -1104,7 +1327,6 @@ ID. Unless overridden, this method returns the string "id".
 
 =cut
 
-# method __primaryKey(OP::Class $class:) {
 sub __primaryKey {
   my $class = shift;
 
@@ -1143,19 +1365,16 @@ Load the object with the received ID from the backing store.
 
 =cut
 
-# method __localLoad(OP::Class $class: Str $id) {
 sub __localLoad {
   my $class = shift;
   my $id    = shift;
 
   if ( $class->__useDbi() ) {
     return $class->__loadFromDatabase($id);
-  }
-  elsif ( $class->__useYaml() ) {
+  } elsif ( $class->__useYaml() ) {
     return $class->__loadYamlFromId($id);
-  }
-  else {
-    throw OP::MethodIsAbstract( "Backing store not implemented for $class" );
+  } else {
+    throw OP::MethodIsAbstract("Backing store not implemented for $class");
   }
 }
 
@@ -1187,22 +1406,15 @@ sub __loadFromMemcached {
 
 =pod
 
-=back
-
-=head2 Database I/O
-
-=over 4
-
 =item * $class->__loadFromDatabase($id)
 
-Instantiates an object by id, from the reporting database rather than
+Instantiates an object by id, from the database rather than
 the YAML backing store.
 
   my $object = $class->__loadFromDatabase($id);
 
 =cut
 
-# method __loadFromDatabase(OP::Class $class: Str $id) {
 sub __loadFromDatabase {
   my $class = shift;
   my $id    = shift;
@@ -1220,7 +1432,7 @@ sub __loadFromDatabase {
     my $db    = $class->databaseName();
 
     throw OP::ObjectNotFound(
-      "Object id \"$id\" does not exist in table $db.$table" );
+      "Object id \"$id\" does not exist in table $db.$table");
   }
 
   return $self;
@@ -1242,7 +1454,6 @@ Returns true on success, otherwise throws an exception.
 
 =cut
 
-# method __marshal(OP::Class $class: Hash $self) {
 sub __marshal {
   my $class = shift;
   my $self  = shift;
@@ -1332,8 +1543,7 @@ sub __marshal {
 
           $self->{$key} = $array;
 
-        }
-        elsif ( $type->objectClass()->isa('OP::Hash') ) {
+        } elsif ( $type->objectClass()->isa('OP::Hash') ) {
           my $elementClass = $class->elementClass($key);
 
           my $hash = $type->objectClass()->new();
@@ -1382,71 +1592,14 @@ sub __marshal {
   # more checks as a developer's safety net.
   #
   throw OP::DataConversionFailed(
-    "Couldn't bless $self into $class- did new() reject input?" )
+    "Couldn't bless $self into $class- did new() reject input?")
     if !$newRefType;
 
   throw OP::DataConversionFailed(
-    "Couldn't bless $self into $class- got $newRefType instead (weird)" )
+    "Couldn't bless $self into $class- got $newRefType (weird)")
     if $newRefType ne $class;
 
   return $self;
-}
-
-# method elementClass(OP::Class $class: Str $key) {
-sub elementClass {
-  my $class = shift;
-  my $key   = shift;
-
-  my $elementClasses = $class->get("__elementClasses");
-
-  if ( !$elementClasses ) {
-    $elementClasses = OP::Hash->new();
-
-    $class->set( "__elementClasses", $elementClasses );
-  }
-
-  if ( $elementClasses->{$key} ) {
-    return $elementClasses->{$key};
-  }
-
-  my $asserts = $class->asserts();
-
-  my $type = $asserts->{$key};
-
-  my $elementClass;
-
-  if ($type) {
-    my $base = $class->__baseAsserts();
-    delete $base->{name};
-
-    if ( $type->objectClass()->isa('OP::Array') ) {
-      $elementClass = join( "::", $class, $key );
-
-      create $elementClass => {
-        name     => OP::Name->assert( OP::Type::subtype( optional => true ) ),
-        parentId => OP::ExtID->assert($class),
-        elementIndex => OP::Int->assert(),
-        elementValue => $type->memberType()
-      };
-
-    }
-    elsif ( $type->objectClass()->isa('OP::Hash') ) {
-      $elementClass = join( "::", $class, $key );
-
-      my $memberClass = $class->memberClass($key);
-
-      create $elementClass => {
-        name       => OP::Name->assert( OP::Type::subtype( optional => true ) ),
-        parentId   => OP::ExtID->assert($class),
-        elementKey => OP::Str->assert(),
-        elementValue => OP::Str->assert(),
-      };
-    }
-  }
-
-  $elementClasses->{$key} = $elementClass;
-
-  return $elementClass;
 }
 
 =pod
@@ -1467,11 +1620,10 @@ Returns a statement handle to iterate over all ids. Requires DBI.
 
 =cut
 
-# method __allIdsSth(OP::Class $class:) {
 sub __allIdsSth {
   my $class = shift;
 
-  throw OP::MethodIsAbstract( "$class->__allIdsSth() requires DBI in class" )
+  throw OP::MethodIsAbstract("$class->__allIdsSth() requires DBI in class")
     if !$class->__useDbi();
 
   return $class->query( $class->__allIdsStatement() );
@@ -1495,11 +1647,10 @@ Returns a statement handle to iterate over all names in class. Requires DBI.
 
 =cut
 
-# method __allNamesSth(OP::Class $class:) {
 sub __allNamesSth {
   my $class = shift;
 
-  throw OP::MethodIsAbstract( "$class->__allNamesSth() requires DBI in class" )
+  throw OP::MethodIsAbstract("$class->__allNamesSth() requires DBI in class")
     if !$class->__useDbi();
 
   return $class->query( $class->__allNamesStatement() );
@@ -1513,7 +1664,6 @@ Begins a new SQL transation.
 
 =cut
 
-# method __beginTransaction(OP::Class $class:) {
 sub __beginTransaction {
   my $class = shift;
 
@@ -1528,7 +1678,6 @@ Rolls back the current SQL transaction.
 
 =cut
 
-# method __rollbackTransaction(OP::Class $class:) {
 sub __rollbackTransaction {
   my $class = shift;
 
@@ -1543,7 +1692,6 @@ Commits the current SQL transaction.
 
 =cut
 
-# method __commitTransaction(OP::Class $class:) {
 sub __commitTransaction {
   my $class = shift;
 
@@ -1558,7 +1706,6 @@ Returns the SQL used to begin a SQL transaction
 
 =cut
 
-# method __beginTransactionStatement(OP::Class $class:) {
 sub __beginTransactionStatement {
   my $class = shift;
 
@@ -1573,7 +1720,6 @@ Returns the SQL used to commit a SQL transaction
 
 =cut
 
-# method __commitTransactionStatement(OP::Class $class:) {
 sub __commitTransactionStatement {
   my $class = shift;
 
@@ -1588,7 +1734,6 @@ Returns the SQL used to rollback a SQL transaction
 
 =cut
 
-# method __rollbackTransactionStatement(OP::Class $class:) {
 sub __rollbackTransactionStatement {
   my $class = shift;
 
@@ -1603,7 +1748,6 @@ Returns the SQL used to construct the receiving class's table.
 
 =cut
 
-# method __schema(OP::Class $class:) {
 sub __schema {
   my $class = shift;
 
@@ -1624,7 +1768,6 @@ other attributes which it is uniquely keyed with.
 
 =cut
 
-# method __concatNameStatement(OP::Class $class:) {
 sub __concatNameStatement {
   my $class = shift;
 
@@ -1640,9 +1783,6 @@ syntax.
 
 =cut
 
-# method __statementForColumn(OP::Class $class:
-#   Str $attribute, OP::Type $type, OP::Array $foreign, OP::Hash $unique
-# ) {
 sub __statementForColumn {
   my $class = shift;
 
@@ -1664,7 +1804,6 @@ Returns the key for storing and retrieving this record in Memcached.
 
 =cut
 
-# method __cacheKey(OP::Class $class: Str $id) {
 sub __cacheKey {
   my $class = shift;
   my $id    = shift;
@@ -1673,7 +1812,7 @@ sub __cacheKey {
     my $caller = caller();
 
     throw OP::InvalidArgument(
-      "BUG (Check $caller): $class->__cacheKey(\$id) received undef for \$id" );
+      "BUG (Check $caller): $class->__cacheKey(\$id) received undef for \$id");
   }
 
   my $qid = join( '/', $class, $id );
@@ -1696,7 +1835,6 @@ Drops the receiving class's database table.
 
 =cut
 
-# method __dropTable(OP::Class $class:) {
 sub __dropTable {
   my $class = shift;
 
@@ -1715,11 +1853,30 @@ Creates the receiving class's database table
 
 =cut
 
-# method __createTable(OP::Class $class:) {
 sub __createTable {
   my $class = shift;
 
   return $class->__dispatch('__createTable');
+}
+
+=pod
+
+=item * $class->__selectTableName()
+
+Returns a string representing the name of the class's current table.
+
+For DBs which support cross-database queries, this returns
+C<databaseName> concatenated with C<tableName> (eg. "yourdb.yourclass"),
+otherwise this method just returns the same value as C<tableName>.
+
+Delegates to the class's vendor-specific override.
+
+=cut
+
+sub __selectTableName() {
+  my $class = shift;
+
+  return $class->__dispatch('__selectTableName');
 }
 
 =pod
@@ -1730,7 +1887,6 @@ Returns the SQL used to select a record by id.
 
 =cut
 
-# method __selectRowStatement(OP::Class $class: Str $id) {
 sub __selectRowStatement {
   my $class = shift;
   my $id    = shift;
@@ -1746,7 +1902,6 @@ Returns the SQL used to generate a list of all record names
 
 =cut
 
-# method __allNamesStatement(OP::Class $class:) {
 sub __allNamesStatement {
   my $class = shift;
 
@@ -1761,14 +1916,12 @@ Returns the SQL used to generate a list of all record ids
 
 =cut
 
-# method __allIdsStatement(OP::Class $class:) {
 sub __allIdsStatement {
   my $class = shift;
 
   return $class->__dispatch('__allIdsStatement');
 }
 
-# method __write(OP::Class $class: Str $query) {
 sub __write {
   my $class = shift;
   my $query = shift;
@@ -1786,14 +1939,12 @@ sub __write {
   return $rows;
 }
 
-# method __wrapWithReconnect(OP::Class $class: Code $sub) {
 sub __wrapWithReconnect {
   my $class = shift;
 
   return $class->__dispatch( '__wrapWithReconnect', @_ );
 }
 
-# method __query(OP::Class $class: Str $query) {
 sub __query {
   my $class = shift;
   my $query = shift;
@@ -1820,125 +1971,6 @@ sub __query {
 
 =pod
 
-=item * $class->__selectBool($query)
-
-Returns the results of the received query, as a binary true or false value.
-
-=cut
-
-# method __selectBool(OP::Class $class: Str $query) {
-sub __selectBool {
-  my $class = shift;
-  my $query = shift;
-
-  return $class->__selectSingle($query)->shift ? true : false;
-}
-
-=pod
-
-=item * $class->__selectSingle($query)
-
-Returns the first row of results from the received query, as a
-one-dimensional OP::Array.
-
-  sub($$) {
-    my $class = shift;
-    my $name = shift;
-
-    my $query = sprintf( q|
-        SELECT mtime, ctime FROM %s WHERE name = %s
-      |,
-      $class->tableName(), $class->quote($name)
-    );
-
-    return $class->__selectSingle($query);
-  }
-
-  #
-  # Flat array of selected values, ie:
-  #
-  #   [ *userId, *ctime ]
-  #
-
-=cut
-
-# method __selectSingle(OP::Class $class: Str $query) {
-sub __selectSingle {
-  my $class = shift;
-  my $query = shift;
-
-  my $sth = $class->query($query);
-
-  my $out = OP::Array->new();
-
-  while ( my @row = $sth->fetchrow_array() ) {
-    $out->push(@row);
-  }
-
-  $sth->finish();
-
-  return $out;
-}
-
-=pod
-
-=item * $class->__selectMulti($query)
-
-Returns each row of results from the received query, as a one-dimensional
-OP::Array.
-
-  my $query = "SELECT userId FROM session";
-
-  #
-  # Flat array of User IDs, ie:
-  #
-  #   [
-  #     *userId,
-  #     *userId,
-  #     ...
-  #   ]
-  #
-  my $userIds = $class->__selectMulti($query);
-
-
-Returns a two-dimensional OP::Array of OP::Arrays, if * or multiple
-columns are specified in the query.
-
-  my $query = "SELECT userId, mtime FROM session";
-
-  #
-  # Array of arrays, ie:
-  #
-  #   [
-  #     [ *userId, *mtime ],
-  #     [ *userId, *mtime ],
-  #     ...
-  #   ]
-  #
-  my $idsWithTime = $class->__selectMulti($query);
-
-=cut
-
-# method __selectMulti(OP::Class $class: Str $query) {
-sub __selectMulti {
-  my $class = shift;
-  my $query = shift;
-
-  my $sth = $class->query($query);
-
-  my $results = OP::Array->new();
-
-  while ( my @row = $sth->fetchrow_array() ) {
-    $results->push( @row > 1 ? OP::Array->new(@row) : $row[0] );
-  }
-
-  $sth->finish();
-
-  return $results;
-}
-
-=pod
-
 =item * $class->__loadFromQuery($query)
 
 Returns the first row of results from the received query, as an instance
@@ -1958,7 +1990,6 @@ have to deal with while().
 
 =cut
 
-# method __loadFromQuery(OP::Class $class: Str $query) {
 sub __loadFromQuery {
   my $class = shift;
   my $query = shift;
@@ -2004,7 +2035,6 @@ Creates a new DB connection, or returns the one which is currently active.
 
 =cut
 
-# method __dbh(OP::Class $class:) {
 sub __dbh {
   my $class = shift;
 
@@ -2026,13 +2056,11 @@ sub __dbh {
       );
 
       $dbi->{$dbName}->{$$} = OP::Persistence::MySQL::connect(%creds);
-    }
-    elsif ( $dbiType == OP::Enum::DBIType::SQLite ) {
+    } elsif ( $dbiType == OP::Enum::DBIType::SQLite ) {
       my %creds = ( database => join( '/', sqliteRoot, $dbName ) );
 
       $dbi->{$dbName}->{$$} = OP::Persistence::SQLite::connect(%creds);
-    }
-    else {
+    } else {
       throw OP::InvalidArgument(
         sprintf( 'Unknown DBI Type %s returned by class %s', $dbiType, $class )
       );
@@ -2057,7 +2085,6 @@ isn't one.
 
 =cut
 
-# method __dbi(OP::Class $class:) {
 sub __dbi {
   my $class = shift;
 
@@ -2242,8 +2269,7 @@ sub __dispatch {
 
   if ( $class->__dbiType == OP::Enum::DBIType::MySQL ) {
     $module = "OP::Persistence::MySQL";
-  }
-  elsif ( $class->__dbiType == OP::Enum::DBIType::SQLite ) {
+  } elsif ( $class->__dbiType == OP::Enum::DBIType::SQLite ) {
     $module = "OP::Persistence::SQLite";
   }
 
@@ -2262,12 +2288,6 @@ sub __dispatch {
 
 =pod
 
-=back
-
-=head2 Flatfile I/O
-
-=over 4
-
 =item * $class->__loadYamlFromId($id)
 
 Return the instance with the received id (returns new instance if the
@@ -2277,7 +2297,6 @@ object doesn't exist on disk yet)
 
 =cut
 
-# method __loadYamlFromId(OP::Class $class: Str $id) {
 sub __loadYamlFromId {
   my $class = shift;
   my $id    = shift;
@@ -2306,7 +2325,6 @@ Return an instance from the YAML at the received filesystem path
 
 =cut
 
-# method __loadYamlFromPath(OP::Class $class: Str $path) {
 sub __loadYamlFromPath {
   my $class = shift;
   my $path  = shift;
@@ -2315,8 +2333,7 @@ sub __loadYamlFromPath {
     my $yaml = $class->__getSourceByPath($path);
 
     return $class->loadYaml($yaml);
-  }
-  else {
+  } else {
     throw OP::FileAccessError("Path $path does not exist on disk");
   }
 }
@@ -2332,7 +2349,6 @@ a file into memory.
 
 =cut
 
-# method __getSourceByPath(OP::Class $class: Str $path) {
 sub __getSourceByPath {
   my $class = shift;
   my $path  = shift;
@@ -2364,7 +2380,6 @@ Return the id of all instances of this class on disk.
 
 =cut
 
-# method __fsIds(OP::Class $class:) {
 sub __fsIds {
   my $class = shift;
 
@@ -2417,7 +2432,7 @@ sub __checkYamlHost {
 
       if ( $thisHost ne $yamlHost ) {
         OP::WrongHost->throw(
-          "YAML archives must be saved on host $yamlHost, not $thisHost" );
+          "YAML archives must be saved on host $yamlHost, not $thisHost");
       }
     }
   }
@@ -2434,7 +2449,9 @@ Callers should invoke this at some point, if overriding in superclass.
 
 =cut
 
-# method __init(OP::Class $class:) {
+my $alreadyWarnedForMemcached;
+my $alreadyWarnedForRcs;
+
 sub __init {
   my $class = shift;
 
@@ -2443,16 +2460,23 @@ sub __init {
     my $co = join( '/', rcsBindir, 'co' );
 
     if ( !-e $ci || !-e $co ) {
-      warn "$class: No RCS executables found\n";
-
       $class->set( "__useRcs", false );
+
+      if ( !$alreadyWarnedForRcs ) {
+        warn "Disabling RCS support (\"ci\"/\"co\" not found)\n";
+
+        $alreadyWarnedForRcs++;
+      }
     }
   }
 
-  if ( $class->__useMemcached
+  if ( !$alreadyWarnedForMemcached
+    && $class->__useMemcached
     && ( !$memd || !%{ $memd->server_versions } ) )
   {
-    warn "$class: No memcached servers found\n";
+    warn "Disabling memcached support (no servers found)";
+
+    $alreadyWarnedForMemcached++;
   }
 
   if ( $class->__useDbi ) {
@@ -2486,8 +2510,6 @@ sub __init {
 
 =head1 PUBLIC INSTANCE METHODS
 
-=head2 General
-
 =over 4
 
 =item * $self->save($comment)
@@ -2500,7 +2522,6 @@ Comment is ignored for classes not using RCS.
 
 =cut
 
-# method save(Str ?$comment) {
 sub save {
   my $self    = shift;
   my $comment = shift;
@@ -2530,7 +2551,6 @@ are needed.
 
 =cut
 
-# method presave() {
 sub presave {
   my $self = shift;
 
@@ -2552,7 +2572,6 @@ Does B<not> delete RCS history, if present.
 
 =cut
 
-# method remove(Str ?$reason) {
 sub remove {
   my $self   = shift;
   my $reason = shift;
@@ -2641,7 +2660,6 @@ Does not call C<save>, caller must do this explicitly.
 
 =cut
 
-# method revert(Num $version) {
 sub revert {
   my $self    = shift;
   my $version = shift;
@@ -2656,8 +2674,7 @@ sub revert {
 
   if ($version) {
     $rcs->co( "-r$version", $self->_path() );
-  }
-  else {
+  } else {
     $rcs->co( $self->_path() );
   }
 
@@ -2684,7 +2701,6 @@ Returns true if this object has ever been saved.
 
 =cut
 
-# method exists() {
 sub exists {
   my $self = shift;
 
@@ -2714,7 +2730,6 @@ Which, in most cases, yields the same value as:
 
 =cut
 
-# method key() {
 sub key {
   my $self = shift;
 
@@ -2740,7 +2755,6 @@ C<memberClass()>, for each ID in the relationship.
 
 =cut
 
-# method memberInstances(Str $key) {
 sub memberInstances {
   my $self = shift;
   my $key  = shift;
@@ -2761,8 +2775,7 @@ sub memberInstances {
     for ( @{ $self->{$key} } ) {
       $instances->push( $memberClass->load($_) );
     }
-  }
-  else {
+  } else {
     $instances->push( $memberClass->load($extId) );
   }
 
@@ -2798,7 +2811,6 @@ referenced object will need to be explicitly saved before the referent.
 
 =cut
 
-# method setIdsFromNames(Str $attr, *@names) {
 sub setIdsFromNames {
   my $self  = shift;
   my $attr  = shift;
@@ -2814,8 +2826,7 @@ sub setIdsFromNames {
     OP::InvalidArgument->throw("Too many names received")
       if @names > 1;
 
-  }
-  elsif ( $type->isa("OP::Type::Array")
+  } elsif ( $type->isa("OP::Type::Array")
     && $type->memberType->isa("OP::Type::ExtID") )
   {
 
@@ -2823,8 +2834,7 @@ sub setIdsFromNames {
     #
     #
 
-  }
-  else {
+  } else {
     OP::InvalidArgument->throw("$attr does not represent an ExtID");
   }
 
@@ -2848,15 +2858,13 @@ sub setIdsFromNames {
 
   if ( !$currIds ) {
     $currIds = OP::Array->new;
-  }
-  elsif ( !$currIds->isa("OP::Array") ) {
+  } elsif ( !$currIds->isa("OP::Array") ) {
     $currIds = OP::Array->new($currIds);
   }
 
   if ( $type->isa("OP::Type::ExtID") ) {
     $self->set( $attr, $newIds->shift );
-  }
-  else {
+  } else {
     $self->set( $attr, $newIds );
   }
 
@@ -2865,23 +2873,12 @@ sub setIdsFromNames {
 
 =pod
 
-=back
-
-=head2 YAML Output
-
-Methods for YAML output may be found in L<OP::Hash>.
-
-=head2 RCS Output
-
-=over 4
-
 =item * $self->revisions()
 
 Return an array of all of this object's revision numbers
 
 =cut
 
-# method revisions() {
 sub revisions {
   my $self = shift;
 
@@ -2896,7 +2893,6 @@ Return a hash of info for this file's checkins
 
 =cut
 
-# method revisionInfo() {
 sub revisionInfo {
   my $self = shift;
 
@@ -2935,7 +2931,6 @@ Return the head revision number for self's backing store.
 
 =cut
 
-# method head() {
 sub head {
   my $self = shift;
 
@@ -2947,8 +2942,6 @@ sub head {
 =back
 
 =head1 PRIVATE INSTANCE METHODS
-
-=head2 General
 
 =over 4
 
@@ -2964,7 +2957,6 @@ Generates a new ID for the current object. Default is GUID-style.
 
 =cut
 
-# method _newId() {
 sub _newId {
   my $self = shift;
 
@@ -2984,8 +2976,8 @@ Saves self to all applicable backing stores.
 =cut
 
 sub _localSave {
-  my $self    = shift;
-  my $comment = shift;
+  my $self                 = shift;
+  my $comment              = shift;
   my $alreadyInTransaction = shift;
 
   my $class = $self->class();
@@ -3027,13 +3019,15 @@ sub _localSave {
     $saved = $self->_localSaveInsideTransaction($comment);
 
     $self->_saveToMemcached;
-  } catch Error with {
+  }
+  catch Error with {
     $OP::Persistence::errstr = shift || "No message";
 
     undef $saved;
   };
 
-  if ( $saved ) {
+  if ($saved) {
+
     #
     # If using DBI, commit the transaction or die trying:
     #
@@ -3055,6 +3049,11 @@ sub _localSave {
     $self->{ctime}  = $orig_ctime;
     $self->{mtime}  = $orig_mtime;
 
+    my $details = sprintf '[class: %s] [id: %s] [name: %s]',
+      $self->class,
+      $orig_id || "No ID",
+      $self->name || "No Name";
+
     if ( $useDbi && !$alreadyInTransaction ) {
       my $rolled = $class->__rollbackTransaction();
 
@@ -3065,19 +3064,16 @@ sub _localSave {
         # If this happens, superfreak out.
         #
         throw OP::TransactionFailed(
-              "ROLLBACK FAILED!!! Check DB and compare history for "
-            . "$idKey $quotedID in class $class: "
-            . $OP::Persistence::errstr
-          );
+              "ROLLBACK FAILED - Check DB and compare history:\n  "
+            . "$details\n  "
+            . $OP::Persistence::errstr );
       } else {
         throw OP::TransactionFailed(
-          "Transaction failed: " . $OP::Persistence::errstr
-        );
+          "Transaction failed - $details\n  " . $OP::Persistence::errstr );
       }
     } else {
       throw OP::TransactionFailed(
-        "Save failed: " . $OP::Persistence::errstr
-      );
+        "Save failed - $details\n  " . $OP::Persistence::errstr );
     }
   }
 
@@ -3150,14 +3146,13 @@ sub _localSaveInsideTransaction {
               elementValue => $value,
             );
 
-            $saved = $element->_localSave($comment, 1);
+            $saved = $element->_localSave( $comment, 1 );
 
             return if !$saved;
 
             $i++;
           }
-        }
-        elsif ( $type->objectClass->isa('OP::Hash') ) {
+        } elsif ( $type->objectClass->isa('OP::Hash') ) {
           for my $elementKey ( keys %{ $self->{$key} } ) {
             my $value = $self->{$key}->{$elementKey};
 
@@ -3167,7 +3162,7 @@ sub _localSaveInsideTransaction {
               elementValue => $value,
             );
 
-            $saved = $element->_localSave($comment, 1);
+            $saved = $element->_localSave( $comment, 1 );
 
             return if !$saved;
           }
@@ -3268,12 +3263,6 @@ sub _saveToMemcached {
 
 =pod
 
-=back
-
-=head2 Database I/O
-
-=over 4
-
 =item * $self->_updateRowStatement()
 
 Returns the SQL used to run an "UPDATE" statement for the
@@ -3281,7 +3270,6 @@ receiving object.
 
 =cut
 
-# method _updateRowStatement() {
 sub _updateRowStatement {
   my $self = shift;
 
@@ -3297,7 +3285,6 @@ receiving object.
 
 =cut
 
-# method _insertRowStatement() {
 sub _insertRowStatement {
   my $self = shift;
 
@@ -3313,7 +3300,6 @@ receiving object.
 
 =cut
 
-# method _deleteRowStatement() {
 sub _deleteRowStatement {
   my $self = shift;
 
@@ -3331,7 +3317,6 @@ Returns number of rows on UPDATE, or ID of object created on INSERT.
 
 =cut
 
-# method _updateRecord() {
 sub _updateRecord {
   my $self = shift;
 
@@ -3380,7 +3365,6 @@ UPDATE or INSERT query.
 our $ForceInsertSQL;
 our $ForceUpdateSQL;
 
-# method _quotedValues(Bool ?$isUpdate ) {
 sub _quotedValues {
   my $self = shift;
 
@@ -3389,12 +3373,6 @@ sub _quotedValues {
 
 =pod
 
-=back
-
-=head2 Flatfile I/O
-
-=over 4
-
 =item * $self->_fsDelete()
 
 Unlink self's YAML datafile from the filesystem. Does not dereference self
@@ -3402,7 +3380,6 @@ from memory.
 
 =cut
 
-# method _fsDelete() {
 sub _fsDelete {
   my $self = shift;
 
@@ -3420,7 +3397,6 @@ $class->__basePath + $self->id();
 
 =cut
 
-# method _fsSave() {
 sub _fsSave {
   my $self = shift;
 
@@ -3437,7 +3413,6 @@ Return the filesystem path to self's YAML data store.
 
 =cut
 
-# method _path() {
 sub _path {
   my $self = shift;
 
@@ -3463,7 +3438,6 @@ Save $self as YAML to a the received filesystem path
 
 =cut
 
-# method _saveToPath(Str $path) {
 sub _saveToPath {
   my $self = shift;
   my $path = shift;
@@ -3512,19 +3486,12 @@ sub _saveToPath {
 
 =pod
 
-=back
-
-=head2 RCS I/O
-
-=over 4
-
 =item * $self->_rcsPath()
 
 Return the filesystem path to self's RCS history file.
 
 =cut
 
-# method _rcsPath() {
 sub _rcsPath {
   my $self = shift;
 
@@ -3549,7 +3516,6 @@ L<Rcs> object.
 
 =cut
 
-# method _checkout(Rcs $rcs, Str $path) {
 sub _checkout {
   my $self = shift;
   my $rcs  = shift;
@@ -3558,17 +3524,18 @@ sub _checkout {
   return if !-e $path;
 
   eval {
+
     #
     # It hides the STDERR from us, and we hates it
     #
     $rcs->co('-l');
   };
 
-  if ( $@ ) {
+  if ($@) {
     my $error = "RCS Checkout failed with status $@; Check STDERR";
 
     OP::RCSError->throw($error);
-  };
+  }
 }
 
 =pod
@@ -3580,7 +3547,6 @@ L<Rcs> object.
 
 =cut
 
-# method _checkin(Rcs $rcs, Str $path, Str $comment) {
 sub _checkin {
   my $self    = shift;
   my $rcs     = shift;
@@ -3592,19 +3558,15 @@ sub _checkin {
   $comment ||= "No checkin comment provided by $user";
 
   eval {
-    $rcs->ci(
-      '-t-Programmatic checkin from ' . $self->class(),
-      '-u',
-      '-wOP',
-      "-mEdited by user $user with comment: $comment"
-    );
+    $rcs->ci( '-t-Programmatic checkin from ' . $self->class(),
+      '-u', '-wOP', "-mEdited by user $user with comment: $comment" );
   };
 
-  if ( $@ ) {
+  if ($@) {
     my $error = "RCS Checkin failed with status $@; Check STDERR";
 
     OP::RCSError->throw($error);
-  };
+  }
 }
 
 =pod
@@ -3615,7 +3577,6 @@ Return an instance of the Rcs class corresponding to self's backing store.
 
 =cut
 
-# method _rcs() {
 sub _rcs {
   my $self = shift;
 

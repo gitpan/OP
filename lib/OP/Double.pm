@@ -84,8 +84,7 @@ sub new {
     OP::Type::insist( $lesser,  OP::Type::isInt );
 
     $self = join( ".", $greater, $lesser );
-  }
-  else {
+  } else {
     $self = $greater;
   }
 
@@ -101,17 +100,14 @@ sub new {
   if ( $self =~ /e/ ) {
     ( $msv, $lsv ) = split( /\./, sprintf( '%.10f', $self ) );
 
-  }
-  elsif ( $self !~ /\./ ) {
+  } elsif ( $self !~ /\./ ) {
     $msv = $self;
     $lsv = 0;
-  }
-  elsif ( $self =~ /^\./ ) {
+  } elsif ( $self =~ /^\./ ) {
     $msv = 0;
     $lsv = $self;
     $lsv =~ s/\.//;
-  }
-  else {
+  } else {
     ( $msv, $lsv ) = split( /\./, $self );
   }
 

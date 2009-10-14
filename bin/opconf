@@ -25,7 +25,7 @@ sub main {
     alarm(5);
 
     print "Do you want to edit your .oprc? [Y/n]\n";
-    print "(Defaults to NO in 5 seconds...)\n";
+    print "(Will answer NO in 5 seconds...)\n";
 
     my $bool = <STDIN>;
     chomp($bool);
@@ -41,7 +41,6 @@ sub main {
 
   if ( !-e $path ) {
     my $conf = {
-      ldapHost    => 'ldap',
       yamlHost    => undef,
       yamlRoot    => join('/', $ENV{OP_HOME}, 'yaml'),
       sqliteRoot  => join('/', $ENV{OP_HOME}, 'sqlite'),

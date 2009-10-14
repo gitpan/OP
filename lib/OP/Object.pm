@@ -110,8 +110,7 @@ sub new {
     #
     $hash = {};
 
-  }
-  elsif ( @args == 1 ) {
+  } elsif ( @args == 1 ) {
 
     #
     # Single argument was provided:
@@ -123,10 +122,9 @@ sub new {
       #
       $hash = shift @args;
 
-      throw OP::InvalidArgument( "In $class->new(...), arg was not HASH-like" )
+      throw OP::InvalidArgument("In $class->new(...), arg was not HASH-like")
         if !UNIVERSAL::isa( $hash, "HASH" );
-    }
-    else {
+    } else {
 
       #
       # Garbage in?
@@ -137,8 +135,7 @@ sub new {
           . "In $class->new(...), args should be hash, hashref, or nothing" );
     }
 
-  }
-  else {
+  } else {
 
     #
     # Unreferenced list received; make a HASHREF from it:
@@ -190,8 +187,7 @@ sub new {
 
         $sanitized->set( $key, ref($value) ? clone($value) : $value );
 
-      }
-      else {
+      } else {
 
         #
         # fall back to default
@@ -213,8 +209,7 @@ sub new {
     # Perl reference magic
     #
     $hash = $sanitized;
-  }
-  else {
+  } else {
     bless $hash, $class;
   }
 
@@ -343,14 +338,12 @@ sub isAttributeAllowed {
   if ( keys %{$asserts} ) {
     if ( exists $asserts->{$key} ) {
       return true;
-    }
-    else {
+    } else {
       my $caller = caller();
       warn "BUG (Check $caller): \"$key\" is not a member of \"$class\"";
       return false;
     }
-  }
-  else {
+  } else {
     return true;
   }
 }
@@ -370,8 +363,7 @@ assertion objects, including any base assertions which may be present.
 sub asserts {
   my $class = shift;
 
-  throw OP::ClassIsAbstract(
-    "Abstract class $class will never have assertions" );
+  throw OP::ClassIsAbstract("Abstract class $class will never have assertions");
 }
 
 =pod
@@ -446,7 +438,7 @@ sub assert {
   my @rules = @_;
 
   throw OP::ClassIsAbstract(
-    "You may not assert attributes for abstract class $class" );
+    "You may not assert attributes for abstract class $class");
 }
 
 # method elementClass(OP::Class $class: Str $key) {
@@ -583,7 +575,7 @@ To inherit no base assertions:
 sub __baseAsserts {
   my $class = shift;
 
-  throw OP::ClassIsAbstract( "Abstract class $class has no base asserts" );
+  throw OP::ClassIsAbstract("Abstract class $class has no base asserts");
 }
 
 # method __assertClass(OP::Class $class:) {
@@ -641,8 +633,7 @@ sub get {
       if !$class->isAttributeAllowed($key);
 
     return $self->{$key};
-  }
-  else {
+  } else {
     return $self->SUPER::get($key);
   }
 }
@@ -678,8 +669,7 @@ sub set {
       if $type && !$type->test( $key, $value[0] );
 
     $self->{$key} = $value[0];
-  }
-  else {
+  } else {
     return $self->SUPER::set( $key, @value );
   }
 
@@ -820,27 +810,23 @@ sub AUTOLOAD {
     #
     if ( scalar( @args > 1 ) ) {
       return $self->set( $attributeName, \@args );
-    }
-    else {
+    } else {
       return $self->set( $attributeName, $args[0] );
     }
-  }
-  elsif ( $message =~ /^[Dd]elete(\w+)/ ) {
+  } elsif ( $message =~ /^[Dd]elete(\w+)/ ) {
     my $attributeName = lcfirst($1);
 
     return if !$class->isAttributeAllowed($attributeName);
 
     return delete $self->{$attributeName};
-  }
-  elsif ( $message =~ /^[Gg]et(\w+)/ ) {
+  } elsif ( $message =~ /^[Gg]et(\w+)/ ) {
     my $attributeName = lcfirst($1);
 
     #
     # get() will perform attribute tests
     #
     return $self->get($attributeName);
-  }
-  else {
+  } else {
     return $self->get($message);
   }
 }

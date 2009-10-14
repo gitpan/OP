@@ -292,34 +292,29 @@ sub escape {
       sub {
         if ( UNIVERSAL::isa( $self->{$_}, "OP::Object" ) ) {
           $escaped->{$_} = $self->{$_}->escape();
-        }
-        else {
+        } else {
           $escaped->{$_} = $self->{$_};
         }
       }
     );
-  }
-  elsif ( $self->isa("OP::Array") ) {
+  } elsif ( $self->isa("OP::Array") ) {
     $escaped = $self->collect(
       sub {
         if ( UNIVERSAL::isa( $_, "OP::Object" ) ) {
           OP::Array::yield( $_->escape() );
-        }
-        else {
+        } else {
           OP::Array::yield($_);
         }
       }
     );
-  }
-  elsif (
-       $self->isa("OP::Scalar")
+  } elsif (
+    $self->isa("OP::Scalar")
     || $self->isa("OP::DateTime")     # Scalar-like
     || $self->isa("OP::EmailAddr")    # Scalar-like
     )
   {
     $escaped = "$self";
-  }
-  else {
+  } else {
     $escaped = $self;
   }
 

@@ -81,11 +81,9 @@ sub new {
 
     if ( $len == 36 ) {
       return Data::GUID::from_string( $class, $self );
-    }
-    elsif ( $len == 24 ) {
+    } elsif ( $len == 24 ) {
       return Data::GUID::from_base64( $class, $self );
-    }
-    else {
+    } else {
       OP::AssertFailed->throw("Unrecognized ID format: \"$self\"");
     }
   }

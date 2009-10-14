@@ -292,8 +292,7 @@ sub get {
 
   if ( $self->class() ) {
     return $self->[$index];
-  }
-  else {
+  } else {
     return $self->SUPER::get($index);
   }
 }
@@ -321,8 +320,7 @@ sub set {
       if @value > 1;
 
     $self->[$index] = $value[0];
-  }
-  else {
+  } else {
     return $self->SUPER::set( $index, @value );
   }
 
@@ -582,8 +580,7 @@ sub collect {
 
     if ($withIndex) {
       eval { &$sub( $_, $i ) };
-    }
-    else {
+    } else {
       eval { &$sub($_) };
     }
 
@@ -594,22 +591,19 @@ sub collect {
 
       if ( $thrown && UNIVERSAL::isa( $thrown, "OP::Array::YieldedItems" ) ) {
         $OP::Array::EmittedItems->push( $thrown->items() );
-      }
-      elsif ( $thrown && UNIVERSAL::isa( $thrown, "OP::Array::Break" ) ) {
+      } elsif ( $thrown && UNIVERSAL::isa( $thrown, "OP::Array::Break" ) ) {
 
         #
         # "break" was called
         #
         last;
-      }
-      elsif ( $thrown && UNIVERSAL::isa( $thrown, "Error" ) ) {
+      } elsif ( $thrown && UNIVERSAL::isa( $thrown, "Error" ) ) {
 
         #
         # Rethrow
         #
         $thrown->throw();
-      }
-      else {
+      } else {
 
         #
         # Normal error encountered, just die
@@ -707,8 +701,7 @@ sub each {
   for ( @{$self} ) {
     if ($withIndex) {
       eval { &{$sub}( $_, $i ); };
-    }
-    else {
+    } else {
       eval { &{$sub}($_); };
     }
 
@@ -723,15 +716,13 @@ sub each {
         # "break" was called
         #
         last;
-      }
-      elsif ( $thrown && UNIVERSAL::isa( $thrown, "Error" ) ) {
+      } elsif ( $thrown && UNIVERSAL::isa( $thrown, "Error" ) ) {
 
         #
         # Rethrow
         #
         $thrown->throw();
-      }
-      else {
+      } else {
 
         #
         # Normal error encountered, just die
@@ -1062,8 +1053,7 @@ sub median {
     my $n = shift @{$median};
 
     return $n;
-  }
-  else {
+  } else {
     return;
   }
 }
@@ -1204,8 +1194,7 @@ sub sort {
 
   if ($function) {
     @{$newSelf} = sort { &$function( $a, $b ) } @{$self};
-  }
-  else {
+  } else {
     @{$newSelf} = sort @{$self};
   }
 

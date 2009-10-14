@@ -17,8 +17,7 @@ sub import {
 
   if ( !-d $path ) {
     die "$path is not a directory (weird)";
-  }
-  elsif ( !-w $path ) {
+  } elsif ( !-w $path ) {
     die "$path is not writable (can't make a temp .oprc)";
   }
 

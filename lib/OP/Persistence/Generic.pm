@@ -40,7 +40,7 @@ sub __doesIdExistStatement {
     sprintf q|
       SELECT count(*) FROM %s WHERE id = %s
     |,
-    $class->tableName,
+    $class->__selectTableName(),
     $class->quote($id)
   );
 }
@@ -53,7 +53,7 @@ sub __doesNameExistStatement {
     sprintf q|
       SELECT count(*) FROM %s WHERE name = %s
     |,
-    $class->tableName,
+    $class->__selectTableName(),
     $class->quote($name),
   );
 }
@@ -67,7 +67,7 @@ sub __idForNameStatement {
       SELECT %s FROM %s WHERE name = %s
     |,
     $class->__primaryKey(),
-    $class->tableName(),
+    $class->__selectTableName(),
     $class->quote($name)
   );
 }
@@ -80,7 +80,7 @@ sub __nameForIdStatement {
     sprintf q|
       SELECT name FROM %s WHERE %s = %s
     |,
-    $class->tableName(),
+    $class->__selectTableName(),
     $class->__primaryKey(),
     $class->quote($id),
   );
@@ -111,9 +111,8 @@ sub __commitTransaction {
 
   if ( !$OP::Persistence::transactionLevel ) {
     throw OP::TransactionFailed(
-      "$class->__commitTransaction() called outside of transaction!!!" );
-  }
-  elsif ( $OP::Persistence::transactionLevel == 1 ) {
+      "$class->__commitTransaction() called outside of transaction!!!");
+  } elsif ( $OP::Persistence::transactionLevel == 1 ) {
     $class->write( $class->__commitTransactionStatement() );
   }
 
@@ -148,13 +147,12 @@ sub __schema {
   #
   my $primaryKey = $class->__primaryKey();
 
-  throw OP::PrimaryKeyMissing( "$class has no __primaryKey set, please fix" )
+  throw OP::PrimaryKeyMissing("$class has no __primaryKey set, please fix")
     if !$primaryKey;
 
   my $asserts = $class->asserts();
 
-  throw OP::PrimaryKeyMissing(
-    "$class did not assert __primaryKey $primaryKey" )
+  throw OP::PrimaryKeyMissing("$class did not assert __primaryKey $primaryKey")
     if !exists $asserts->{$primaryKey};
 
   #
@@ -210,11 +208,9 @@ sub __concatNameStatement {
 
   if ( ref $uniqueness ) {
     @uniqueAttrs = @{$uniqueness};
-  }
-  elsif ( $uniqueness && $uniqueness ne '1' ) {
+  } elsif ( $uniqueness && $uniqueness ne '1' ) {
     @uniqueAttrs = $uniqueness;
-  }
-  else {
+  } else {
     return join( ".", $class->tableName, "name" ) . " as __name";
 
     # @uniqueAttrs = "name";
@@ -252,8 +248,7 @@ sub __concatNameStatement {
         $subSel, $tableName, $tableName, $extAttr
       );
 
-    }
-    else {
+    } else {
       $concatAttrs->push($extAttr);
     }
   }
@@ -334,8 +329,7 @@ sub __statementForColumn {
     my $quotedDefault = $class->quote( $type->default );
 
     $fragment->push( $attribute, $datatype, 'DEFAULT', $quotedDefault );
-  }
-  else {
+  } else {
 
     #
     # No default() was specified:
@@ -353,6 +347,16 @@ sub __statementForColumn {
 sub __dropTable {
   my $class = shift;
 
+  $class->asserts->each( sub {
+    my $key = shift;
+
+    my $elementClass = $class->elementClass($key);
+
+    return if !$elementClass;
+
+    $elementClass->__dropTable();
+  } );
+
   my $table = $class->tableName();
 
   my $query = "DROP TABLE $table;\n";
@@ -365,7 +369,25 @@ sub __createTable {
 
   my $query = $class->__schema();
 
-  return $class->write($query);
+  $class->write($query);
+
+  $class->asserts->each( sub {
+    my $key = shift;
+
+    my $elementClass = $class->elementClass($key);
+
+    return if !$elementClass;
+
+    $elementClass->__init();
+  } );
+
+  return true;
+}
+
+sub __selectTableName {
+  my $class = shift;
+
+  return $class->tableName;
 }
 
 sub __selectRowStatement {
@@ -374,15 +396,16 @@ sub __selectRowStatement {
 
   return sprintf(
     q| SELECT %s FROM %s WHERE %s = %s |,
-    $class->__selectColumnNames->join(", "), $class->tableName(),
-    $class->__primaryKey(),                  $class->quote($id)
+    $class->__selectColumnNames->join(", "),
+    $class->__selectTableName(),
+    $class->__primaryKey(), $class->quote($id)
   );
 }
 
 sub __allNamesStatement {
   my $class = shift;
 
-  return sprintf( q| SELECT name FROM %s |, $class->tableName() );
+  return sprintf( q| SELECT name FROM %s |, $class->__selectTableName() );
 }
 
 sub __allIdsStatement {
@@ -393,7 +416,7 @@ sub __allIdsStatement {
       SELECT %s FROM %s ORDER BY name
     |,
     $class->__primaryKey(),
-    $class->tableName(),
+    $class->__selectTableName(),
   );
 }
 
@@ -457,8 +480,7 @@ sub __insertColumnNames {
       }
     );
 
-  }
-  else {
+  } else {
     return $class->columnNames;
   }
 }
@@ -486,8 +508,7 @@ sub __selectColumnNames {
         # OP::Array::yield("UNIX_TIMESTAMP($attr) AS $attr");
         OP::Array::yield( $class->__quoteDatetimeSelect($attr) );
 
-      }
-      else {
+      } else {
         OP::Array::yield($attr);
       }
     }
@@ -540,24 +561,20 @@ sub _quotedValues {
       if ( $type->sqlInsertValue && $OP::Persistence::ForceInsertSQL ) {
         $quotedValue = $type->sqlInsertValue;
 
-      }
-      elsif ( $type->sqlUpdateValue && $OP::Persistence::ForceUpdateSQL ) {
+      } elsif ( $type->sqlUpdateValue && $OP::Persistence::ForceUpdateSQL ) {
         $quotedValue = $type->sqlUpdateValue;
 
-      }
-      elsif ( $type->sqlValue() ) {
+      } elsif ( $type->sqlValue() ) {
         $quotedValue = $type->sqlValue();
 
-      }
-      elsif ( $type->optional() && !defined($value) ) {
+      } elsif ( $type->optional() && !defined($value) ) {
         $quotedValue = 'NULL';
 
-      }
-      elsif ( !defined($value) || ( !ref($value) && $value eq '' ) ) {
+      } elsif ( !defined($value) || ( !ref($value) && $value eq '' ) ) {
         $quotedValue = "''";
 
-      }
-      elsif ( !ref($value) || ( ref($value) && overload::Overloaded($value) ) )
+      } elsif ( !ref($value)
+        || ( ref($value) && overload::Overloaded($value) ) )
       {
         if ( !UNIVERSAL::isa( $value, $type->objectClass ) ) {
 
@@ -571,12 +588,10 @@ sub _quotedValues {
           && $type->columnType eq 'DATETIME' )
         {
           $quotedValue = $class->__quoteDatetimeInsert($value);
-        }
-        else {
+        } else {
           $quotedValue = $class->quote($value);
         }
-      }
-      elsif ( ref($value) ) {
+      } elsif ( ref($value) ) {
         my $dumpedValue =
           UNIVERSAL::can( $value, "toYaml" )
           ? $value->toYaml
@@ -589,8 +604,7 @@ sub _quotedValues {
 
       if ($isUpdate) {
         $values->push("  $key = $quotedValue");
-      }
-      else {    # Is Insert
+      } else {    # Is Insert
         $values->push($quotedValue);
       }
     }
@@ -606,8 +620,8 @@ sub _updateRowStatement {
 
   my $statement = sprintf(
     q| UPDATE %s SET %s WHERE %s = %s; |,
-    $class->tableName(),    $self->_quotedValues(true)->join(",\n"),
-    $class->__primaryKey(), $class->quote( $self->key() )
+    $class->__selectTableName(), $self->_quotedValues(true)->join(",\n"),
+    $class->__primaryKey(),      $class->quote( $self->key() )
   );
 
   return $statement;
@@ -620,7 +634,7 @@ sub _insertRowStatement {
 
   return sprintf(
     q| INSERT INTO %s (%s) VALUES (%s); |,
-    $class->tableName(),
+    $class->__selectTableName(),
     $class->__insertColumnNames->join(', '),
     $self->_quotedValues(false)->join(', '),
   );
@@ -637,8 +651,11 @@ sub _deleteRowStatement {
 
   my $class = $self->class();
 
-  return sprintf( q| DELETE FROM %s WHERE %s = %s |,
-    $class->tableName(), $idKey, $class->quote( $self->{$idKey} ) );
+  return sprintf(
+    q| DELETE FROM %s WHERE %s = %s |,
+    $class->__selectTableName(),
+    $idKey, $class->quote( $self->{$idKey} )
+  );
 }
 
 true;

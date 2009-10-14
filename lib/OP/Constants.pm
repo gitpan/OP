@@ -34,8 +34,7 @@ sub init {
 
   $ENV{OP_HOME} ||= File::HomeDir->my_home;
 
-  OP::RuntimeError->throw(
-    "Could not determine home directory for current user" )
+  OP::RuntimeError->throw("Could not determine home directory for current user")
     if !$ENV{OP_HOME};
 
   #
@@ -93,8 +92,26 @@ sub init {
         $rc->{$key} = $overlay->{$key};
       }
     }
-  }
-  else {
+  } elsif ( $RC eq '.oprc' ) {
+
+    #
+    # Use what are hopefully reasonable defaults.
+    #
+    $rc = {
+      yamlHost       => undef,
+      yamlRoot       => join( '/', $ENV{OP_HOME}, 'yaml' ),
+      sqliteRoot     => join( '/', $ENV{OP_HOME}, 'sqlite' ),
+      scratchRoot    => '/tmp',
+      dbHost         => 'localhost',
+      dbPass         => undef,
+      dbPort         => 3306,
+      dbUser         => 'op',
+      memcachedHosts => [ '127.0.0.1:31337', ],
+      rcsBindir      => '/usr/bin',
+      rcsDir         => 'RCS',
+      syslogHost     => undef,
+    };
+  } else {
     print STDERR q(!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     _  _____ _____ _____ _   _ _____ ___ ___  _   _ 

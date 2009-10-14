@@ -234,7 +234,7 @@ sub set {
     if !$type;
 
   throw OP::InvalidArgument(
-    "Too many args received by set(). Usage: set(\"$key\", VALUE)" )
+    "Too many args received by set(). Usage: set(\"$key\", VALUE)")
     if @value > 1;
 
   my $value = $value[0];

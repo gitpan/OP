@@ -16,6 +16,20 @@ package OP::Persistence::MySQL;
 
 OP::Persistence::MySQL - Vendor-specific overrides for MySQL/InnoDB
 
+=head1 DESCRIPTION
+
+Enables the MySQL/InnoDB backing store.
+
+When using MySQL, you must create and grant access to your application's
+database and the "op" database prior to use.
+
+  # mysql -u root -p
+  mysql> create database "op";
+  mysql> grant all on op.* to <username>@<hostname>;
+
+  mysql> create database "yourapp";
+  mysql> grant all on yourapp.* to <username>@<hostname>;
+
 =head1 FUNCTION
 
 =over 4
@@ -71,6 +85,12 @@ This file is part of L<OP>.
 ######## The remainder of this module contains vendor-specific overrides
 ########
 
+sub __selectTableName {
+  my $class = shift;
+
+  return join( ".", $class->databaseName, $class->tableName );
+}
+
 sub __schema {
   my $class = shift;
 
@@ -79,13 +99,12 @@ sub __schema {
   #
   my $primaryKey = $class->__primaryKey();
 
-  throw OP::PrimaryKeyMissing( "$class has no __primaryKey set, please fix" )
+  throw OP::PrimaryKeyMissing("$class has no __primaryKey set, please fix")
     if !$primaryKey;
 
   my $asserts = $class->asserts();
 
-  throw OP::PrimaryKeyMissing(
-    "$class did not assert __primaryKey $primaryKey" )
+  throw OP::PrimaryKeyMissing("$class did not assert __primaryKey $primaryKey")
     if !exists $asserts->{$primaryKey};
 
   #
@@ -123,8 +142,7 @@ sub __schema {
 
   if ( $unique->isEmpty() ) {
     $schema->push( sprintf( '  PRIMARY KEY(%s)', $primaryKey ) );
-  }
-  else {
+  } else {
     $schema->push( sprintf( '  PRIMARY KEY(%s),', $primaryKey ) );
 
     my $uniqueStatement = $unique->collect(
@@ -150,21 +168,18 @@ sub __schema {
           for ( @{$multiples} ) {
             if ( !$asserts->{$_} ) {
               throw OP::AssertFailed(
-                "Can't key on non-existent attribute '$_'" );
-            }
-            elsif ( $asserts->{$_}->optional() ) {
+                "Can't key on non-existent attribute '$_'");
+            } elsif ( $asserts->{$_}->optional() ) {
               throw OP::AssertFailed(
-                "Can't reliably key on ::optional column '$_'" );
+                "Can't reliably key on ::optional column '$_'");
             }
           }
 
           $item = sprintf '  UNIQUE KEY (%s)',
             join( ", ", $key, @{$multiples} );
-        }
-        elsif ( $multiples && $multiples ne '1' ) {
+        } elsif ( $multiples && $multiples ne '1' ) {
           $item = "  UNIQUE KEY($key, $multiples)";
-        }
-        elsif ($multiples) {
+        } elsif ($multiples) {
           $item = "  UNIQUE KEY($key)";
         }
 
@@ -199,7 +214,7 @@ sub __schema {
           OP::Array::yield(
             sprintf( $template,
               $_,
-              $foreignClass->tableName(),
+              $foreignClass->__selectTableName(),
               $foreignClass->__primaryKey() )
           );
         }
@@ -255,8 +270,7 @@ sub __statementForColumn {
 
   if ( $type->columnType() ) {
     $datatype = $type->columnType();
-  }
-  else {
+  } else {
     $datatype = 'TEXT';
   }
 
@@ -287,8 +301,7 @@ sub __statementForColumn {
     my $quotedDefault = $class->quote( $type->default() );
 
     $attr->push( $attribute, $datatype, 'DEFAULT', $quotedDefault );
-  }
-  else {
+  } else {
 
     #
     # No default() was specified:
@@ -333,8 +346,7 @@ sub __wrapWithReconnect {
 
         delete $OP::Persistence::dbi->{$dbName}->{$$};
         delete $OP::Persistence::dbi->{$dbName};
-      }
-      else {
+      } else {
 
         #
         # Rethrow

@@ -146,8 +146,7 @@ sub stash {
 
           $i++;
         }
-      }
-      elsif ( $oClass->isa('OP::Hash') ) {
+      } elsif ( $oClass->isa('OP::Hash') ) {
         my $elementClass = $class->elementClass($key);
 
         for my $elementKey ( keys %{ $self->{$key} } ) {

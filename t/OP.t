@@ -39,6 +39,7 @@ SKIP: {
 
 do {
   %classPrototype = (
+    testArray     => OP::Array->assert(OP::Str->assert()),
     testBool      => OP::Bool->assert(),
     testDouble    => OP::Double->assert(),
     testFloat     => OP::Float->assert(),
@@ -50,6 +51,7 @@ do {
   );
 
   %instancePrototype = (
+    testArray     => [ "foo", "bar", "baz", "rebar", "rebaz" ],
     testBool      => true,
     testDouble    => "1234.5678901",
     testFloat     => 22/7,
@@ -60,6 +62,20 @@ do {
     testTimeSpan  => 60*24,
   );
 };
+
+SKIP: {
+  skip($nofs, 2) if $nofs;
+
+  my $class = "OP::AutoTest01";
+  ok(
+    testCreate($class => {
+      %classPrototype
+    }),
+    "Auto-detect backing store type + class allocate"
+  );
+
+  kickClassTires($class);
+}
 
 SKIP: {
   skip($nofs, 2) if $nofs;
@@ -260,9 +276,17 @@ sub kickClassTires {
       $class
     );
     ok( $obj->save, "Save to backing store" );
-    ok( $obj->exists, "Exists in backing store" );
 
-    kickObjectTires($obj);
+    my $success;
+
+    ok( $success = $obj->exists, "Exists in backing store" );
+
+    #
+    # If the above test failed, then we know the rest will too.
+    #
+    if ( $success ) {
+      kickObjectTires($obj);
+    }
   };
 
   my $ids = $class->allIds;
@@ -315,6 +339,10 @@ sub kickObjectTires {
       $obj->{$key}, $type->objectClass, 
       sprintf('%s "%s"', $class->pretty($key), $obj->{$key})
     );
+
+    if ( $obj->{$key}->isa("OP::Array") ) {
+      is($obj->{$key}->size(), 5, "Compare inline array size");
+    }
   } );
 }
 

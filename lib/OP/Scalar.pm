@@ -95,12 +95,10 @@ sub new {
 
   if ( ref($self) && overload::Overloaded($self) ) {
     return bless $self, $class;    # ONE OF US NOW
-  }
-  elsif ( ref($self) ) {
+  } elsif ( ref($self) ) {
     throw OP::InvalidArgument(
       "$class->new() requires a non-ref arg, not a " . ref($self) );
-  }
-  else {
+  } else {
     return bless \$self, $class;
   }
 }
@@ -143,8 +141,7 @@ sub get {
         . " (you asked for \""
         . join( ", ", @args )
         . "\" at $package:$line" );
-  }
-  else {
+  } else {
     return $self->SUPER::get(@args);
   }
 }
@@ -166,8 +163,7 @@ sub set {
 
   if ( $self->class() ) {
     throw OP::MethodIsAbstract("set() not implemented for scalars");
-  }
-  else {
+  } else {
     return $self->SUPER::set(@args);
   }
 }

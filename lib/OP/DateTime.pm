@@ -91,11 +91,9 @@ sub new {
 
   if ( $blessed && $time->can("epoch") ) {
     $epoch = $time->epoch();
-  }
-  elsif ( $blessed && overload::Overloaded($time) ) {
+  } elsif ( $blessed && overload::Overloaded($time) ) {
     $epoch = "$time";
-  }
-  else {
+  } else {
     $epoch = $time;
   }
 

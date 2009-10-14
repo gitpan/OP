@@ -114,17 +114,14 @@ sub create {
       && overload::Overloaded( $args->{__BASE__} ) )
     {
       @base = "$args->{__BASE__}";    # Stringify
-    }
-    elsif ( $basereftype eq 'ARRAY' ) {
+    } elsif ( $basereftype eq 'ARRAY' ) {
       @base = @{ $args->{__BASE__} };
-    }
-    else {
+    } else {
       throw OP::InvalidArgument(
         "__BASE__ must be a string or ARRAY reference, not $basereftype");
     }
 
-  }
-  else {
+  } else {
     @base = $args->{__BASE__};
   }
 
@@ -171,8 +168,7 @@ sub create {
       #
       $class->asserts()->{$key} = $arg;
 
-    }
-    elsif ( ref($arg) && reftype($arg) eq 'CODE' ) {
+    } elsif ( ref($arg) && reftype($arg) eq 'CODE' ) {
 
       #
       # Defining a method
@@ -185,8 +181,7 @@ sub create {
         *{"$class\::$key"} = $arg;
       };
 
-    }
-    elsif ( $key =~ /^__\w+$/xsm ) {
+    } elsif ( $key =~ /^__\w+$/xsm ) {
 
       #
       # Setting a class variable
@@ -195,10 +190,9 @@ sub create {
       #
       $class->set( $key, $arg );
 
-    }
-    else {
+    } else {
       throw OP::ClassAllocFailed(
-        "$class member $key needs to be an OP::Type instance or CODE ref" );
+        "$class member $key needs to be an OP::Type instance or CODE ref");
     }
   }
 

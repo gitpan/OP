@@ -206,9 +206,8 @@ sub assert {
   $parsed{columnType} ||= $externalClass->asserts->{id}->columnType;
 
   if ( $query && !ref $query ) {
-    $parsed{allowed} = sub { $externalClass->__selectMulti($query) };
-  }
-  else {
+    $parsed{allowed} = sub { $externalClass->selectMulti($query) };
+  } else {
     $parsed{allowed} = sub {
       my $assertion = shift;
       my $value     = shift;
@@ -216,12 +215,12 @@ sub assert {
       my $q = sprintf(
         q| SELECT %s FROM %s WHERE %s = %s |,
         $assertion->memberClass()->__primaryKey(),
-        $assertion->memberClass()->tableName(),
+        $assertion->memberClass()->__selectTableName(),
         $assertion->memberClass()->__primaryKey(),
         $assertion->memberClass()->quote($value)
       );
 
-      return $externalClass->__selectMulti($q);
+      return $externalClass->selectMulti($q);
       }
   }
 

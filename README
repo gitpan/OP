@@ -13,7 +13,7 @@ SYNOPSIS
 
 DESCRIPTION
 
-    OP is a Perl 5 framework for prototyping InnoDB-backed object
+    OP is a Perl 5 framework for prototyping schema-backed object
     classes.
 
 GETTING STARTED

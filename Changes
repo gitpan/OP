@@ -1,3 +1,15 @@
+2009-10-14: .318
+  - Add support for cross-database foreign keys (just assert ExtID as usual)
+  - Non-InnoDB classes won't try to use InnoDB for their linked tables (oops)
+  - Run with hardcoded defaults if .oprc is not found
+  - Automatically choose the "best" available backing store type
+    on the local system, if no explicit __useYaml, __useDbi, or __dbiType
+    values were given for a class
+  - OP::Persistence - __selectBool(), __selectSingle() and __selectMulti()
+    are now considered public and have been renamed to selectBool(),
+    selectSingle() and selectMulti() (old names will work + warn for now)
+  - More misc doc updates, tweaks, and fixes
+
 2009-10-01: .317
   - Doc updates, more tweaks and fixes for RCS
 
