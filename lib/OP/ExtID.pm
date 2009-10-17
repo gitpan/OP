@@ -203,25 +203,44 @@ sub assert {
 
   my %parsed = OP::Type::__parseTypeArgs( OP::Type::isStr, @rules );
 
-  $parsed{columnType} ||= $externalClass->asserts->{id}->columnType;
+  $parsed{columnType} = $externalClass->asserts->{id}->columnType;
 
   if ( $query && !ref $query ) {
-    $parsed{allowed} = sub { $externalClass->selectMulti($query) };
+    $parsed{allowed} = sub {
+      my $type  = shift;
+      my $value = shift;
+
+      return $externalClass->selectBool($query)
+        || OP::AssertFailed->throw("Value \"$value\" is not permitted");
+    };
+
   } else {
     $parsed{allowed} = sub {
-      my $assertion = shift;
-      my $value     = shift;
+      my $type   = shift;
+      my $value  = shift;
 
-      my $q = sprintf(
-        q| SELECT %s FROM %s WHERE %s = %s |,
-        $assertion->memberClass()->__primaryKey(),
-        $assertion->memberClass()->__selectTableName(),
-        $assertion->memberClass()->__primaryKey(),
-        $assertion->memberClass()->quote($value)
-      );
+      my $memberClass = $type->memberClass;
 
-      return $externalClass->selectMulti($q);
+      my $exists;
+
+      if ( $memberClass->__useDbi ) {
+        my $q = sprintf(
+          q| SELECT %s FROM %s WHERE %s = %s |,
+          $memberClass->__primaryKey,
+          $memberClass->__selectTableName,
+          $memberClass->__primaryKey,
+          $memberClass->quote($value)
+        );
+
+        $exists = $externalClass->selectBool($q);
+      } else {
+        $exists = $memberClass->doesIdExist($value);
       }
+
+      return $exists
+        || OP::AssertFailed->throw("Value \"$value\" is not permitted");
+    };
+
   }
 
   $parsed{memberClass} = $externalClass;

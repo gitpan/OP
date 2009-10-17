@@ -11,7 +11,7 @@
 --- 
 dbPass: ~
 dbHost: localhost
-dbPort: 3306
+dbPort: ~
 dbUser: op
 memcachedHosts: 
   - 127.0.0.1:31337

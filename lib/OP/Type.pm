@@ -368,36 +368,38 @@ to access them directly.
 
 =over 4
 
-=item * $type->allowed()
+=item * $type->allowed($value)
 
-Returns the array of allowed values for this asserted attribute.
-
-XXX TODO This would be much faster as a hash table keyed on value
+Returns true if the received value is allowed, otherwise throws an exception.
 
 =cut
 
 # method allowed(Str ?$key) {
 sub allowed {
   my $self = shift;
-  my $key  = shift;
+  my $value  = shift;
 
   return if !$self->{__allowed} || !ref $self->{__allowed};
 
   if ( ref( $self->{__allowed} ) eq 'CODE' ) {
-
     #
-    # Allowed values are derived from a function at runtime:
+    # Allowed values are derived from a function at runtime.
     #
-    my $answer = &{ $self->{__allowed} }( $self, $key );
-
-    return @{$answer};
+    # Function should throw an exception if value is not allowed.
+    #
+    &{ $self->{__allowed} }( $self, $value );
   } else {
+    #
+    # Allowed values were specified in a hard-coded list.
+    #
+    my @allowed = @{ $self->{__allowed} };
 
-    #
-    # Allowed values are specified in a hard coded list:
-    #
-    return @{ $self->{__allowed} };
+    if ( @allowed && !grep { $_ eq $value } @allowed ) {
+      throw OP::AssertFailed("Value \"$value\" is not permitted");
+    }
   }
+
+  return true;
 }
 
 =pod
@@ -562,11 +564,14 @@ sub test {
   #
   # Compare against allowed values, if any:
   #
-  my @allowed = $self->allowed($value);
+  try {
+    $self->allowed($value);
 
-  if ( @allowed && !grep { $_ eq $value } @allowed ) {
-    throw OP::AssertFailed("Value \"$value\" is not permitted for $key");
-  }
+  } catch Error with {
+    my $error = shift;
+
+    OP::AssertFailed->throw( join(": ", $key, $error) );
+  };
 
   my $default = $self->default();
 

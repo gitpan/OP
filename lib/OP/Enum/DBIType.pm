@@ -10,7 +10,7 @@
 #
 package OP::Enum::DBIType;
 
-use OP::Enum qw| MySQL SQLite |;
+use OP::Enum qw| MySQL SQLite PostgreSQL |;
 
 =head1 NAME
 
@@ -24,13 +24,11 @@ be overridden in a subclass to return one of the constants in this package.
 
 =head1 SYNOPSIS
 
-  use OP::Enum::DBIType;
+  create "YourApp::YourClass" => {
+    __useDbi  => true,
+    __dbiType => OP::Enum::DBIType::<Type>,
 
-  sub __dbiType($) {
-    my $class = shift;
-
-    return OP::Enum::DBIType::MySQL;
-  }
+  };
 
 =head1 CONSTANTS
 
@@ -38,11 +36,15 @@ be overridden in a subclass to return one of the constants in this package.
 
 =item * C<OP::Enum::DBIType::MySQL>
 
-Specifies MySQL as a DBI type
+Specify MySQL as a DBI type (0)
 
 =item * C<OP::Enum::DBIType::SQLite>
 
-Specifies SQLite as a DBI type
+Specify SQLite as a DBI type (1)
+
+=item * C<OP::Enum::DBIType::PostgreSQL>
+
+Specify PostgreSQL as a DBI type (2)
 
 =back
 

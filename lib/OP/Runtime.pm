@@ -31,7 +31,7 @@ sub import {
 --- 
 dbPass: ~
 dbHost: localhost
-dbPort: 3306
+dbPort: ~
 dbUser: op
 memcachedHosts: 
   - 127.0.0.1:31337
@@ -49,45 +49,14 @@ yamlHost: ~
 
   $Backends = OP::Hash->new;
 
-  eval {
-    require DBD::SQLite;
+  $Backends->{"SQLite"}     = OP::Persistence::__supportsSQLite();
+  $Backends->{"MySQL"}      = OP::Persistence::__supportsMySQL();
 
-    $Backends->{"SQLite"}++;
-  };
-
-  my $dbdMysqlIsInstalled;
-
-  eval {
-    require DBD::mysql;
-
-    $dbdMysqlIsInstalled++;
-  };
-
-  if ($dbdMysqlIsInstalled) {
-    eval {
-      my $dbname = 'op';
-
-      my $dsn = sprintf( 'DBI:mysql:database=%s;host=%s;port=%s',
-        $dbname, 'localhost', 3306 );
-
-      my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
-        || die DBI->errstr;
-
-      my $sth = $dbh->prepare("show tables") || die $dbh->errstr;
-
-      $sth->execute || die $sth->errstr;
-
-      my $worked = $sth->fetchall_arrayref() || die $sth->errstr;
-
-      $Backends->{"MySQL"}++;
-    };
-  }
-
-  if ( $dbdMysqlIsInstalled && !$Backends->{"MySQL"} ) {
+  if ( !$Backends->{"MySQL"} ) {
     print "----------------------------------------------------------\n";
-    print "If you would like to enable DB tests for OP, please remedy the\n";
-    print "issue shown in the diagnostic message below. You will need to\n";
-    print "create a local MySQL DB named 'op', and grant access, ie:\n";
+    print "If you would like to enable MySQL tests for OP, please remedy\n";
+    print "the issue shown in the diagnostic message below. You will need\n";
+    print "to create a local MySQL DB named 'op', and grant access, ie:\n";
     print "\n";
     print "> mysql -u root -p\n";
     print "> create database op;\n";
@@ -104,7 +73,27 @@ yamlHost: ~
     }
   }
 
-  $Backends->{"Memcached"} =
+  $Backends->{"PostgreSQL"} = OP::Persistence::__supportsPostgreSQL();
+
+  if ( !$Backends->{"PostgreSQL"} ) {
+    print "----------------------------------------------------------\n";
+    print "If you would like to enable pgsql tests for OP, please remedy\n";
+    print "the issue shown in the diagnostic message below. You will need\n";
+    print "to create a local pgsql DB and user named 'op' + grant access.\n";
+    print "\n";
+
+    if ($@) {
+      my $error = $@;
+      chomp $error;
+
+      print "\n";
+      print "Diagnostic message:\n";
+      print $error;
+      print "\n";
+    }
+  }
+
+  $Backends->{"Memcached"}  =
     scalar( keys %{ $OP::Persistence::memd->server_versions } );
 
   return 1;

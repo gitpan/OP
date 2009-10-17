@@ -104,7 +104,7 @@ sub init {
       scratchRoot    => '/tmp',
       dbHost         => 'localhost',
       dbPass         => undef,
-      dbPort         => 3306,
+      dbPort         => undef,
       dbUser         => 'op',
       memcachedHosts => [ '127.0.0.1:31337', ],
       rcsBindir      => '/usr/bin',
@@ -237,7 +237,7 @@ valid YAML:
   scratchRoot: /tmp
   dbHost: localhost
   dbPass: ~
-  dbPort: 3306
+  dbPort: ~
   dbUser: op
   memcachedHosts:
     - 127.0.0.1:31337

@@ -87,6 +87,8 @@ sub __init {
     mkpath(sqliteRoot);
   }
 
+  $class->write('PRAGMA foreign_keys = ON');
+
   my $sth = $class->query('select tbl_name from sqlite_master');
 
   my %tables;
@@ -115,6 +117,20 @@ sub __quoteDatetimeSelect {
   my $attr  = shift;
 
   return "strftime('\%s', $attr) AS $attr";
+}
+
+sub __useForeignKeys {
+  my $class = shift;
+
+  my $use = $class->get("__useForeignKeys");
+
+  if ( !defined $use ) {
+    $use = false;
+
+    $class->set("__useForeignKeys", $use);
+  }
+
+  return $use;
 }
 
 true;

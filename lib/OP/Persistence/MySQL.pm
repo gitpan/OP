@@ -398,4 +398,10 @@ sub __quoteDatetimeSelect {
   return "UNIX_TIMESTAMP($attr) AS $attr";
 }
 
+sub __useForeignKeys {
+  my $class = shift;
+
+  return true;
+}
+
 true;

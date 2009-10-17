@@ -68,6 +68,7 @@ use OP::Exceptions;
 use OP::Utility;
 use OP::Persistence::MySQL;
 use OP::Persistence::SQLite;
+use OP::Persistence::PostgreSQL;
 
 #
 # OP Object Classes
@@ -179,7 +180,7 @@ sub query {
 
 =pod
 
-=item * $class->write()
+=item * $class->write($query)
 
 Runs the received query against the database, using the
 DBI do() method. Returns number of rows updated.
@@ -430,15 +431,7 @@ sub memberClass {
   throw OP::AssertFailed("$key is not a member of $class")
     if !$class->isAttributeAllowed($key);
 
-  my $asserts = $class->asserts();
-
-  my $type = $asserts->{$key};
-
-  # if ( $type->objectClass()->isa('OP::Array') ) {
-  # $type = $type->memberType();
-  # }
-
-  return $type->memberClass();
+  my $type = $class->asserts->{$key}->memberClass;
 }
 
 =pod
@@ -453,8 +446,15 @@ sub doesIdExist {
   my $class = shift;
   my $id    = shift;
 
-  return $class->selectBool(
-    $class->__doesIdExistStatement( $class->__primaryKeyClass->new($id) ) );
+  if ( $class->__useDbi ) {
+    return $class->selectBool(
+      $class->__doesIdExistStatement( $class->__primaryKeyClass->new($id) )
+    );
+  } else {
+    my $path = join("/", $class->__basePath, OP::ID->new($id)->as_string());
+
+    return -e $path;
+  }
 }
 
 =pod
@@ -479,7 +479,7 @@ sub doesNameExist {
 }
 
 #
-# Overrides
+# Override
 #
 sub pretty {
   my $class = shift;
@@ -940,8 +940,8 @@ setting a class variable with the same name, as the examples illustrate.
 
 Return a true value to maintain a YAML backend for all saved objects.
 
-Default inherited value is the best detected value for the local
-system. Set class variable to override.
+Default inherited value is auto-detected for the local system. Set
+class variable to override.
 
 YAML and DBI backing stores are not mutually exclusive. Classes may
 use either, both, or neither, depending on use case.
@@ -1056,11 +1056,15 @@ but may be overridden on a per-class basis.
 sub __yamlHost {
   my $class = shift;
 
-  if ( !defined $class->get("__yamlHost") ) {
-    $class->set( "__yamlHost", yamlHost );
+  my $host = $class->get("__yamlHost");
+
+  if ( !$host && yamlHost ) {
+    $host = yamlHost;
+
+    $class->set( "__yamlHost", $host );
   }
 
-  return $class->get("__yamlHost");
+  return $host;
 }
 
 =pod
@@ -1071,11 +1075,11 @@ Returns a true value if the current class uses a SQL backing store,
 otherwise false.
 
 If __useDbi() returns true, the database type specified by
-__dbiType() (MySQL, SQLite) will be used.  See __dbiType() for how to
-override the class's database type.
+__dbiType() will be used.  See __dbiType() for how to override the
+class's database type.
 
-Default inherited value is the best detected value for the local
-system. Set class variable to override.
+Default inherited value is auto-detected for the local system. Set
+class variable to override.
 
   create "YourApp::Example" => {
     __useDbi => false
@@ -1098,6 +1102,24 @@ sub __useDbi {
 
   return $useDbi;
 }
+
+
+=pod
+
+=item * $class->__useForeignKeys()
+
+Returns a true value if the SQL schema should include foreign key
+constraints where applicable. Default is appropriate for the chosen
+DBI type.
+
+=cut
+
+sub __useForeignKeys {
+  my $class = shift;
+
+  return $class->__dispatch('__useForeignKeys');
+}
+
 
 =pod
 
@@ -1136,7 +1158,7 @@ sub __useMemcached {
   my $class = shift;
 
   if ( !defined $class->get("__useMemcached") ) {
-    $class->set( "__useMemcached", 120 );
+    $class->set( "__useMemcached", 300 );
   }
 
   return $class->get("__useMemcached");
@@ -1152,12 +1174,11 @@ Returns the constant of the DBI adapter to be used. Applies only if
 $class->__useDbi() returns a true value. Override in subclass to
 specify the desired backing store.
 
-Returns a constant from the L<OP::Enum::DBIType> enumeration. Currently,
-valid return values are OP::Enum::DBIType::MySQL and
-OP::Enum::DBIType::SQLite.
+Returns a constant from the L<OP::Enum::DBIType> enumeration. See
+L<OP::Enum::DBIType> for a list of supported constants.
 
-Default inherited value is the best detected value for the local
-system. Set class variable to override.
+Default inherited value is auto-detected for the local system. Set
+class variable to override.
 
   create "YourApp::Example" => {
     __dbiType => OP::Enum::DBIType::SQLite
@@ -1186,22 +1207,52 @@ my %createArgs;
 sub __autoArgs {
   return %createArgs if %createArgs;
 
-  eval {
-    $createArgs{__useDbi}  = false;
-    $createArgs{__useYaml} = true;
-    $createArgs{__dbiType} = OP::Enum::DBIType::SQLite;
+  $createArgs{__useDbi}  = false;
+  $createArgs{__useYaml} = true;
+  $createArgs{__dbiType} = OP::Enum::DBIType::SQLite;
 
-    require DBD::SQLite;
-
+  if ( __supportsSQLite() ) {
     $createArgs{__useDbi}  = true;
     $createArgs{__useYaml} = false;
+  }
 
+  if ( __supportsPostgreSQL() ) {
+    $createArgs{__useDbi}  = true;
+    $createArgs{__useYaml} = false;
+    $createArgs{__dbiType} = OP::Enum::DBIType::PostgreSQL;
+  }
+
+  if ( __supportsMySQL() ) {
+    $createArgs{__useDbi}  = true;
+    $createArgs{__useYaml} = false;
+    $createArgs{__dbiType} = OP::Enum::DBIType::MySQL;
+  }
+
+  return %createArgs;
+}
+
+sub __supportsSQLite {
+  my $worked;
+
+  eval {
+    require DBD::SQLite;
+
+    $worked++;
+  };
+
+  return $worked;
+}
+
+sub __supportsMySQL {
+  my $worked;
+
+  eval {
     require DBD::mysql;
 
     my $dbname = 'op';
 
     my $dsn = sprintf( 'DBI:mysql:database=%s;host=%s;port=%s',
-      $dbname, dbHost, dbPort );
+      $dbname, dbHost, dbPort || 3306 );
 
     my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
       || die DBI->errstr;
@@ -1210,10 +1261,37 @@ sub __autoArgs {
     $sth->execute || die $sth->errstr;
     $sth->fetchall_arrayref() || die $sth->errstr;
 
-    $createArgs{__dbiType} = OP::Enum::DBIType::MySQL;
+    $worked++;
   };
 
-  return %createArgs;
+  return $worked;
+}
+
+sub __supportsPostgreSQL {
+  my $worked;
+
+  eval {
+    require DBD::Pg;
+
+    my $dbname = 'op';
+
+    my $dsn = sprintf( 'DBI:Pg:database=%s;host=%s;port=%s',
+      $dbname, dbHost, dbPort || 5432 );
+
+    my $dbh = DBI->connect( $dsn, $dbname, '', { RaiseError => 1 } )
+      || die DBI->errstr;
+
+    my $sth = $dbh->prepare("select count(*) from information_schema.tables")
+      || die $dbh->errstr;
+
+    $sth->execute || die $sth->errstr;
+
+    $sth->fetchall_arrayref() || die $sth->errstr;
+
+    $worked++;
+  };
+
+  return $worked;
 }
 
 =pod
@@ -1253,13 +1331,13 @@ sub __baseAsserts {
       mtime => OP::DateTime->assert(
         OP::Type::subtype(
           descript   => "The last modified timestamp of this object",
-          columnType => "DATETIME"
+          columnType => $class->__datetimeColumnType(),
         )
       ),
       ctime => OP::DateTime->assert(
         OP::Type::subtype(
           descript   => "The creation timestamp of this object",
-          columnType => "DATETIME"
+          columnType => $class->__datetimeColumnType(),
         )
       ),
     );
@@ -1658,6 +1736,20 @@ sub __allNamesSth {
 
 =pod
 
+=item * $class->__datetimeColumnType();
+
+Returns an override column type for ctime/mtime
+
+=cut
+
+sub __datetimeColumnType {
+  my $class = shift;
+
+  return $class->__dispatch('__datetimeColumnType');
+}
+
+=pod
+
 =item * $class->__beginTransaction();
 
 Begins a new SQL transation.
@@ -2038,6 +2130,12 @@ Creates a new DB connection, or returns the one which is currently active.
 sub __dbh {
   my $class = shift;
 
+  if ( !$class->__useDbi ) {
+    OP::RuntimeError->throw(
+      "BUG: $class was asked for its DBH, but it does not use DBI."
+    );
+  }
+
   my $dbName = $class->databaseName();
 
   $dbi ||= OP::Hash->new();
@@ -2051,7 +2149,7 @@ sub __dbh {
         database => $dbName,
         host     => dbHost,
         pass     => dbPass,
-        port     => dbPort,
+        port     => dbPort || 3306,
         user     => dbUser
       );
 
@@ -2060,6 +2158,16 @@ sub __dbh {
       my %creds = ( database => join( '/', sqliteRoot, $dbName ) );
 
       $dbi->{$dbName}->{$$} = OP::Persistence::SQLite::connect(%creds);
+    } elsif ( $dbiType == OP::Enum::DBIType::PostgreSQL ) {
+      my %creds = (
+        database => $dbName,
+        host     => dbHost,
+        pass     => dbPass,
+        port     => dbPort || 5432,
+        user     => dbUser
+      );
+
+      $dbi->{$dbName}->{$$} = OP::Persistence::PostgreSQL::connect(%creds);
     } else {
       throw OP::InvalidArgument(
         sprintf( 'Unknown DBI Type %s returned by class %s', $dbiType, $class )
@@ -2254,8 +2362,7 @@ sub __quoteDatetimeSelect {
 =item * $receiver->__dispatch($methodName, @args)
 
 Delegate the received class or instance method and arguments to the
-appropriate database-specific persistence module (ie
-OP::Persistence::MySQL, OP::Persistence::SQLite).
+appropriate database-specific persistence module.
 
 =cut
 
@@ -2271,6 +2378,8 @@ sub __dispatch {
     $module = "OP::Persistence::MySQL";
   } elsif ( $class->__dbiType == OP::Enum::DBIType::SQLite ) {
     $module = "OP::Persistence::SQLite";
+  } elsif ( $class->__dbiType == OP::Enum::DBIType::PostgreSQL ) {
+    $module = "OP::Persistence::PostgreSQL";
   }
 
   do {
@@ -2394,7 +2503,7 @@ sub __fsIds {
       my $id = $File::Find::name;
 
       my $shortId = $id;
-      $shortId =~ s/$basePath\///;
+      $shortId =~ s/\Q$basePath\E\///;
 
       if ( -f $id
         && !( $id =~ /,v$/ )
@@ -2794,9 +2903,10 @@ the received names. If a name is provided which does not correspond to
 a named object in the foreign table, a new object is created and saved,
 and the new ID is used.
 
-If the named objects do not yet exist, and have other required attributes
+If the named objects do not yet exist, and have required attributes
 other than "name", then this method will raise an exception. The
-referenced object will need to be explicitly saved before the referent.
+referenced object will need to be explicitly saved before the
+referent.
 
   #
   # Set "parentId" in self to the ID of the object named "Mom":

@@ -47,7 +47,7 @@ sub main {
       scratchRoot => '/tmp',
       dbHost      => 'localhost',
       dbPass      => undef,
-      dbPort      => 3306,
+      dbPort      => undef,
       dbUser      => 'op',
       memcachedHosts => [
         '127.0.0.1:31337',

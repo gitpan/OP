@@ -1,3 +1,12 @@
+.319
+  - Add support + tests for PostgreSQL
+  - Fixed ExtID support for non-InnoDB-backed classes + added tests
+  - Cleaned up auto-detection, removed duplicate test code
+  - Leaving dbPort undef (~) in .oprc will make OP use default port for
+    specified dbi type
+  - Add foreign key support for future versions of DBD::SQLite
+  - Type::allowed($value) now returns true or throws an exception
+
 2009-10-14: .318
   - Add support for cross-database foreign keys (just assert ExtID as usual)
   - Non-InnoDB classes won't try to use InnoDB for their linked tables (oops)

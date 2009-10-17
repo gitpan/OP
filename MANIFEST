@@ -19,8 +19,6 @@ lib/OP/Double.pm
 lib/OP/Enum.pm
 lib/OP/Enum/Bool.pm
 lib/OP/Enum/DBIType.pm
-lib/OP/Enum/DaysOfWeek.pm
-lib/OP/Enum/MonthsOfYear.pm
 lib/OP/Exceptions.pm
 lib/OP/ExtID.pm
 lib/OP/Float.pm
@@ -35,6 +33,7 @@ lib/OP/Persistence.pm
 lib/OP/Persistence/Bulk.pm
 lib/OP/Persistence/Generic.pm
 lib/OP/Persistence/MySQL.pm
+lib/OP/Persistence/PostgreSQL.pm
 lib/OP/Persistence/SQLite.pm
 lib/OP/Redefines.pm
 lib/OP/Rule.pm

@@ -272,8 +272,6 @@ sub __statementForColumn {
   my $class     = shift;
   my $attribute = shift;
   my $type      = shift;
-  my $foreign   = shift;    # Not handled by Generic
-  my $unique    = shift;    # Not handled by Generic - see $uniqueInline instead
 
   if ( $type->objectClass()->isa("OP::Hash")
     || $type->objectClass()->isa("OP::Array") )
@@ -340,6 +338,18 @@ sub __statementForColumn {
   $fragment->push($notNull)       if $notNull;
   $fragment->push($uniqueInline)  if $uniqueInline;
   $fragment->push($primaryInline) if $primaryInline;
+
+  if ( $class->__useForeignKeys() && $type->objectClass->isa("OP::ExtID") ) {
+    my $memberClass = $type->memberClass();
+
+    #
+    # Value references a foreign key
+    #
+    $fragment->push( sprintf('references %s(%s)',
+      $memberClass->tableName,
+      $memberClass->__primaryKey
+    ) );
+  }
 
   return $fragment->join(" ");
 }
@@ -515,11 +525,16 @@ sub __selectColumnNames {
   );
 }
 
+sub __datetimeColumnType {
+  my $class = shift;
+
+  return "DATETIME";
+}
+
 sub __quoteDatetimeInsert {
   my $class = shift;
   my $value = shift;
 
-  die;
   return $value;
 }
 
@@ -527,7 +542,6 @@ sub __quoteDatetimeSelect {
   my $class = shift;
   my $attr  = shift;
 
-  die;
   return $attr;
 }
 
@@ -658,4 +672,43 @@ sub _deleteRowStatement {
   );
 }
 
+sub __useForeignKeys {
+  my $class = shift;
+
+  return false;
+}
+
 true;
+=pod
+
+=head1 NAME
+
+OP::Persistence::Generic - Abstract base for DBI mix-in modules
+
+=head1 SYNOPSIS
+
+  package OP::Persistence::NewDBIType;
+
+  use strict;
+  use warnings;
+
+  use base qw| OP::Persistence::Generic |;
+
+  # ...
+
+  1;
+
+=head1 DESCRIPTION
+
+This module should not be used directly.
+
+New DBI types should use this module as a base, and override methods
+as needed.
+
+=head1 SEE ALSO
+
+L<OP::Persistence>
+
+This file is part of L<OP>.
+
+=cut

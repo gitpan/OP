@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.318';
+our $VERSION = '0.319';
 
 use strict;
 use diagnostics;
@@ -104,15 +104,15 @@ object classes. OP's purpose is to automatically derive a database
 schema, handle object-relational mapping, and provide input validation
 for classes created in this manner.
 
-OP works with MySQL/InnoDB, SQLite, and YAML flatfile. If the
-backing store type for a class is not specified, OP will try to
-determine the best type for the local system. If memcached is
-available, OP will use it in conjunction with the permanent backing
-store.
+OP works with MySQL/InnoDB, PostgreSQL, SQLite, and YAML flatfile.
+If the backing store type for a class is not specified, OP will try
+to automatically determine an appropriate type for the local system.
+If memcached is available, OP will use it in conjunction with the
+permanent backing store.
 
 =head1 VERSION
 
-This documentation is for version B<0.318> of OP.
+This documentation is for version B<0.319> of OP.
 
 =head1 EXPORT TAGS
 
@@ -441,9 +441,11 @@ as inline attributes.
 
 =item * L<OP::Persistence::Generic> - Base for vendor-specific DBI modules
 
-=item * L<OP::Persistence::MySQL> - MySQL/InnoDB-specific runtime overrides
+=item * L<OP::Persistence::MySQL> - MySQL/InnoDB runtime overrides
 
-=item * L<OP::Persistence::SQLite> - SQLite-specific runtime overrides
+=item * L<OP::Persistence::PostgreSQL> - PostgreSQL runtime overrides
+
+=item * L<OP::Persistence::SQLite> - SQLite runtime overrides
 
 =item * L<OP::Node> - Abstract stored object class
 
@@ -481,8 +483,9 @@ as inline attributes.
 
 =head2 OP and your DBA
 
-If using MySQL, your app's database and the "op" database should
-exist with the proper access prior to use - see L<OP::Persistence::MySQL>.
+If using MySQL or PostgreSQL, your app's database and the "op"
+database should exist with the proper access prior to use - see
+L<OP::Persistence::MySQL>, L<OP::Persistence::PostgreSQL>.
 
 =head2 OP_HOME and .oprc
 
@@ -511,8 +514,8 @@ For example, in a file C<startup.pl>:
     $ENV{OP_HOME} = '/home/user/op'; # Directory with the .oprc
   }
 
-  use MyApp::Component;
-  use MyApp::OtherComponent;
+  use YourApp::Component;
+  use YourApp::OtherComponent;
 
   1;
 
