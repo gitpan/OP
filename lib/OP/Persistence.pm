@@ -87,6 +87,7 @@ use OP::Redefines;
 #
 # RCS setup
 #
+Rcs->arcext(',v');
 Rcs->bindir(rcsBindir);
 Rcs->quiet(true);
 

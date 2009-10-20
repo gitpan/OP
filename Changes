@@ -1,4 +1,8 @@
-.319
+.320
+  - Always provide an RCS archive extension (possible fix for openrcs)
+  - This distribution will be moving to a new name, Devel::Ladybug
+
+2009-10-17: .319
   - Add support + tests for PostgreSQL
   - Fixed ExtID support for non-InnoDB-backed classes + added tests
   - Cleaned up auto-detection, removed duplicate test code

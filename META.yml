@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                OP
-version:             0.319
+version:             0.320
 abstract:            Compact prototyping of schema-backed object classes
 license:             open_source
 author:              

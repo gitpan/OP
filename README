@@ -13,6 +13,10 @@ SYNOPSIS
 
 DESCRIPTION
 
+    Please be advised that this distribution will be moving to a
+    new name, Devel::Ladybug. The OP distribution will be removed
+    from CPAN shortly.
+
     OP is a Perl 5 framework for prototyping schema-backed object
     classes.
 

@@ -11,7 +11,7 @@
 
 package OP;
 
-our $VERSION = '0.319';
+our $VERSION = '0.320';
 
 use strict;
 use diagnostics;
@@ -81,6 +81,13 @@ __END__
 
 OP - Compact prototyping of schema-backed object classes
 
+=head1 NEW NAME
+
+Oct 19 2009 - Please be advised that this distribution will be
+moving to a new name, L<Devel::Ladybug>. The OP distribution will
+be removed from CPAN shortly. Sincere apologies for any inconvenience
+this may cause.
+
 =head1 SYNOPSIS
 
   use strict;
@@ -112,7 +119,7 @@ permanent backing store.
 
 =head1 VERSION
 
-This documentation is for version B<0.319> of OP.
+This documentation is for version B<0.320> of OP.
 
 =head1 EXPORT TAGS
 
